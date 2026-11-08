@@ -3,10 +3,12 @@ const path = require("path");
 const vscode = require("vscode");
 
 const NAME = "opencode";
-const REPLAY_LIMIT = 512 * 1024; // output kept to redraw the view after it is rebuilt
+const REPLAY_LIMIT = 512 * 1024; // output kept per session to redraw the view after it is rebuilt
 
 // node-pty ships inside VS Code (node_modules on the server, asar.unpacked on desktop)
+let ptyModule;
 function loadPty() {
+  if (ptyModule) return ptyModule;
   const root = vscode.env.appRoot;
   const candidates = [
     path.join(root, "node_modules", "node-pty"),
@@ -16,7 +18,8 @@ function loadPty() {
   const errors = [];
   for (const candidate of candidates) {
     try {
-      return require(candidate);
+      ptyModule = require(candidate);
+      return ptyModule;
     } catch (err) {
       errors.push(`${candidate}: ${err.message}`);
     }
@@ -47,12 +50,22 @@ function fontSettings() {
   };
 }
 
+class Session {
+  constructor(id, number) {
+    this.id = id;
+    this.number = number;
+    this.pty = undefined;
+    this.replay = "";
+  }
+}
+
 class OpencodeView {
   constructor(context) {
     this.context = context;
     this.view = undefined;
-    this.pty = undefined;
-    this.replay = "";
+    this.sessions = new Map();
+    this.active = undefined;
+    this.nextId = 1;
     this.size = { cols: 80, rows: 24 };
   }
 
@@ -69,38 +82,82 @@ class OpencodeView {
   }
 
   onMessage(msg) {
+    const session = msg.id !== undefined ? this.sessions.get(msg.id) : undefined;
     switch (msg.type) {
       case "ready":
         this.size = { cols: msg.cols, rows: msg.rows };
-        if (this.pty) {
-          if (this.replay) this.post({ type: "output", data: this.replay });
-          this.pty.resize(msg.cols, msg.rows);
+        if (this.sessions.size === 0) {
+          this.create();
         } else {
-          this.start();
+          this.post({ type: "init", sessions: this.list(), active: this.active });
+          for (const s of this.sessions.values()) {
+            if (s.replay) this.post({ type: "output", id: s.id, data: s.replay });
+            if (s.pty) s.pty.resize(msg.cols, msg.rows);
+          }
         }
         break;
+      case "create":
+        this.create();
+        break;
+      case "close":
+        if (session) this.close(session);
+        break;
+      case "activate":
+        if (session) this.active = session.id;
+        break;
       case "input":
-        if (this.pty) this.pty.write(msg.data);
-        else if (msg.data === "\r") this.start();
+        if (!session) break;
+        if (session.pty) session.pty.write(msg.data);
+        else if (msg.data === "\r") this.start(session);
         break;
       case "resize":
         this.size = { cols: msg.cols, rows: msg.rows };
-        if (this.pty) this.pty.resize(msg.cols, msg.rows);
+        for (const s of this.sessions.values()) if (s.pty) s.pty.resize(msg.cols, msg.rows);
         break;
     }
   }
 
-  start() {
+  list() {
+    return [...this.sessions.values()].map((s) => ({ id: s.id, number: s.number }));
+  }
+
+  // Lowest free number, so tabs read 1, 2, 3 and reuse the numbers of closed ones
+  freeNumber() {
+    const used = new Set([...this.sessions.values()].map((s) => s.number));
+    let n = 1;
+    while (used.has(n)) n++;
+    return n;
+  }
+
+  create() {
+    const session = new Session(this.nextId++, this.freeNumber());
+    this.sessions.set(session.id, session);
+    this.active = session.id;
+    this.post({ type: "add", session: { id: session.id, number: session.number } });
+    this.start(session);
+  }
+
+  close(session) {
+    this.sessions.delete(session.id);
+    const proc = session.pty;
+    session.pty = undefined;
+    if (proc) proc.kill();
+    this.post({ type: "remove", id: session.id });
+    if (this.active === session.id) this.active = [...this.sessions.keys()].pop();
+    if (this.sessions.size === 0) this.create();
+  }
+
+  start(session) {
     let pty;
     try {
       pty = loadPty();
     } catch (err) {
-      this.post({ type: "output", data: `\r\n${err.message.replace(/\n/g, "\r\n")}\r\n` });
+      this.post({ type: "output", id: session.id, data: `\r\n${err.message.replace(/\n/g, "\r\n")}\r\n` });
       return;
     }
     const { file, args } = command();
-    this.replay = "";
-    this.post({ type: "clear" });
+    session.replay = "";
+    this.post({ type: "clear", id: session.id });
     const proc = pty.spawn(file, args, {
       name: "xterm-256color",
       cols: this.size.cols,
@@ -108,26 +165,36 @@ class OpencodeView {
       cwd: cwd(),
       env: { ...process.env, TERM: "xterm-256color", COLORTERM: "truecolor", TERM_PROGRAM: "vscode" },
     });
-    this.pty = proc;
+    session.pty = proc;
     proc.onData((data) => {
-      this.replay = (this.replay + data).slice(-REPLAY_LIMIT);
-      this.post({ type: "output", data });
+      session.replay = (session.replay + data).slice(-REPLAY_LIMIT);
+      this.post({ type: "output", id: session.id, data });
     });
     proc.onExit(({ exitCode }) => {
-      if (this.pty !== proc) return;
-      this.pty = undefined;
-      this.post({
-        type: "output",
-        data: `\r\n\x1b[2m[opencode exited with code ${exitCode}. Press Enter to start it again.]\x1b[0m\r\n`,
-      });
+      if (session.pty !== proc) return;
+      session.pty = undefined;
+      const data = `\r\n\x1b[2m[opencode exited with code ${exitCode}. Press Enter to start it again.]\x1b[0m\r\n`;
+      session.replay += data;
+      this.post({ type: "output", id: session.id, data });
     });
   }
 
+  newSession() {
+    this.create();
+    this.focus();
+  }
+
   restart() {
-    const old = this.pty;
-    this.pty = undefined;
+    const session = this.sessions.get(this.active);
+    if (!session) return this.newSession();
+    const old = session.pty;
+    session.pty = undefined;
     if (old) old.kill();
-    this.start();
+    this.start(session);
+    this.focus();
+  }
+
+  focus() {
     vscode.commands.executeCommand("opencodeSidebar.view.focus");
   }
 
@@ -136,7 +203,7 @@ class OpencodeView {
   }
 
   dispose() {
-    if (this.pty) this.pty.kill();
+    for (const s of this.sessions.values()) if (s.pty) s.pty.kill();
   }
 
   html(webview) {
@@ -152,7 +219,8 @@ class OpencodeView {
 <link rel="stylesheet" href="${uri("media", "view.css")}">
 </head>
 <body>
-<div id="terminal"></div>
+<nav id="tabs"><div id="tab-list" role="tablist"></div><button id="new" title="New session" aria-label="New session">+</button></nav>
+<main id="terminals"></main>
 <script nonce="${nonce}">window.OPENCODE_SETTINGS = ${settings};</script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "xterm", "lib", "xterm.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-fit", "lib", "addon-fit.js")}"></script>
@@ -182,6 +250,7 @@ function activate(context) {
     vscode.window.registerWebviewViewProvider("opencodeSidebar.view", provider, {
       webviewOptions: { retainContextWhenHidden: true },
     }),
+    vscode.commands.registerCommand("opencodeSidebar.newSession", () => provider.newSession()),
     vscode.commands.registerCommand("opencodeSidebar.restart", () => provider.restart()),
     vscode.commands.registerCommand("opencodeSidebar.openInTerminal", () =>
       vscode.window.createTerminal(terminalOptions(context)).show()

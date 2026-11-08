@@ -4,9 +4,132 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  background: var(--opencode-background, var(--vscode-sideBar-background));
 }
 
-#terminal {
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+:focus,
+:focus-visible,
+.xterm.focus,
+.xterm:focus {
+  outline: none;
+}
+
+/* Tab bar, shown when there is more than one session */
+#tabs {
+  display: flex;
+  flex: none;
+  align-items: stretch;
+  height: 28px;
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
+}
+
+#tab-list {
+  display: flex;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  max-width: 160px;
+  padding: 0 4px 0 10px;
+  cursor: pointer;
+  color: var(--vscode-tab-inactiveForeground, var(--vscode-foreground));
+  border-bottom: 1px solid transparent;
+  user-select: none;
+}
+
+.tab.active {
+  color: var(--vscode-tab-activeForeground, var(--vscode-foreground));
+  border-bottom-color: var(--vscode-tab-activeBorder, var(--vscode-focusBorder));
+}
+
+.tab .label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+button {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.tab .close {
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+  visibility: hidden;
+}
+
+.tab:hover .close,
+.tab.active .close {
+  visibility: visible;
+}
+
+#new {
+  align-self: center;
+  width: 22px;
+  height: 22px;
+  margin: 0 6px;
+  font-size: 16px;
+  color: var(--vscode-tab-inactiveForeground, var(--vscode-foreground));
+}
+
+/* Single session: no tab bar, just a + that fades in at the top right on hover */
+body:not(.multi) #tabs {
+  position: fixed;
+  top: 4px;
+  right: 2px;
+  z-index: 10;
+  height: auto;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+body:not(.multi) #tab-list {
+  display: none;
+}
+
+body:not(.multi):hover #tabs {
+  opacity: 0.9;
+}
+
+#terminals {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.session {
   position: absolute;
-  inset: 4px 0 0 8px;
+  inset: 6px;
+  display: none;
+}
+
+.session.active {
+  display: block;
 }
