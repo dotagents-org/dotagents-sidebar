@@ -1,0 +1,7 @@
+*.vsix
+.gitignore
+**/*.map
+**/*.mjs
+node_modules/@xterm/*/src/**
+node_modules/@xterm/*/typings/**
+.vscode/**
