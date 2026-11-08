@@ -1,0 +1,84 @@
+{
+  "name": "opencode-sidebar",
+  "displayName": "opencode Sidebar",
+  "description": "Runs the opencode terminal UI inside a secondary sidebar view, next to Claude Code and Codex.",
+  "version": "0.1.0",
+  "publisher": "gabrieldulolmarques",
+  "license": "MIT",
+  "author": "Gabriel R. Marques",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gabrieldulolmarques/opencode-sidebar.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gabrieldulolmarques/opencode-sidebar/issues"
+  },
+  "homepage": "https://github.com/gabrieldulolmarques/opencode-sidebar#readme",
+  "keywords": [
+    "opencode",
+    "terminal",
+    "sidebar",
+    "ai",
+    "agent"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "icon": "media/icon.png",
+  "scripts": {
+    "package": "npx --yes @vscode/vsce@3 package -o opencode-sidebar.vsix"
+  },
+  "engines": {
+    "vscode": "^1.106.0"
+  },
+  "extensionKind": [
+    "workspace"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "secondarySidebar": [
+        {
+          "id": "opencodeSidebar",
+          "title": "opencode",
+          "icon": "media/opencode.svg"
+        }
+      ]
+    },
+    "views": {
+      "opencodeSidebar": [
+        {
+          "type": "webview",
+          "id": "opencodeSidebar.view",
+          "name": "opencode"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "opencodeSidebar.restart",
+        "title": "opencode: Restart"
+      },
+      {
+        "command": "opencodeSidebar.openInTerminal",
+        "title": "opencode: Open in Terminal Panel"
+      }
+    ],
+    "terminal": {
+      "profiles": [
+        {
+          "id": "opencodeSidebar.profile",
+          "title": "opencode",
+          "icon": "media/opencode.svg"
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "0.11.0",
+    "@xterm/xterm": "6.0.0"
+  }
+}
