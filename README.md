@@ -10,7 +10,8 @@ The official opencode extension opens opencode in a terminal tab. This one gives
 
 - **Sidebar view.** An opencode icon sits in the secondary sidebar. The view runs a full terminal ([xterm.js](https://xtermjs.org)) with opencode inside, fitted to the view and resized when you drag the sidebar.
 - **Persistent session.** Switch to another view and back, and opencode keeps running. When it exits, press <kbd>Enter</kbd> in the view to start it again. For several conversations, use opencode's own session tabs (opencode 2 and newer).
-- **No frame, no seams.** The margin around the grid takes the background color opencode paints, so there is no frame whatever theme opencode uses, and the grid is centered in the view. Rendering goes through xterm.js's WebGL renderer, which draws cell backgrounds edge to edge (the DOM renderer leaves hairline gaps between rows at fractional zoom levels). It uses your `terminal.integrated.fontFamily`, `fontSize` and `lineHeight` (falling back to the editor's) and your theme's ANSI colors.
+- **Renders like your terminal.** The view follows the integrated terminal's settings: `terminal.integrated.gpuAcceleration` picks the renderer (WebGL for `auto` and `on`, with a fallback to the DOM renderer; DOM for `off`), and `fontFamily`, `fontSize`, `lineHeight`, `letterSpacing`, `fontWeight`, `fontWeightBold` and `minimumContrastRatio` set the text (font settings fall back to the editor's). Changing any of them updates the view without restarting opencode.
+- **No frame, sharp at any scale.** The margin around the grid takes the background color opencode paints, so there is no frame whatever its theme, and any hairline gap between rows shows that same color. The grid is centered and snapped to whole device pixels, so it stays sharp at fractional display scales and zoom levels.
 - **Clipboard.** <kbd>Ctrl</kbd>+<kbd>C</kbd> copies when text is selected and goes to opencode otherwise. <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes.
 - **Terminal profile.** An **opencode** entry in the terminal's new-terminal menu (⌄ next to `+`) opens opencode in a regular terminal, with the opencode mark as its tab icon.
 - **Remote ready.** It runs where your workspace runs, so it works in WSL, SSH and dev containers as well as locally.
@@ -75,7 +76,7 @@ Then reload the VS Code window. To debug, open the folder in VS Code and press <
 | File | Role |
 |---|---|
 | `extension.js` | Extension host: the webview provider, the node-pty process, commands and terminal profile |
-| `media/view.js` | Webview: xterm.js (WebGL), theme colors, fitting, centering and margin color, clipboard |
+| `media/view.js` | Webview: xterm.js and its renderer, theme colors, fitting, centering and pixel snapping, margin color, clipboard |
 | `media/view.css` | Webview layout |
 | `media/opencode*.svg` | Sidebar and terminal tab icons |
 
