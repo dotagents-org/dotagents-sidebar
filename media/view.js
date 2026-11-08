@@ -4,9 +4,12 @@
   const css = getComputedStyle(document.documentElement);
   const color = (name, fallback) => css.getPropertyValue(`--vscode-${name}`).trim() || fallback;
 
-  // Use the sidebar's own background, so the terminal blends into the view with no frame
   const background = color("sideBar-background", color("terminal-background", "#1e1e1e"));
-  document.documentElement.style.setProperty("--opencode-background", background);
+  const ansiNames = ["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White"];
+  const xtermDefaults = [
+    "#000000", "#cd3131", "#0dbc79", "#e5e510", "#2472c8", "#bc3fbc", "#11a8cd", "#e5e5e5",
+    "#666666", "#f14c4c", "#23d18b", "#f5f543", "#3b8eea", "#d670d6", "#29b8db", "#e5e5e5",
+  ];
 
   const theme = {
     background,
@@ -14,191 +17,117 @@
     cursor: color("terminalCursor-foreground", undefined),
     selectionBackground: color("terminal-selectionBackground", undefined),
   };
-  for (const name of ["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White"]) {
-    theme[name.toLowerCase()] = color(`terminal-ansi${name}`, undefined);
-    theme[`bright${name}`] = color(`terminal-ansiBright${name}`, undefined);
-  }
+  ansiNames.forEach((name, i) => {
+    theme[name.toLowerCase()] = color(`terminal-ansi${name}`, xtermDefaults[i]);
+    theme[`bright${name}`] = color(`terminal-ansiBright${name}`, xtermDefaults[i + 8]);
+  });
 
-  const options = {
+  // The 256-color palette: theme ANSI colors, then the 6x6x6 cube, then the gray ramp
+  const hex = (r, g, b) => `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+  const rgb = (n) => [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  const palette = [
+    ...ansiNames.map((n) => theme[n.toLowerCase()]),
+    ...ansiNames.map((n) => theme[`bright${n}`]),
+  ];
+  const levels = [0, 95, 135, 175, 215, 255];
+  for (let i = 0; i < 216; i++) {
+    palette.push(hex(levels[Math.floor(i / 36)], levels[Math.floor(i / 6) % 6], levels[i % 6]));
+  }
+  for (let i = 0; i < 24; i++) palette.push(hex(8 + i * 10, 8 + i * 10, 8 + i * 10));
+
+  const el = document.getElementById("terminal");
+  el.style.background = background;
+
+  const term = new Terminal({
     fontFamily: settings.fontFamily,
     fontSize: settings.fontSize,
     lineHeight: settings.lineHeight,
     theme,
     allowProposedApi: true,
     scrollback: 0, // opencode is a full-screen app; no scrollback also means no scrollbar gutter
-  };
+  });
+  const fit = new FitAddon.FitAddon();
+  term.loadAddon(fit);
+  term.open(el);
 
-  const tabList = document.getElementById("tab-list");
-  const container = document.getElementById("terminals");
-  const sessions = new Map(); // id -> { term, fit, el, tab }
-  let active;
-  let size = { cols: 80, rows: 24 };
-
-  function createTerminal(id, number) {
-    const el = document.createElement("div");
-    el.className = "session";
-    container.appendChild(el);
-
-    const term = new Terminal(options);
-    const fit = new FitAddon.FitAddon();
-    term.loadAddon(fit);
-    term.open(el);
-    term.resize(size.cols, size.rows);
-
-    // Ctrl+C copies when there is a selection; otherwise it goes to opencode
-    term.attachCustomKeyEventHandler((event) => {
-      if (event.type === "keydown" && event.ctrlKey && event.key === "c" && term.hasSelection()) {
-        navigator.clipboard.writeText(term.getSelection());
-        term.clearSelection();
-        return false;
-      }
-      return true;
-    });
-    term.onData((data) => vscode.postMessage({ type: "input", id, data }));
-
-    const tab = document.createElement("div");
-    tab.className = "tab";
-    tab.setAttribute("role", "tab");
-    const label = document.createElement("span");
-    label.className = "label";
-    label.textContent = `opencode ${number}`;
-    const close = document.createElement("button");
-    close.className = "close";
-    close.title = "Close session";
-    close.setAttribute("aria-label", "Close session");
-    close.textContent = "×";
-    tab.append(label, close);
-    tabList.appendChild(tab);
-
-    tab.addEventListener("mousedown", (event) => {
-      if (event.button === 1) event.preventDefault(); // keep middle click from autoscrolling
-    });
-    tab.addEventListener("click", () => activate(id, true));
-    tab.addEventListener("auxclick", (event) => {
-      if (event.button === 1) vscode.postMessage({ type: "close", id });
-    });
-    close.addEventListener("click", (event) => {
-      event.stopPropagation();
-      vscode.postMessage({ type: "close", id });
-    });
-    term.onTitleChange((title) => {
-      const clean = title.trim();
-      label.textContent = clean && clean !== "opencode" ? clean : `opencode ${number}`;
-      tab.title = label.textContent;
-    });
-
-    sessions.set(id, { term, fit, el, tab });
-    document.body.classList.toggle("multi", sessions.size > 1);
+  // WebGL draws cell backgrounds edge to edge; the DOM renderer leaves hairline gaps between
+  // rows at fractional zoom levels
+  try {
+    const webgl = new WebglAddon.WebglAddon();
+    webgl.onContextLoss(() => webgl.dispose());
+    term.loadAddon(webgl);
+  } catch {
+    // no WebGL: xterm keeps its DOM renderer
   }
 
-  function removeTerminal(id) {
-    const s = sessions.get(id);
-    if (!s) return;
-    s.term.dispose();
-    s.el.remove();
-    s.tab.remove();
-    sessions.delete(id);
-    document.body.classList.toggle("multi", sessions.size > 1);
-    if (active === id) {
-      active = undefined;
-      const last = [...sessions.keys()].pop();
-      if (last !== undefined) activate(last, true);
-    } else {
-      layoutActive();
+  // Paint the margin around the grid with the color the app paints its first cell, so the
+  // terminal has no frame whatever background opencode's theme uses
+  function edgeColor() {
+    const buffer = term.buffer.active;
+    const cell = buffer.getLine(buffer.viewportY)?.getCell(0);
+    if (!cell) return background;
+    if (cell.isInverse()) return cell.isFgRGB() ? hex(...rgb(cell.getFgColor())) : theme.foreground;
+    if (cell.isBgRGB()) return hex(...rgb(cell.getBgColor()));
+    if (cell.isBgPalette()) return palette[cell.getBgColor()] || background;
+    return background;
+  }
+  let painting = false;
+  term.onRender(() => {
+    if (painting) return;
+    painting = true;
+    requestAnimationFrame(() => {
+      painting = false;
+      el.style.background = edgeColor();
+    });
+  });
+
+  // Ctrl+C copies when there is a selection; otherwise it goes to opencode
+  term.attachCustomKeyEventHandler((event) => {
+    if (event.type === "keydown" && event.ctrlKey && event.key === "c" && term.hasSelection()) {
+      navigator.clipboard.writeText(term.getSelection());
+      term.clearSelection();
+      return false;
     }
-  }
-
-  function activate(id, notify) {
-    const s = sessions.get(id);
-    if (!s) return;
-    active = id;
-    for (const [otherId, other] of sessions) {
-      const on = otherId === id;
-      other.el.classList.toggle("active", on);
-      other.tab.classList.toggle("active", on);
-      other.tab.setAttribute("aria-selected", String(on));
-    }
-    layout(s);
-    s.term.focus();
-    if (notify) vscode.postMessage({ type: "activate", id });
-  }
-
-  function layoutActive() {
-    const s = sessions.get(active);
-    if (s) layout(s);
-  }
+    return true;
+  });
+  term.onData((data) => vscode.postMessage({ type: "input", data }));
 
   // Fit the terminal to the view, then center the grid in the pixels the cells leave over
-  function layout(s) {
-    if (s.el.clientWidth === 0 || s.el.clientHeight === 0) return; // view hidden; keep the last size
+  let last = "";
+  function layout() {
+    if (el.clientWidth === 0 || el.clientHeight === 0) return; // view hidden; keep the last size
     try {
-      s.fit.fit();
+      fit.fit();
     } catch {
       return;
     }
-    const xterm = s.el.querySelector(".xterm");
-    const screen = s.el.querySelector(".xterm-screen");
+    const xterm = el.querySelector(".xterm");
+    const screen = el.querySelector(".xterm-screen");
     if (xterm && screen) {
-      const left = Math.max(0, Math.floor((s.el.clientWidth - screen.offsetWidth) / 2));
-      const top = Math.max(0, Math.floor((s.el.clientHeight - screen.offsetHeight) / 2));
+      const box = getComputedStyle(el);
+      const left = Math.max(0, Math.floor((parseFloat(box.width) - screen.offsetWidth) / 2));
+      const top = Math.max(0, Math.floor((parseFloat(box.height) - screen.offsetHeight) / 2));
       xterm.style.transform = `translate(${left}px, ${top}px)`;
     }
-    if (s.term.cols !== size.cols || s.term.rows !== size.rows) {
-      size = { cols: s.term.cols, rows: s.term.rows };
-      vscode.postMessage({ type: "resize", ...size });
-    }
-    // Hidden sessions can't measure themselves; they follow the active one
-    for (const other of sessions.values()) {
-      if (other !== s && (other.term.cols !== size.cols || other.term.rows !== size.rows)) {
-        other.term.resize(size.cols, size.rows);
-      }
+    const key = `${term.cols}x${term.rows}`;
+    if (key !== last) {
+      last = key;
+      vscode.postMessage({ type: "resize", cols: term.cols, rows: term.rows });
     }
   }
-
-  new ResizeObserver(layoutActive).observe(container);
-
-  document.getElementById("new").addEventListener("click", () => vscode.postMessage({ type: "create" }));
+  new ResizeObserver(layout).observe(el);
 
   window.addEventListener("message", (event) => {
     const msg = event.data;
-    switch (msg.type) {
-      case "init":
-        for (const id of [...sessions.keys()]) removeTerminal(id);
-        for (const s of msg.sessions) createTerminal(s.id, s.number);
-        activate(msg.active ?? msg.sessions[msg.sessions.length - 1]?.id, false);
-        break;
-      case "add":
-        createTerminal(msg.session.id, msg.session.number);
-        activate(msg.session.id, false);
-        break;
-      case "remove":
-        removeTerminal(msg.id);
-        break;
-      case "output":
-        sessions.get(msg.id)?.term.write(msg.data);
-        break;
-      case "clear":
-        sessions.get(msg.id)?.term.reset();
-        break;
-    }
+    if (msg.type === "output") term.write(msg.data);
+    else if (msg.type === "clear") term.reset();
   });
-  window.addEventListener("focus", () => sessions.get(active)?.term.focus());
+  window.addEventListener("focus", () => term.focus());
 
-  // Measure the grid with a throwaway terminal, so the first session starts at the right size
   document.fonts.ready.then(() => {
-    const probe = document.createElement("div");
-    probe.className = "session active";
-    container.appendChild(probe);
-    const term = new Terminal(options);
-    const fit = new FitAddon.FitAddon();
-    term.loadAddon(fit);
-    term.open(probe);
-    try {
-      fit.fit();
-      size = { cols: term.cols, rows: term.rows };
-    } catch {}
-    term.dispose();
-    probe.remove();
-    vscode.postMessage({ type: "ready", ...size });
+    layout();
+    last = `${term.cols}x${term.rows}`;
+    vscode.postMessage({ type: "ready", cols: term.cols, rows: term.rows });
+    term.focus();
   });
 })();
