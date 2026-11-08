@@ -9,9 +9,8 @@ The official opencode extension opens opencode in a terminal tab. This one gives
 ## Features
 
 - **Sidebar view.** An opencode icon sits in the secondary sidebar. The view runs a full terminal ([xterm.js](https://xtermjs.org)) with opencode inside, fitted to the view and resized when you drag the sidebar.
-- **Several sessions.** Hover the view and click **+** at the top right to start another opencode. With more than one, a tab bar appears: click a tab to switch, and click **×** or middle-click it to close. Each tab is its own opencode process, so they can work at the same time.
-- **Persistent sessions.** Switch to another view and back, and every opencode keeps running. When one exits, press <kbd>Enter</kbd> in its tab to start it again.
-- **Blends into the sidebar.** The terminal takes the sidebar's background, so there is no frame around it, and the grid is centered in the view. It uses your `terminal.integrated.fontFamily`, `fontSize` and `lineHeight` (falling back to the editor's) and your theme's ANSI colors.
+- **Persistent session.** Switch to another view and back, and opencode keeps running. When it exits, press <kbd>Enter</kbd> in the view to start it again. For several conversations, use opencode's own session tabs (opencode 2 and newer).
+- **No frame, no seams.** The margin around the grid takes the background color opencode paints, so there is no frame whatever theme opencode uses, and the grid is centered in the view. Rendering goes through xterm.js's WebGL renderer, which draws cell backgrounds edge to edge (the DOM renderer leaves hairline gaps between rows at fractional zoom levels). It uses your `terminal.integrated.fontFamily`, `fontSize` and `lineHeight` (falling back to the editor's) and your theme's ANSI colors.
 - **Clipboard.** <kbd>Ctrl</kbd>+<kbd>C</kbd> copies when text is selected and goes to opencode otherwise. <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes.
 - **Terminal profile.** An **opencode** entry in the terminal's new-terminal menu (⌄ next to `+`) opens opencode in a regular terminal, with the opencode mark as its tab icon.
 - **Remote ready.** It runs where your workspace runs, so it works in WSL, SSH and dev containers as well as locally.
@@ -44,15 +43,14 @@ If the icon doesn't show up, open the secondary sidebar with **View: Toggle Seco
 
 | Command | What it does |
 |---|---|
-| `opencode: New Session` | Starts another opencode in a new tab |
-| `opencode: Restart Session` | Stops the opencode in the active tab and starts a fresh one |
+| `opencode: Restart` | Stops the opencode in the view and starts a fresh one |
 | `opencode: Open in Terminal Panel` | Opens opencode in a regular terminal instead |
 
 ## How it works
 
-VS Code's API only lets extensions put terminals in the terminal panel or the editor area, not in a sidebar. So the view is a webview that draws its own terminal with xterm.js. The opencode process runs on the extension host through **node-pty**: the copy that ships inside VS Code itself, loaded from `vscode.env.appRoot`. Keystrokes go from the webview to the process, and output comes back the other way. Each tab has its own process and its own xterm.js instance; only the active one is shown, and the hidden ones follow its size.
+VS Code's API only lets extensions put terminals in the terminal panel or the editor area, not in a sidebar. So the view is a webview that draws its own terminal with xterm.js. The opencode process runs on the extension host through **node-pty**: the copy that ships inside VS Code itself, loaded from `vscode.env.appRoot`. Keystrokes go from the webview to the process, and output comes back the other way.
 
-Because the view is a webview, `retainContextWhenHidden` keeps it alive while hidden. The extension also keeps the last 512 KB of output per session to redraw the view if VS Code rebuilds it (for example after you move it to another sidebar).
+Because the view is a webview, `retainContextWhenHidden` keeps it alive while hidden. The extension also keeps the last 512 KB of output to redraw the view if VS Code rebuilds it (for example after you move it to another sidebar).
 
 ## Known limitations
 
@@ -67,7 +65,7 @@ There is no build step: the extension is plain JavaScript.
 ```bash
 git clone https://github.com/gabrieldulolmarques/opencode-sidebar.git
 cd opencode-sidebar
-npm install # xterm.js and its fit addon
+npm install # xterm.js with its fit and WebGL addons
 npm run package # writes opencode-sidebar.vsix
 code --install-extension opencode-sidebar.vsix --force
 ```
@@ -76,9 +74,9 @@ Then reload the VS Code window. To debug, open the folder in VS Code and press <
 
 | File | Role |
 |---|---|
-| `extension.js` | Extension host: the webview provider, the sessions and their node-pty processes, commands and terminal profile |
-| `media/view.js` | Webview: tabs, one xterm.js per session, theme colors, fitting and centering, clipboard |
-| `media/view.css` | Webview layout and tab bar |
+| `extension.js` | Extension host: the webview provider, the node-pty process, commands and terminal profile |
+| `media/view.js` | Webview: xterm.js (WebGL), theme colors, fitting, centering and margin color, clipboard |
+| `media/view.css` | Webview layout |
 | `media/opencode*.svg` | Sidebar and terminal tab icons |
 
 ## Credits

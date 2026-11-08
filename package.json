@@ -2,7 +2,7 @@
   "name": "opencode-sidebar",
   "displayName": "opencode Sidebar",
   "description": "Runs the opencode terminal UI inside a secondary sidebar view, next to Claude Code and Codex.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "gabrieldulolmarques",
   "license": "MIT",
   "author": "Gabriel R. Marques",
@@ -59,12 +59,8 @@
     },
     "commands": [
       {
-        "command": "opencodeSidebar.newSession",
-        "title": "opencode: New Session"
-      },
-      {
         "command": "opencodeSidebar.restart",
-        "title": "opencode: Restart Session"
+        "title": "opencode: Restart"
       },
       {
         "command": "opencodeSidebar.openInTerminal",
@@ -83,6 +79,7 @@
   },
   "dependencies": {
     "@xterm/addon-fit": "0.11.0",
+    "@xterm/addon-webgl": "0.19.0",
     "@xterm/xterm": "6.0.0"
   }
 }
