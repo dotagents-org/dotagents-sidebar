@@ -2,7 +2,7 @@
   "name": "opencode-sidebar",
   "displayName": "opencode Sidebar",
   "description": "Runs the opencode terminal UI inside a secondary sidebar view, next to Claude Code and Codex.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "gabrieldulolmarques",
   "license": "MIT",
   "author": "Gabriel R. Marques",

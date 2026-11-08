@@ -40,13 +40,23 @@ function cwd() {
   return folder && folder.uri.scheme === "file" ? folder.uri.fsPath : os.homedir();
 }
 
-function fontSettings() {
+// The view mirrors the integrated terminal's own settings, so it renders the way the user
+// already tuned their terminal for their screen (renderer, font, spacing)
+const WATCHED = ["terminal.integrated", "editor.fontFamily", "editor.fontSize"];
+
+function terminalSettings() {
   const term = vscode.workspace.getConfiguration("terminal.integrated");
   const editor = vscode.workspace.getConfiguration("editor");
   return {
     fontFamily: term.get("fontFamily") || editor.get("fontFamily") || "monospace",
     fontSize: term.get("fontSize") || editor.get("fontSize") || 14,
     lineHeight: term.get("lineHeight") || 1,
+    letterSpacing: term.get("letterSpacing") || 0,
+    fontWeight: term.get("fontWeight") || "normal",
+    fontWeightBold: term.get("fontWeightBold") || "bold",
+    minimumContrastRatio: term.get("minimumContrastRatio") ?? 4.5,
+    // "auto" and "on" use WebGL (falling back to the DOM renderer), "off" uses the DOM renderer
+    gpuAcceleration: term.get("gpuAcceleration") || "auto",
   };
 }
 
@@ -69,6 +79,11 @@ class OpencodeView {
     view.onDidDispose(() => {
       if (this.view === view) this.view = undefined;
     });
+  }
+
+  // Rebuild the page with the new settings; the running opencode is kept and replayed
+  reload() {
+    if (this.view) this.view.webview.html = this.html(this.view.webview);
   }
 
   onMessage(msg) {
@@ -144,7 +159,7 @@ class OpencodeView {
   html(webview) {
     const uri = (...p) => webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, ...p));
     const nonce = [...Array(32)].map(() => Math.floor(Math.random() * 36).toString(36)).join("");
-    const settings = JSON.stringify(fontSettings()).replace(/</g, "\\u003c");
+    const settings = JSON.stringify(terminalSettings()).replace(/</g, "\\u003c");
     return `<!doctype html>
 <html>
 <head>
@@ -184,6 +199,9 @@ function activate(context) {
     provider,
     vscode.window.registerWebviewViewProvider("opencodeSidebar.view", provider, {
       webviewOptions: { retainContextWhenHidden: true },
+    }),
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (WATCHED.some((key) => event.affectsConfiguration(key))) provider.reload();
     }),
     vscode.commands.registerCommand("opencodeSidebar.restart", () => provider.restart()),
     vscode.commands.registerCommand("opencodeSidebar.openInTerminal", () =>

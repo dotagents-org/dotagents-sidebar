@@ -42,6 +42,11 @@
     fontFamily: settings.fontFamily,
     fontSize: settings.fontSize,
     lineHeight: settings.lineHeight,
+    letterSpacing: settings.letterSpacing,
+    fontWeight: settings.fontWeight,
+    fontWeightBold: settings.fontWeightBold,
+    minimumContrastRatio: settings.minimumContrastRatio,
+    customGlyphs: true, // box drawing and block characters drawn to fill the cell, as in VS Code
     theme,
     allowProposedApi: true,
     scrollback: 0, // opencode is a full-screen app; no scrollback also means no scrollbar gutter
@@ -50,14 +55,16 @@
   term.loadAddon(fit);
   term.open(el);
 
-  // WebGL draws cell backgrounds edge to edge; the DOM renderer leaves hairline gaps between
-  // rows at fractional zoom levels
-  try {
-    const webgl = new WebglAddon.WebglAddon();
-    webgl.onContextLoss(() => webgl.dispose());
-    term.loadAddon(webgl);
-  } catch {
-    // no WebGL: xterm keeps its DOM renderer
+  // Same renderer choice as VS Code's terminal: WebGL unless gpuAcceleration is "off", falling
+  // back to the DOM renderer when WebGL is missing or its context is lost
+  if (settings.gpuAcceleration !== "off") {
+    try {
+      const webgl = new WebglAddon.WebglAddon();
+      webgl.onContextLoss(() => webgl.dispose());
+      term.loadAddon(webgl);
+    } catch {
+      // no WebGL: xterm keeps its DOM renderer
+    }
   }
 
   // Paint the margin around the grid with the color the app paints its first cell, so the
@@ -104,10 +111,17 @@
     const xterm = el.querySelector(".xterm");
     const screen = el.querySelector(".xterm-screen");
     if (xterm && screen) {
+      // Center the grid, then snap it to whole device pixels: at fractional scales (125%,
+      // zoomed windows) a grid on a half pixel gets resampled by the browser and looks blurry
+      xterm.style.transform = "none";
+      const dpr = window.devicePixelRatio || 1;
       const box = getComputedStyle(el);
-      const left = Math.max(0, Math.floor((parseFloat(box.width) - screen.offsetWidth) / 2));
-      const top = Math.max(0, Math.floor((parseFloat(box.height) - screen.offsetHeight) / 2));
-      xterm.style.transform = `translate(${left}px, ${top}px)`;
+      const area = el.getBoundingClientRect();
+      const base = screen.getBoundingClientRect();
+      const snap = (v) => Math.round(v * dpr) / dpr;
+      const left = area.left + parseFloat(box.paddingLeft) + Math.max(0, (parseFloat(box.width) - base.width) / 2);
+      const top = area.top + parseFloat(box.paddingTop) + Math.max(0, (parseFloat(box.height) - base.height) / 2);
+      xterm.style.transform = `translate(${snap(left) - base.left}px, ${snap(top) - base.top}px)`;
     }
     const key = `${term.cols}x${term.rows}`;
     if (key !== last) {
@@ -116,6 +130,19 @@
     }
   }
   new ResizeObserver(layout).observe(el);
+
+  // Zooming the window changes the device pixel ratio without resizing in CSS pixels
+  function watchScale() {
+    matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`).addEventListener(
+      "change",
+      () => {
+        layout();
+        watchScale();
+      },
+      { once: true }
+    );
+  }
+  watchScale();
 
   window.addEventListener("message", (event) => {
     const msg = event.data;
