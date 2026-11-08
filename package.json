@@ -59,8 +59,12 @@
     },
     "commands": [
       {
+        "command": "opencodeSidebar.newSession",
+        "title": "opencode: New Session"
+      },
+      {
         "command": "opencodeSidebar.restart",
-        "title": "opencode: Restart"
+        "title": "opencode: Restart Session"
       },
       {
         "command": "opencodeSidebar.openInTerminal",
