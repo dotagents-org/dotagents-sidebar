@@ -49,7 +49,7 @@
     customGlyphs: true, // box drawing and block characters drawn to fill the cell, as in VS Code
     theme,
     allowProposedApi: true,
-    scrollback: 0, // opencode is a full-screen app; no scrollback also means no scrollbar gutter
+    scrollback: 0, // OpenCode is a full-screen app; no scrollback also means no scrollbar gutter
   });
   const fit = new FitAddon.FitAddon();
   term.loadAddon(fit);
@@ -68,7 +68,7 @@
   }
 
   // Paint the margin around the grid with the color the app paints its first cell, so the
-  // terminal has no frame whatever background opencode's theme uses
+  // terminal has no frame whatever background OpenCode's theme uses
   function edgeColor() {
     const buffer = term.buffer.active;
     const cell = buffer.getLine(buffer.viewportY)?.getCell(0);
@@ -88,7 +88,7 @@
     });
   });
 
-  // Ctrl+C copies when there is a selection; otherwise it goes to opencode
+  // Ctrl+C copies when there is a selection; otherwise it goes to OpenCode
   term.attachCustomKeyEventHandler((event) => {
     if (event.type === "keydown" && event.ctrlKey && event.key === "c" && term.hasSelection()) {
       navigator.clipboard.writeText(term.getSelection());

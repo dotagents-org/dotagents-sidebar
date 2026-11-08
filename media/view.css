@@ -21,7 +21,7 @@ body {
   overflow: hidden !important;
 }
 
-/* The padding is the margin around the grid; view.js paints it with opencode's background */
+/* The padding is the margin around the grid; view.js paints it with OpenCode's background */
 #terminal {
   position: absolute;
   inset: 0;

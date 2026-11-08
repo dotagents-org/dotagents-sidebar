@@ -2,7 +2,7 @@ const os = require("os");
 const path = require("path");
 const vscode = require("vscode");
 
-const NAME = "opencode";
+const NAME = "OpenCode";
 const REPLAY_LIMIT = 512 * 1024; // output kept to redraw the view after it is rebuilt
 
 // node-pty ships inside VS Code (node_modules on the server, asar.unpacked on desktop)
@@ -31,7 +31,7 @@ function command() {
   if (process.platform === "win32") {
     return { file: "powershell.exe", args: ["-NoLogo", "-Command", "opencode"] };
   }
-  // -i loads ~/.bashrc, where opencode's bin folder enters the PATH
+  // -i loads ~/.bashrc, where OpenCode's bin folder enters the PATH
   return { file: "bash", args: ["-ic", "opencode"] };
 }
 
@@ -81,7 +81,7 @@ class OpencodeView {
     });
   }
 
-  // Rebuild the page with the new settings; the running opencode is kept and replayed
+  // Rebuild the page with the new settings; the running OpenCode is kept and replayed
   reload() {
     if (this.view) this.view.webview.html = this.html(this.view.webview);
   }
@@ -134,7 +134,7 @@ class OpencodeView {
     proc.onExit(({ exitCode }) => {
       if (this.pty !== proc) return;
       this.pty = undefined;
-      const data = `\r\n\x1b[2m[opencode exited with code ${exitCode}. Press Enter to start it again.]\x1b[0m\r\n`;
+      const data = `\r\n\x1b[2m[OpenCode exited with code ${exitCode}. Press Enter to start it again.]\x1b[0m\r\n`;
       this.replay += data;
       this.post({ type: "output", data });
     });
