@@ -1,6 +1,6 @@
 # OpenCode Sidebar
 
-A small VS Code extension that runs the [OpenCode](https://opencode.ai) terminal UI inside its own view in the **secondary sidebar**, next to Claude Code and Codex.
+Run the [OpenCode](https://opencode.ai) terminal UI in VS Code's **secondary sidebar**.
 
 The official OpenCode extension opens OpenCode in a terminal tab. This one gives it a sidebar icon instead: click it and OpenCode is right there in the view, the same TUI you get in a terminal. You don't have to switch to the terminal panel or hunt for a tab.
 

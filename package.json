@@ -1,7 +1,7 @@
 {
   "name": "opencode-sidebar",
   "displayName": "OpenCode Sidebar",
-  "description": "Runs the OpenCode terminal UI inside a secondary sidebar view, next to Claude Code and Codex.",
+  "description": "Run the OpenCode terminal UI in VS Code's secondary sidebar.",
   "version": "0.5.0",
   "publisher": "gabrieldulolmarques",
   "license": "MIT",
