@@ -112,9 +112,15 @@ class AgentsView {
     this.describe();
   }
 
-  // The active session's name, next to the view's title
+  // The title reads like a terminal tab: the agent, then the workspace and the session's own
+  // name, when it has one other than the agent's
   describe() {
-    if (this.view) this.view.description = this.session(this.state.active)?.name || "";
+    if (!this.view) return;
+    const session = this.session(this.state.active);
+    const provider = session && PROVIDERS.find((p) => p.id === session.provider);
+    this.view.title = provider ? provider.name : "Agents";
+    const named = session && session.name !== provider.name ? session.name : "";
+    this.view.description = [vscode.workspace.name, named].filter(Boolean).join(" · ");
   }
 
   session(id) {
