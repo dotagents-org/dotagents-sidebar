@@ -8,12 +8,12 @@
   "author": "Gabriel R. Marques",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gabrieldulolmarques/dotagents-sidebar.git"
+    "url": "https://github.com/dotagents-org/dotagents-sidebar.git"
   },
   "bugs": {
-    "url": "https://github.com/gabrieldulolmarques/dotagents-sidebar/issues"
+    "url": "https://github.com/dotagents-org/dotagents-sidebar/issues"
   },
-  "homepage": "https://github.com/gabrieldulolmarques/dotagents-sidebar#readme",
+  "homepage": "https://github.com/dotagents-org/dotagents-sidebar#readme",
   "keywords": [
     "opencode",
     "claude-code",
