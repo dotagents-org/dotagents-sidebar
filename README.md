@@ -56,6 +56,8 @@ If the icon doesn't show up, open the secondary sidebar with **View: Toggle Seco
 | `OpenCode: Restart` | Stops the OpenCode in the view and starts a fresh one |
 | `OpenCode: Open in Terminal Panel` | Opens OpenCode in a regular terminal instead |
 
+The restart command also sits as a button in the view's title bar.
+
 ## How it works
 
 VS Code's API only lets extensions put terminals in the terminal panel or the editor area, not in a sidebar. So the view is a webview that draws its own terminal with xterm.js. The OpenCode process runs on the extension host through **node-pty**: the copy that ships inside VS Code itself, loaded from `vscode.env.appRoot`. Keystrokes go from the webview to the process, and output comes back the other way.
