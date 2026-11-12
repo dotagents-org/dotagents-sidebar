@@ -15,7 +15,7 @@
   <a href="#how-it-works">How it works</a>
 </p>
 
-The agents' official extensions put them in a chat panel or a terminal tab. This one gives them a view of their own in the secondary sidebar, laid out like VS Code's terminal panel: the agent's terminal UI on the left, the list of sessions on the right. It is part of the [dotagents](https://github.com/gabrieldulolmarques/dotagents) family, and works without it.
+The agents' official extensions put them in a chat panel or a terminal tab. This one gives them a view of their own in the secondary sidebar, laid out like VS Code's terminal panel: the agent's terminal UI on the left, the list of sessions on the right. It is part of the [dotagents](https://github.com/dotagents-org/dotagents-cli) family, and works without it.
 
 > This is an unofficial community project. It is not affiliated with or endorsed by Anthropic, OpenAI or the OpenCode team.
 
@@ -42,7 +42,7 @@ The agents' official extensions put them in a chat panel or a terminal tab. This
 
 The extension is not on the Marketplace. Install the `.vsix` from a release:
 
-1. Download the `.vsix` from the [latest release](https://github.com/gabrieldulolmarques/dotagents-sidebar/releases/latest).
+1. Download the `.vsix` from the [latest release](https://github.com/dotagents-org/dotagents-sidebar/releases/latest).
 2. In VS Code, run **Extensions: Install from VSIX...** and pick the file, or run `code --install-extension <file>.vsix`.
 3. Run **Developer: Reload Window**.
 
@@ -89,7 +89,7 @@ The agents don't run in the extension. On first use, the extension starts `host.
 There is no build step: the extension is plain JavaScript.
 
 ```bash
-git clone https://github.com/gabrieldulolmarques/dotagents-sidebar.git
+git clone https://github.com/dotagents-org/dotagents-sidebar.git
 cd dotagents-sidebar
 npm install
 npm test # node:test, test/*.test.mjs
