@@ -26,6 +26,7 @@
   ],
   "icon": "media/icon.png",
   "scripts": {
+    "test": "node --test",
     "package": "npx --yes @vscode/vsce@3 package -o opencode-sidebar.vsix"
   },
   "engines": {
