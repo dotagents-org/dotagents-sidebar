@@ -24,6 +24,48 @@
 
   const panes = document.getElementById("panes");
   const list = document.getElementById("list");
+  const saved = vscode.getState() || {};
+
+  // The list's width, dragged on its left edge like the terminal panel's. Narrow, it keeps only
+  // the icons. The width is kept across reloads of the page
+  const sash = document.createElement("div");
+  sash.id = "sash";
+  list.before(sash);
+  const COMPACT = 80;
+  function setListWidth(width) {
+    const max = Math.max(COMPACT, document.body.clientWidth / 2);
+    const w = Math.round(Math.min(Math.max(width, 36), max));
+    list.style.width = `${w}px`;
+    list.classList.toggle("compact", w < COMPACT);
+    return w;
+  }
+  // The width asked for; a narrow view squeezes the list, and widening the view gives it back
+  let wanted = saved.listWidth || 150;
+  setListWidth(wanted);
+  window.addEventListener("resize", () => setListWidth(wanted));
+  sash.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    sash.setPointerCapture(event.pointerId);
+    sash.classList.add("active");
+    const startX = event.clientX;
+    const startWidth = list.getBoundingClientRect().width;
+    const move = (e) => setListWidth(startWidth + startX - e.clientX);
+    const up = (e) => {
+      sash.releasePointerCapture(e.pointerId);
+      sash.classList.remove("active");
+      sash.removeEventListener("pointermove", move);
+      sash.removeEventListener("pointerup", up);
+      wanted = list.getBoundingClientRect().width;
+      vscode.setState({ ...(vscode.getState() || {}), listWidth: wanted });
+    };
+    sash.addEventListener("pointermove", move);
+    sash.addEventListener("pointerup", up);
+  });
+  // Double-click puts the default width back
+  sash.addEventListener("dblclick", () => {
+    wanted = setListWidth(150);
+    vscode.setState({ ...(vscode.getState() || {}), listWidth: wanted });
+  });
   const terminals = new Map(); // session id -> { el, term, fit, last }
   let state = { sessions: [], active: null };
 
