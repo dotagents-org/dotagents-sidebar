@@ -10,7 +10,8 @@ The official OpenCode extension opens OpenCode in a terminal tab. This one gives
 
 - **Sidebar view.** An OpenCode icon sits in the secondary sidebar. The view runs a full terminal ([xterm.js](https://xtermjs.org)) with OpenCode inside, fitted to the view and resized when you drag the sidebar.
 - **Persistent session.** Switch to another view and back, and OpenCode keeps running. When it exits, press <kbd>Enter</kbd> in the view to start it again. For several conversations, use OpenCode's own session tabs (OpenCode 2 and newer).
-- **Renders like your terminal.** The view follows the integrated terminal's settings: `terminal.integrated.gpuAcceleration` picks the renderer (WebGL for `auto` and `on`, with a fallback to the DOM renderer; DOM for `off`), and `fontFamily`, `fontSize`, `lineHeight`, `letterSpacing`, `fontWeight`, `fontWeightBold` and `minimumContrastRatio` set the text (font settings fall back to the editor's). Changing any of them updates the view without restarting OpenCode.
+- **Seamless rendering.** The view draws with xterm.js's WebGL renderer, which fills block and box characters exactly, so OpenCode's panels and logo have no hairlines between rows (the DOM renderer draws them from the font and leaves gaps at fractional zoom levels). Set `opencodeSidebar.renderer` to `dom` to use the DOM renderer instead; without WebGL it falls back to DOM on its own.
+- **Your terminal font.** `terminal.integrated.fontFamily`, `fontSize`, `lineHeight`, `letterSpacing`, `fontWeight`, `fontWeightBold` and `minimumContrastRatio` set the text (font settings fall back to the editor's). Changing any of them updates the view without restarting OpenCode.
 - **No frame, sharp at any scale.** The margin around the grid takes the background color OpenCode paints, so there is no frame whatever its theme, and any hairline gap between rows shows that same color. The grid is centered and snapped to whole device pixels, so it stays sharp at fractional display scales and zoom levels.
 - **Clipboard.** <kbd>Ctrl</kbd>+<kbd>C</kbd> copies when text is selected and goes to OpenCode otherwise. <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes.
 - **Terminal profile.** An **OpenCode** entry in the terminal's new-terminal menu (⌄ next to `+`) opens OpenCode in a regular terminal, with the OpenCode mark as its tab icon.
@@ -39,6 +40,12 @@ In a remote window (WSL, SSH, containers), install it while connected, so it lan
 Click the OpenCode icon in the secondary sidebar. OpenCode starts in the first workspace folder (or your home folder when no folder is open).
 
 If the icon doesn't show up, open the secondary sidebar with **View: Toggle Secondary Side Bar Visibility**. You can drag the icon to any other sidebar or panel; VS Code remembers where you put it.
+
+### Settings
+
+| Setting | Default | What it does |
+|---|---|---|
+| `opencodeSidebar.renderer` | `webgl` | `webgl` or `dom`: how the view draws the terminal. Independent of `terminal.integrated.gpuAcceleration` |
 
 ### Commands
 
