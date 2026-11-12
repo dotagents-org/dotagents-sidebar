@@ -1,10 +1,11 @@
 const crypto = require("crypto");
+const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const vscode = require("vscode");
 const { Terminal } = require("@xterm/headless");
 const { SerializeAddon } = require("@xterm/addon-serialize");
-const { PROVIDERS, command, env, newer } = require("./providers");
+const { PROVIDERS, command, conversationArgs, env, findCodexSessions, newer } = require("./providers");
 const sessions = require("./sessions");
 
 // node-pty ships inside VS Code (node_modules on the server, asar.unpacked on desktop)
@@ -27,6 +28,30 @@ function loadPty() {
     }
   }
   throw new Error(`node-pty not found in VS Code:\n${errors.join("\n")}`);
+}
+
+// Codex's saved conversations: the first line of each rollout has its id, folder and start time
+function codexRollouts(since) {
+  const root = path.join(process.env.CODEX_HOME || path.join(os.homedir(), ".codex"), "sessions");
+  const rollouts = [];
+  let files = [];
+  try {
+    files = fs.readdirSync(root, { recursive: true }).filter((f) => /rollout-.*\.jsonl$/.test(f));
+  } catch {
+    return rollouts; // no Codex conversations yet
+  }
+  for (const file of files) {
+    const full = path.join(root, file);
+    try {
+      if (fs.statSync(full).mtimeMs < since) continue;
+      const first = fs.readFileSync(full, "utf8").split("\n", 1)[0];
+      const { payload } = JSON.parse(first);
+      rollouts.push({ id: payload.id, cwd: payload.cwd, started: Date.parse(payload.timestamp) });
+    } catch {
+      // a rollout being written, or of another format: skip it
+    }
+  }
+  return rollouts;
 }
 
 function cwd() {
@@ -173,7 +198,18 @@ class AgentsView {
     this.post({ type: "output", id, data });
   }
 
-  start(id) {
+  // Codex picks its own conversation ids: find the ones of the sessions that don't know theirs
+  findCodexConversations() {
+    const pending = this.state.sessions.filter((s) => s.provider === "codex" && s.startedAt && !s.conversation);
+    if (!pending.length) return;
+    const since = Math.min(...pending.map((s) => s.startedAt));
+    const found = findCodexSessions(pending, codexRollouts(since), cwd());
+    let state = this.state;
+    for (const [id, conversation] of Object.entries(found)) state = sessions.remember(state, id, { conversation });
+    if (state !== this.state) this.update(state);
+  }
+
+  start(id, fresh = false) {
     const terminal = this.terminal(id);
     let pty;
     try {
@@ -184,7 +220,14 @@ class AgentsView {
       return;
     }
     const { provider } = terminal;
-    const { file, args } = command(provider, process.platform);
+    // Open the session's conversation again; the first time, a new one with an id of our own
+    if (provider.id === "codex") this.findCodexConversations();
+    let conversation = fresh ? undefined : this.session(id).conversation;
+    const resume = !!conversation;
+    if (!conversation && provider.newConversation) conversation = provider.newConversation();
+    const startedAt = Date.now();
+    this.update(sessions.remember(this.state, id, { conversation, startedAt }));
+    const { file, args } = command(provider, process.platform, conversationArgs(provider, conversation, resume));
     terminal.exited = false;
     terminal.screen.reset();
     this.post({ type: "clear", id });
@@ -204,6 +247,8 @@ class AgentsView {
       terminal.pty = undefined;
       // Leaving the agent closes its session, like a shell closes its terminal
       if (exitCode === 0) return this.close(id);
+      // A conversation that can't be resumed (never saved, or deleted): start a new one
+      if (resume && Date.now() - startedAt < 5000) return this.start(id, true);
       terminal.exited = true;
       // 127 is bash's "command not found"
       const reason =

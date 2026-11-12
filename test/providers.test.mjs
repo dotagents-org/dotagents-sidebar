@@ -48,3 +48,59 @@ test("newer compares versions by number, not by text", () => {
   assert.equal(newer("0.5.9", "0.6.0"), false);
   assert.equal(newer("1.0", "1.0.0"), false);
 });
+
+const { conversationArgs, findCodexSessions } = createRequire(import.meta.url)("../providers.js");
+const byId = (id) => PROVIDERS.find((p) => p.id === id);
+
+test("claude and opencode open a conversation with an id the view chooses", () => {
+  const claude = byId("claude");
+  const id = claude.newConversation();
+  assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  assert.deepEqual(conversationArgs(claude, id, false), ["--session-id", id]);
+  assert.deepEqual(conversationArgs(claude, id, true), ["--resume", id]);
+  const opencode = byId("opencode");
+  const ses = opencode.newConversation();
+  assert.match(ses, /^ses_[A-Za-z0-9]{26}$/);
+  assert.notEqual(ses, opencode.newConversation());
+  assert.deepEqual(conversationArgs(opencode, ses, false), ["--session", ses]);
+  assert.deepEqual(conversationArgs(opencode, ses, true), ["--session", ses]);
+});
+
+test("codex can only resume, with the id found after it started", () => {
+  const codex = byId("codex");
+  assert.equal(codex.newConversation, undefined);
+  assert.deepEqual(conversationArgs(codex, undefined, false), []);
+  assert.deepEqual(conversationArgs(codex, "01a1d164-93b6-7160-9582-cbfb09605720", true), ["resume", "01a1d164-93b6-7160-9582-cbfb09605720"]);
+});
+
+test("an id that could reach the shell as code is never passed", () => {
+  for (const bad of ["x; rm -rf ~", "$(id)", "a b", "`id`", ""]) {
+    assert.deepEqual(conversationArgs(byId("claude"), bad, true), []);
+    assert.deepEqual(conversationArgs(byId("codex"), bad, true), []);
+  }
+});
+
+test("command appends the arguments to the agent's command", () => {
+  assert.deepEqual(command({ command: "agent" }, "linux", ["--resume", "abc-1"]), { file: "bash", args: ["-ic", "agent --resume abc-1"] });
+  assert.deepEqual(command({ command: "agent" }, "win32", ["resume", "x"]), { file: "powershell.exe", args: ["-NoLogo", "-Command", "agent resume x"] });
+});
+
+test("findCodexSessions matches each session with the first rollout started after it, in this folder", () => {
+  const rollouts = [
+    { id: "r-other-folder", cwd: "/elsewhere", started: 105 },
+    { id: "r-early", cwd: "/work", started: 90 },
+    { id: "r-a", cwd: "/work", started: 101 },
+    { id: "r-b", cwd: "/work", started: 202 },
+    { id: "r-c", cwd: "/work", started: 203 },
+  ];
+  const found = findCodexSessions(
+    [
+      { id: "s2", startedAt: 200 },
+      { id: "s1", startedAt: 100 },
+      { id: "s3", startedAt: 300 },
+    ],
+    rollouts,
+    "/work"
+  );
+  assert.deepEqual(found, { s1: "r-a", s2: "r-b" });
+});

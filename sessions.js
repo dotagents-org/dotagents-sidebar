@@ -38,6 +38,11 @@ function change(state, id, fields) {
   return { ...state, sessions: state.sessions.map((s) => (s.id === id ? { ...s, ...fields } : s)) };
 }
 
+// What the view learns about a session's agent: the conversation it is in, when it started
+function remember(state, id, fields) {
+  return change(state, id, fields);
+}
+
 function rename(state, id, name) {
   const trimmed = String(name).trim();
   return trimmed ? change(state, id, { name: trimmed }) : state;
@@ -65,4 +70,4 @@ function restore(saved, providers) {
   return { sessions, active, next: saved.next };
 }
 
-module.exports = { EMPTY, COLORS, add, split, close, rename, recolor, activate, visible, restore };
+module.exports = { EMPTY, COLORS, add, split, close, remember, rename, recolor, activate, visible, restore };
