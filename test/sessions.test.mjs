@@ -63,3 +63,12 @@ test("restore keeps a saved state and drops what it cannot run", () => {
   assert.deepEqual(restore(undefined, ["opencode"]), EMPTY);
   assert.deepEqual(restore({ sessions: "x" }, ["opencode"]), EMPTY);
 });
+
+test("remember keeps facts about one session's agent, and they survive a restore", () => {
+  const { remember } = createRequire(import.meta.url)("../sessions.js");
+  const state = remember(add(add(EMPTY, "claude", "Claude Code"), "codex", "Codex"), "s1", { conversation: "abc", startedAt: 5 });
+  assert.equal(state.sessions[0].conversation, "abc");
+  assert.equal(state.sessions[0].startedAt, 5);
+  assert.equal(state.sessions[1].conversation, undefined);
+  assert.equal(restore(state, ["claude", "codex"]).sessions[0].conversation, "abc");
+});
