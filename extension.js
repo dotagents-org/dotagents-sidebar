@@ -56,7 +56,7 @@ function cwd() {
 // The view mirrors the integrated terminal's font settings, so text looks the way the user
 // already tuned it for their screen
 const WATCHED = [
-  "agentsSidebar",
+  "dotagentsSidebar",
   "terminal.integrated.commandsToSkipShell",
   "terminal.integrated.sendKeybindingsToShell",
   "terminal.integrated.allowChords",
@@ -82,11 +82,11 @@ function terminalSettings() {
     scrollback: term.get("scrollback") ?? 1000,
     // Not the terminal's gpuAcceleration: block and box characters only draw seamlessly
     // with the WebGL renderer (DOM leaves hairlines)
-    renderer: vscode.workspace.getConfiguration("agentsSidebar").get("renderer") || "webgl",
+    renderer: vscode.workspace.getConfiguration("dotagentsSidebar").get("renderer") || "webgl",
   };
 }
 
-class AgentsView {
+class SidebarView {
   constructor(context) {
     this.context = context;
     this.view = undefined;
@@ -125,7 +125,7 @@ class AgentsView {
       skip: keys.skipCommands(SKIP_SHELL.commands, terminal.get("commandsToSkipShell") || []),
       allowChords: terminal.get("allowChords") ?? true,
       sendKeybindingsToShell: terminal.get("sendKeybindingsToShell") ?? false,
-      extra: vscode.workspace.getConfiguration("agentsSidebar").get("keysForVsCode") || [],
+      extra: vscode.workspace.getConfiguration("dotagentsSidebar").get("keysForVsCode") || [],
     });
     const source = Array.isArray(defaults)
       ? `VS Code's default keybindings (${defaults.length})${user.length ? ` and ${user.length} of yours` : ", without yours (not reachable from here)"}`
@@ -387,7 +387,7 @@ class AgentsView {
 
   open(action, providerId) {
     this.update(this.added(action, providerId));
-    vscode.commands.executeCommand("agentsSidebar.view.focus");
+    vscode.commands.executeCommand("dotagentsSidebar.view.focus");
   }
 
   close(id = this.state.active) {
@@ -485,7 +485,7 @@ class AgentsView {
 <div id="panes"></div>
 </div>
 <div id="list"></div>
-<script nonce="${nonce}">window.AGENTS_SETTINGS = ${settings};</script>
+<script nonce="${nonce}">window.DOTAGENTS_SIDEBAR_SETTINGS = ${settings};</script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "xterm", "lib", "xterm.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-fit", "lib", "addon-fit.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-webgl", "lib", "addon-webgl.js")}"></script>
@@ -559,13 +559,13 @@ async function checkForUpdate(context) {
 function activate(context) {
   checkForUpdate(context).catch(() => {}); // offline or rate limited: try again tomorrow
 
-  const view = new AgentsView(context);
+  const view = new SidebarView(context);
   view.workOutKeys().catch((err) => view.log.appendLine(`Could not work out the shortcut keys: ${err.message}`));
   // A command run from a session's context menu gets that session; from the title bar, the active one
-  const onSession = (name, run) => vscode.commands.registerCommand(`agentsSidebar.${name}`, (arg) => run(arg?.sessionId));
+  const onSession = (name, run) => vscode.commands.registerCommand(`dotagentsSidebar.${name}`, (arg) => run(arg?.sessionId));
   context.subscriptions.push(
     view,
-    vscode.window.registerWebviewViewProvider("agentsSidebar.view", view, {
+    vscode.window.registerWebviewViewProvider("dotagentsSidebar.view", view, {
       webviewOptions: { retainContextWhenHidden: true },
     }),
     vscode.workspace.onDidChangeConfiguration(async (event) => {
@@ -575,19 +575,19 @@ function activate(context) {
     }),
     // The view reads the theme's colors when it loads
     vscode.window.onDidChangeActiveColorTheme(() => view.reload()),
-    vscode.commands.registerCommand("agentsSidebar.new", () => view.open(sessions.add)),
-    vscode.commands.registerCommand("agentsSidebar.split", () => view.open(sessions.split)),
+    vscode.commands.registerCommand("dotagentsSidebar.new", () => view.open(sessions.add)),
+    vscode.commands.registerCommand("dotagentsSidebar.split", () => view.open(sessions.split)),
     // The + menu, like the terminal panel's: a session with a chosen agent, opened or split
     ...PROVIDERS.flatMap((provider) => [
-      vscode.commands.registerCommand(`agentsSidebar.new.${provider.id}`, () => view.open(sessions.add, provider.id)),
-      vscode.commands.registerCommand(`agentsSidebar.split.${provider.id}`, () => view.open(sessions.split, provider.id)),
+      vscode.commands.registerCommand(`dotagentsSidebar.new.${provider.id}`, () => view.open(sessions.add, provider.id)),
+      vscode.commands.registerCommand(`dotagentsSidebar.split.${provider.id}`, () => view.open(sessions.split, provider.id)),
     ]),
     onSession("close", (id) => view.close(id)),
     onSession("restart", (id) => view.restart(id)),
     onSession("rename", (id) => view.rename(id)),
     onSession("recolor", (id) => view.recolor(id)),
     ...PROVIDERS.map((provider) =>
-      vscode.window.registerTerminalProfileProvider(`agentsSidebar.profile.${provider.id}`, {
+      vscode.window.registerTerminalProfileProvider(`dotagentsSidebar.profile.${provider.id}`, {
         provideTerminalProfile: () => new vscode.TerminalProfile(terminalOptions(context, provider)),
       })
     )

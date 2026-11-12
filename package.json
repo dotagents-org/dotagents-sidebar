@@ -1,5 +1,5 @@
 {
-  "name": "agents-sidebar",
+  "name": "dotagents-sidebar",
   "displayName": "dotagents-sidebar",
   "description": "OpenCode, Claude Code and Codex in VS Code's secondary sidebar: several sessions, splits, and agents that keep working across window reloads.",
   "version": "0.7.0",
@@ -29,7 +29,7 @@
   "icon": "media/icon.png",
   "scripts": {
     "test": "node --test",
-    "package": "npx --yes @vscode/vsce@3 package -o agents-sidebar.vsix"
+    "package": "npx --yes @vscode/vsce@3 package -o dotagents-sidebar.vsix"
   },
   "engines": {
     "vscode": "^1.106.0"
@@ -39,175 +39,175 @@
   ],
   "main": "./extension.js",
   "activationEvents": [
-    "onTerminalProfile:agentsSidebar.profile.opencode",
-    "onTerminalProfile:agentsSidebar.profile.claude",
-    "onTerminalProfile:agentsSidebar.profile.codex"
+    "onTerminalProfile:dotagentsSidebar.profile.opencode",
+    "onTerminalProfile:dotagentsSidebar.profile.claude",
+    "onTerminalProfile:dotagentsSidebar.profile.codex"
   ],
   "contributes": {
     "viewsContainers": {
       "secondarySidebar": [
         {
-          "id": "agentsSidebar",
-          "title": "Agents",
+          "id": "dotagentsSidebar",
+          "title": "dotagents",
           "icon": "media/dotagents-sidebar-line.svg"
         }
       ]
     },
     "views": {
-      "agentsSidebar": [
+      "dotagentsSidebar": [
         {
           "type": "webview",
-          "id": "agentsSidebar.view",
-          "name": "Agents"
+          "id": "dotagentsSidebar.view",
+          "name": "Sidebar"
         }
       ]
     },
     "commands": [
       {
-        "command": "agentsSidebar.new",
-        "title": "Agents: New Session",
+        "command": "dotagentsSidebar.new",
+        "title": "dotagents-sidebar: New Session",
         "icon": "$(add)"
       },
       {
-        "command": "agentsSidebar.split",
-        "title": "Agents: Split Session",
+        "command": "dotagentsSidebar.split",
+        "title": "dotagents-sidebar: Split Session",
         "icon": "$(split-horizontal)"
       },
       {
-        "command": "agentsSidebar.close",
-        "title": "Agents: Close Session",
+        "command": "dotagentsSidebar.close",
+        "title": "dotagents-sidebar: Close Session",
         "icon": {
           "light": "media/trash-light.svg",
           "dark": "media/trash-dark.svg"
         }
       },
       {
-        "command": "agentsSidebar.restart",
-        "title": "Agents: Restart Session",
+        "command": "dotagentsSidebar.restart",
+        "title": "dotagents-sidebar: Restart Session",
         "icon": "$(debug-restart)"
       },
       {
-        "command": "agentsSidebar.rename",
-        "title": "Agents: Rename Session..."
+        "command": "dotagentsSidebar.rename",
+        "title": "dotagents-sidebar: Rename Session..."
       },
       {
-        "command": "agentsSidebar.recolor",
-        "title": "Agents: Change Session Color..."
+        "command": "dotagentsSidebar.recolor",
+        "title": "dotagents-sidebar: Change Session Color..."
       },
       {
-        "command": "agentsSidebar.new.opencode",
+        "command": "dotagentsSidebar.new.opencode",
         "title": "OpenCode",
-        "category": "Agents: New Session"
+        "category": "dotagents-sidebar: New Session"
       },
       {
-        "command": "agentsSidebar.new.claude",
+        "command": "dotagentsSidebar.new.claude",
         "title": "Claude Code",
-        "category": "Agents: New Session"
+        "category": "dotagents-sidebar: New Session"
       },
       {
-        "command": "agentsSidebar.new.codex",
+        "command": "dotagentsSidebar.new.codex",
         "title": "Codex",
-        "category": "Agents: New Session"
+        "category": "dotagents-sidebar: New Session"
       },
       {
-        "command": "agentsSidebar.split.opencode",
+        "command": "dotagentsSidebar.split.opencode",
         "title": "OpenCode",
-        "category": "Agents: Split Session"
+        "category": "dotagents-sidebar: Split Session"
       },
       {
-        "command": "agentsSidebar.split.claude",
+        "command": "dotagentsSidebar.split.claude",
         "title": "Claude Code",
-        "category": "Agents: Split Session"
+        "category": "dotagents-sidebar: Split Session"
       },
       {
-        "command": "agentsSidebar.split.codex",
+        "command": "dotagentsSidebar.split.codex",
         "title": "Codex",
-        "category": "Agents: Split Session"
+        "category": "dotagents-sidebar: Split Session"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "agentsSidebar.new",
-          "when": "view == agentsSidebar.view",
+          "command": "dotagentsSidebar.new",
+          "when": "view == dotagentsSidebar.view",
           "group": "navigation@1"
         },
         {
-          "submenu": "agentsSidebar.newMenu",
-          "when": "view == agentsSidebar.view",
+          "submenu": "dotagentsSidebar.newMenu",
+          "when": "view == dotagentsSidebar.view",
           "group": "navigation@2"
         },
         {
-          "command": "agentsSidebar.split",
-          "when": "view == agentsSidebar.view",
+          "command": "dotagentsSidebar.split",
+          "when": "view == dotagentsSidebar.view",
           "group": "navigation@3"
         },
         {
-          "command": "agentsSidebar.restart",
-          "when": "view == agentsSidebar.view",
+          "command": "dotagentsSidebar.restart",
+          "when": "view == dotagentsSidebar.view",
           "group": "navigation@4"
         },
         {
-          "command": "agentsSidebar.close",
-          "when": "view == agentsSidebar.view",
+          "command": "dotagentsSidebar.close",
+          "when": "view == dotagentsSidebar.view",
           "group": "navigation@5"
         }
       ],
       "webview/context": [
         {
-          "command": "agentsSidebar.rename",
-          "when": "webviewId == 'agentsSidebar.view' && webviewSection == 'session'",
+          "command": "dotagentsSidebar.rename",
+          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection == 'session'",
           "group": "1_edit@1"
         },
         {
-          "command": "agentsSidebar.recolor",
-          "when": "webviewId == 'agentsSidebar.view' && webviewSection == 'session'",
+          "command": "dotagentsSidebar.recolor",
+          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection == 'session'",
           "group": "1_edit@2"
         },
         {
-          "command": "agentsSidebar.restart",
-          "when": "webviewId == 'agentsSidebar.view' && webviewSection == 'session'",
+          "command": "dotagentsSidebar.restart",
+          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection == 'session'",
           "group": "2_run@1"
         },
         {
-          "command": "agentsSidebar.close",
-          "when": "webviewId == 'agentsSidebar.view' && webviewSection == 'session'",
+          "command": "dotagentsSidebar.close",
+          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection == 'session'",
           "group": "2_run@2"
         }
       ],
-      "agentsSidebar.newMenu": [
+      "dotagentsSidebar.newMenu": [
         {
-          "command": "agentsSidebar.new.opencode",
+          "command": "dotagentsSidebar.new.opencode",
           "group": "1_agents@1"
         },
         {
-          "command": "agentsSidebar.new.claude",
+          "command": "dotagentsSidebar.new.claude",
           "group": "1_agents@2"
         },
         {
-          "command": "agentsSidebar.new.codex",
+          "command": "dotagentsSidebar.new.codex",
           "group": "1_agents@3"
         },
         {
-          "command": "agentsSidebar.split",
+          "command": "dotagentsSidebar.split",
           "group": "2_split@1"
         },
         {
-          "submenu": "agentsSidebar.splitMenu",
+          "submenu": "dotagentsSidebar.splitMenu",
           "group": "2_split@2"
         }
       ],
-      "agentsSidebar.splitMenu": [
+      "dotagentsSidebar.splitMenu": [
         {
-          "command": "agentsSidebar.split.opencode",
+          "command": "dotagentsSidebar.split.opencode",
           "group": "1_agents@1"
         },
         {
-          "command": "agentsSidebar.split.claude",
+          "command": "dotagentsSidebar.split.claude",
           "group": "1_agents@2"
         },
         {
-          "command": "agentsSidebar.split.codex",
+          "command": "dotagentsSidebar.split.codex",
           "group": "1_agents@3"
         }
       ]
@@ -215,17 +215,17 @@
     "terminal": {
       "profiles": [
         {
-          "id": "agentsSidebar.profile.opencode",
+          "id": "dotagentsSidebar.profile.opencode",
           "title": "OpenCode",
           "icon": "code"
         },
         {
-          "id": "agentsSidebar.profile.claude",
+          "id": "dotagentsSidebar.profile.claude",
           "title": "Claude Code",
           "icon": "sparkle"
         },
         {
-          "id": "agentsSidebar.profile.codex",
+          "id": "dotagentsSidebar.profile.codex",
           "title": "Codex",
           "icon": "hubot"
         }
@@ -234,7 +234,7 @@
     "configuration": {
       "title": "dotagents-sidebar",
       "properties": {
-        "agentsSidebar.renderer": {
+        "dotagentsSidebar.renderer": {
           "type": "string",
           "enum": [
             "webgl",
@@ -247,7 +247,7 @@
           ],
           "description": "How the view draws the terminal. Independent of terminal.integrated.gpuAcceleration."
         },
-        "agentsSidebar.keysForVsCode": {
+        "dotagentsSidebar.keysForVsCode": {
           "type": "array",
           "items": {
             "type": "string"
@@ -259,12 +259,12 @@
     },
     "submenus": [
       {
-        "id": "agentsSidebar.newMenu",
+        "id": "dotagentsSidebar.newMenu",
         "label": "New Session With...",
         "icon": "$(chevron-down)"
       },
       {
-        "id": "agentsSidebar.splitMenu",
+        "id": "dotagentsSidebar.splitMenu",
         "label": "Split Session With"
       }
     ]

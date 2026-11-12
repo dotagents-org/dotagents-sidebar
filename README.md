@@ -50,26 +50,26 @@ In a remote window (WSL, SSH, containers), install it while connected, so it lan
 
 ## Usage
 
-Open the secondary sidebar (**View: Toggle Secondary Side Bar Visibility**) and pick the **Agents** view. The first session starts in the first workspace folder, or in your home folder when no folder is open.
+Open the secondary sidebar (**View: Toggle Secondary Side Bar Visibility**) and pick the **dotagents: Sidebar** view. The first session starts in the first workspace folder, or in your home folder when no folder is open.
 
 ### Commands
 
 | Command | Where | What it does |
 |---|---|---|
-| `Agents: New Session` | `+` | A session with the agent used last |
-| `Agents: New Session With...` | `⌄` | A session with the agent you pick, or a split with it |
-| `Agents: Split Session` | title bar | A session next to the active one |
-| `Agents: Restart Session` | title bar, session menu | A new process in the same conversation |
-| `Agents: Close Session` | title bar, session menu | Stops the agent and closes the session |
-| `Agents: Rename Session...` | session menu | Names the session; the title shows it |
-| `Agents: Change Session Color...` | session menu | One of the terminal panel's colors, or none |
+| `dotagents-sidebar: New Session` | `+` | A session with the agent used last |
+| `dotagents-sidebar: New Session With...` | `⌄` | A session with the agent you pick, or a split with it |
+| `dotagents-sidebar: Split Session` | title bar | A session next to the active one |
+| `dotagents-sidebar: Restart Session` | title bar, session menu | A new process in the same conversation |
+| `dotagents-sidebar: Close Session` | title bar, session menu | Stops the agent and closes the session |
+| `dotagents-sidebar: Rename Session...` | session menu | Names the session; the title shows it |
+| `dotagents-sidebar: Change Session Color...` | session menu | One of the terminal panel's colors, or none |
 
 ### Settings
 
 | Setting | Default | What it does |
 |---|---|---|
-| `agentsSidebar.renderer` | `webgl` | `webgl` or `dom`: how the view draws the terminal. WebGL draws block characters without hairlines between rows |
-| `agentsSidebar.keysForVsCode` | `[]` | Keys that go to VS Code on top of the worked-out ones (`"ctrl+e"`), or back to the agent (`"-ctrl+b"`). The keys in use are listed in the **dotagents-sidebar** output |
+| `dotagentsSidebar.renderer` | `webgl` | `webgl` or `dom`: how the view draws the terminal. WebGL draws block characters without hairlines between rows |
+| `dotagentsSidebar.keysForVsCode` | `[]` | Keys that go to VS Code on top of the worked-out ones (`"ctrl+e"`), or back to the agent (`"-ctrl+b"`). The keys in use are listed in the **dotagents-sidebar** output |
 
 ## How it works
 
@@ -80,7 +80,7 @@ The agents don't run in the extension. On first use, the extension starts `host.
 ## Known limitations
 
 - **VS Code internals.** node-pty is not a public API. If a VS Code update moves it, the view shows an error listing the paths it tried.
-- **Shortcuts without `when`.** The extension can't ask VS Code which command a key runs at the moment, so it leaves the `when` conditions out (but for bindings that need a focus the view never has). Your own `keybindings.json` is only read in a local window; in a remote one, add your keys with `agentsSidebar.keysForVsCode`.
+- **Shortcuts without `when`.** The extension can't ask VS Code which command a key runs at the moment, so it leaves the `when` conditions out (but for bindings that need a focus the view never has). Your own `keybindings.json` is only read in a local window; in a remote one, add your keys with `dotagentsSidebar.keysForVsCode`.
 - **Pasting images.** Ctrl+V pastes text only.
 - **An update stops the agents.** A new version of the extension starts a new host; the sessions then reopen their conversations.
 
