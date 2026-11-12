@@ -367,8 +367,20 @@ class AgentsView {
 
   async recolor(id = this.state.active) {
     if (!this.session(id)) return;
-    const color = await vscode.window.showQuickPick(sessions.COLORS, { placeHolder: "Session color" });
-    if (color && this.session(id)) this.update(sessions.recolor(this.state, id, color));
+    // Like the terminal panel's Change Color: each color with a dot of itself, then a reset
+    const name = (c) => c[0].toUpperCase() + c.slice(1);
+    const items = [
+      ...sessions.COLORS.map((c) => ({
+        label: name(c),
+        description: `terminal.ansi${name(c)}`,
+        iconPath: new vscode.ThemeIcon("circle-filled", new vscode.ThemeColor(`terminal.ansi${name(c)}`)),
+        color: c,
+      })),
+      { label: "", kind: vscode.QuickPickItemKind.Separator },
+      { label: "Reset to default", color: null },
+    ];
+    const pick = await vscode.window.showQuickPick(items, { placeHolder: "Session color" });
+    if (pick && this.session(id)) this.update(sessions.recolor(this.state, id, pick.color));
   }
 
   post(msg) {
