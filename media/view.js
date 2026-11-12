@@ -73,7 +73,11 @@
     const buffer = term.buffer.active;
     const cell = buffer.getLine(buffer.viewportY)?.getCell(0);
     if (!cell) return background;
-    if (cell.isInverse()) return cell.isFgRGB() ? hex(...rgb(cell.getFgColor())) : theme.foreground;
+    if (cell.isInverse()) {
+      if (cell.isFgRGB()) return hex(...rgb(cell.getFgColor()));
+      if (cell.isFgPalette()) return palette[cell.getFgColor()] || theme.foreground;
+      return theme.foreground;
+    }
     if (cell.isBgRGB()) return hex(...rgb(cell.getBgColor()));
     if (cell.isBgPalette()) return palette[cell.getBgColor()] || background;
     return background;
@@ -90,7 +94,7 @@
 
   // Ctrl+C copies when there is a selection; otherwise it goes to OpenCode
   term.attachCustomKeyEventHandler((event) => {
-    if (event.type === "keydown" && event.ctrlKey && event.key === "c" && term.hasSelection()) {
+    if (event.type === "keydown" && event.ctrlKey && event.key.toLowerCase() === "c" && term.hasSelection()) {
       navigator.clipboard.writeText(term.getSelection());
       term.clearSelection();
       return false;

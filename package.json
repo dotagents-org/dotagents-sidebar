@@ -72,7 +72,10 @@
         {
           "id": "opencodeSidebar.profile",
           "title": "OpenCode",
-          "icon": "media/opencode.svg"
+          "icon": {
+            "light": "media/opencode-light.svg",
+            "dark": "media/opencode-dark.svg"
+          }
         }
       ]
     },
