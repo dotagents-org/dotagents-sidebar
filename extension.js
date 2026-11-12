@@ -481,14 +481,12 @@ function activate(context) {
     // The view reads the theme's colors when it loads
     vscode.window.onDidChangeActiveColorTheme(() => view.reload()),
     vscode.commands.registerCommand("agentsSidebar.new", () => view.open(sessions.add)),
-    vscode.commands.registerCommand("agentsSidebar.newWith", async () => {
-      const pick = await vscode.window.showQuickPick(
-        PROVIDERS.map((p) => ({ label: p.name, id: p.id })),
-        { placeHolder: "Agent for the new session" }
-      );
-      if (pick) view.open(sessions.add, pick.id);
-    }),
     vscode.commands.registerCommand("agentsSidebar.split", () => view.open(sessions.split)),
+    // The + menu, like the terminal panel's: a session with a chosen agent, opened or split
+    ...PROVIDERS.flatMap((provider) => [
+      vscode.commands.registerCommand(`agentsSidebar.new.${provider.id}`, () => view.open(sessions.add, provider.id)),
+      vscode.commands.registerCommand(`agentsSidebar.split.${provider.id}`, () => view.open(sessions.split, provider.id)),
+    ]),
     onSession("close", (id) => view.close(id)),
     onSession("restart", (id) => view.restart(id)),
     onSession("rename", (id) => view.rename(id)),

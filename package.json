@@ -68,11 +68,6 @@
         "icon": "$(add)"
       },
       {
-        "command": "agentsSidebar.newWith",
-        "title": "Agents: New Session With...",
-        "icon": "$(chevron-down)"
-      },
-      {
         "command": "agentsSidebar.split",
         "title": "Agents: Split Session",
         "icon": "$(split-horizontal)"
@@ -93,6 +88,36 @@
       {
         "command": "agentsSidebar.recolor",
         "title": "Agents: Change Session Color..."
+      },
+      {
+        "command": "agentsSidebar.new.opencode",
+        "title": "OpenCode",
+        "category": "Agents: New Session"
+      },
+      {
+        "command": "agentsSidebar.new.claude",
+        "title": "Claude Code",
+        "category": "Agents: New Session"
+      },
+      {
+        "command": "agentsSidebar.new.codex",
+        "title": "Codex",
+        "category": "Agents: New Session"
+      },
+      {
+        "command": "agentsSidebar.split.opencode",
+        "title": "OpenCode",
+        "category": "Agents: Split Session"
+      },
+      {
+        "command": "agentsSidebar.split.claude",
+        "title": "Claude Code",
+        "category": "Agents: Split Session"
+      },
+      {
+        "command": "agentsSidebar.split.codex",
+        "title": "Codex",
+        "category": "Agents: Split Session"
       }
     ],
     "menus": {
@@ -103,7 +128,7 @@
           "group": "navigation@1"
         },
         {
-          "command": "agentsSidebar.newWith",
+          "submenu": "agentsSidebar.newMenu",
           "when": "view == agentsSidebar.view",
           "group": "navigation@2"
         },
@@ -138,6 +163,42 @@
           "command": "agentsSidebar.close",
           "when": "webviewId == 'agentsSidebar.view' && webviewSection == 'session'",
           "group": "2_run@2"
+        }
+      ],
+      "agentsSidebar.newMenu": [
+        {
+          "command": "agentsSidebar.new.opencode",
+          "group": "1_agents@1"
+        },
+        {
+          "command": "agentsSidebar.new.claude",
+          "group": "1_agents@2"
+        },
+        {
+          "command": "agentsSidebar.new.codex",
+          "group": "1_agents@3"
+        },
+        {
+          "command": "agentsSidebar.split",
+          "group": "2_split@1"
+        },
+        {
+          "submenu": "agentsSidebar.splitMenu",
+          "group": "2_split@2"
+        }
+      ],
+      "agentsSidebar.splitMenu": [
+        {
+          "command": "agentsSidebar.split.opencode",
+          "group": "1_agents@1"
+        },
+        {
+          "command": "agentsSidebar.split.claude",
+          "group": "1_agents@2"
+        },
+        {
+          "command": "agentsSidebar.split.codex",
+          "group": "1_agents@3"
         }
       ]
     },
@@ -186,7 +247,18 @@
           "description": "How the view draws the terminal. Independent of terminal.integrated.gpuAcceleration."
         }
       }
-    }
+    },
+    "submenus": [
+      {
+        "id": "agentsSidebar.newMenu",
+        "label": "New Session With...",
+        "icon": "$(chevron-down)"
+      },
+      {
+        "id": "agentsSidebar.splitMenu",
+        "label": "Split Session With"
+      }
+    ]
   },
   "dependencies": {
     "@xterm/addon-fit": "0.11.0",
