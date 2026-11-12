@@ -1,6 +1,6 @@
 (function () {
   const vscode = acquireVsCodeApi();
-  const settings = window.AGENTS_SETTINGS;
+  const settings = window.DOTAGENTS_SIDEBAR_SETTINGS;
   const css = getComputedStyle(document.documentElement);
   const color = (name, fallback) => css.getPropertyValue(`--vscode-${name}`).trim() || fallback;
 

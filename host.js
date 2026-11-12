@@ -37,7 +37,7 @@ function loadPty(appRoot) {
 // Whoever reaches the socket types into the agents, so it lives in a folder only the user can open
 function socketDir(env = process.env) {
   const uid = process.getuid();
-  const dir = path.join(env.XDG_RUNTIME_DIR || os.tmpdir(), `agents-sidebar-${uid}`);
+  const dir = path.join(env.XDG_RUNTIME_DIR || os.tmpdir(), `dotagents-sidebar-${uid}`);
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   const stat = fs.lstatSync(dir);
   if (!stat.isDirectory() || stat.uid !== uid || (stat.mode & 0o077) !== 0) throw new Error(`${dir} is not private`);
@@ -45,7 +45,7 @@ function socketDir(env = process.env) {
 }
 
 function socketPath(key) {
-  if (process.platform === "win32") return `\\\\.\\pipe\\agents-sidebar-${os.userInfo().username}-${key}`;
+  if (process.platform === "win32") return `\\\\.\\pipe\\dotagents-sidebar-${os.userInfo().username}-${key}`;
   return path.join(socketDir(), `${key}.sock`);
 }
 
