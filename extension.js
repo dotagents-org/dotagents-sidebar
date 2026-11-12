@@ -4,8 +4,10 @@ const path = require("path");
 const vscode = require("vscode");
 const { Terminal } = require("@xterm/headless");
 const { SerializeAddon } = require("@xterm/addon-serialize");
+const { PROVIDERS, command, env, newer } = require("./providers");
 
-const NAME = "OpenCode";
+const PROVIDER = PROVIDERS[0];
+const NAME = PROVIDER.name;
 
 // node-pty ships inside VS Code (node_modules on the server, asar.unpacked on desktop)
 let ptyModule;
@@ -27,24 +29,6 @@ function loadPty() {
     }
   }
   throw new Error(`node-pty not found in VS Code:\n${errors.join("\n")}`);
-}
-
-function command() {
-  if (process.platform === "win32") {
-    return { file: "powershell.exe", args: ["-NoLogo", "-Command", "opencode"] };
-  }
-  // -i loads ~/.bashrc, where OpenCode's bin folder enters the PATH
-  return { file: "bash", args: ["-ic", "opencode"] };
-}
-
-// Like the integrated terminal, don't hand VS Code's own process variables to OpenCode:
-// ELECTRON_RUN_AS_NODE, for one, breaks any Electron app started from inside it
-function env() {
-  const result = { ...process.env, TERM: "xterm-256color", COLORTERM: "truecolor", TERM_PROGRAM: "vscode" };
-  for (const key of Object.keys(result)) {
-    if (key.startsWith("ELECTRON_") || (key.startsWith("VSCODE_") && key !== "VSCODE_IPC_HOOK_CLI")) delete result[key];
-  }
-  return result;
 }
 
 function cwd() {
@@ -156,7 +140,7 @@ class OpencodeView {
       this.output(`\r\n${err.message.replace(/\n/g, "\r\n")}\r\n`);
       return;
     }
-    const { file, args } = command();
+    const { file, args } = command(PROVIDER, process.platform);
     this.exited = false;
     this.screen.reset();
     this.post({ type: "clear" });
@@ -165,7 +149,7 @@ class OpencodeView {
       cols: this.size.cols,
       rows: this.size.rows,
       cwd: cwd(),
-      env: env(),
+      env: env(PROVIDER, process.env),
     });
     this.pty = proc;
     proc.onData((data) => this.output(data));
@@ -176,8 +160,8 @@ class OpencodeView {
       // 127 is bash's "command not found"
       const reason =
         exitCode === 127
-          ? "opencode was not found on the PATH set up by ~/.bashrc. Install it from https://opencode.ai"
-          : `OpenCode exited with code ${exitCode}`;
+          ? `${PROVIDER.command} was not found on the PATH set up by ~/.bashrc. ${PROVIDER.install}`
+          : `${NAME} exited with code ${exitCode}`;
       this.output(`\r\n\x1b[2m[${reason}. Press Enter to start it again.]\x1b[0m\r\n`);
     });
   }
@@ -225,7 +209,7 @@ class OpencodeView {
 }
 
 function terminalOptions(context) {
-  const { file, args } = command();
+  const { file, args } = command(PROVIDER, process.platform);
   return {
     name: NAME,
     shellPath: file,
@@ -241,13 +225,6 @@ function terminalOptions(context) {
 // a newer GitHub release and offer to install its .vsix
 const RELEASES = "https://api.github.com/repos/gabrieldulolmarques/opencode-sidebar/releases/latest";
 const DAY = 24 * 60 * 60 * 1000;
-
-function newer(a, b) {
-  const x = a.split(".").map(Number);
-  const y = b.split(".").map(Number);
-  for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
-  return false;
-}
 
 async function checkForUpdate(context) {
   const state = context.globalState;
