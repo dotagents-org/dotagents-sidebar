@@ -1,0 +1,86 @@
+<!doctype html>
+<!-- The real view (media/view.js and view.css) with example sessions, for the README picture.
+     The theme comes from the hash: #dark or #light, with VS Code's Dark Modern and Light Modern colors. -->
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="../../node_modules/@xterm/xterm/css/xterm.css">
+<link rel="stylesheet" href="../../media/view.css">
+<style>
+:root.dark {
+  --vscode-sideBar-background: #181818; --vscode-foreground: #cccccc; --vscode-terminal-foreground: #cccccc;
+  --vscode-descriptionForeground: #9d9d9d; --vscode-panel-border: #2b2b2b; --vscode-list-hoverBackground: #2a2d2e;
+  --vscode-list-inactiveSelectionBackground: #37373d; --vscode-font-family: "Segoe UI", system-ui, sans-serif; --vscode-font-size: 13px;
+  --vscode-terminal-ansiRed: #f14c4c; --vscode-terminal-ansiGreen: #23d18b; --vscode-terminal-ansiYellow: #f5f543;
+  --vscode-terminal-ansiBlue: #3b8eea; --vscode-terminal-ansiMagenta: #d670d6; --vscode-terminal-ansiCyan: #29b8db;
+}
+:root.light {
+  --vscode-sideBar-background: #f8f8f8; --vscode-foreground: #3b3b3b; --vscode-terminal-foreground: #3b3b3b;
+  --vscode-descriptionForeground: #6e6e6e; --vscode-panel-border: #e5e5e5; --vscode-list-hoverBackground: #f2f2f2;
+  --vscode-list-inactiveSelectionBackground: #e4e6f1; --vscode-font-family: "Segoe UI", system-ui, sans-serif; --vscode-font-size: 13px;
+  --vscode-terminal-ansiBlack: #000000; --vscode-terminal-ansiRed: #cd3131; --vscode-terminal-ansiGreen: #00a000;
+  --vscode-terminal-ansiYellow: #949800; --vscode-terminal-ansiBlue: #0451a5; --vscode-terminal-ansiMagenta: #bc05bc;
+  --vscode-terminal-ansiCyan: #0598bc; --vscode-terminal-ansiWhite: #555555; --vscode-terminal-ansiBrightBlack: #666666;
+  --vscode-terminalCursor-foreground: #3b3b3b;
+}
+</style>
+<script>document.documentElement.className = location.hash.slice(1) || "dark";</script>
+</head>
+<body>
+<div id="main"><div id="header"></div><div id="panes"></div></div>
+<div id="list"></div>
+<script>
+const icon = (id) => `../../media/${id}-dark.svg`;
+window.DOTAGENTS_SIDEBAR_SETTINGS = {
+  fontFamily: '"JetBrains Mono", "DejaVu Sans Mono", monospace', fontSize: 13, lineHeight: 1.15, letterSpacing: 0,
+  fontWeight: "normal", fontWeightBold: "bold", minimumContrastRatio: 4.5, scrollback: 1000, renderer: "dom",
+  workspace: "my-app",
+  providers: {
+    opencode: { name: "OpenCode", scrollback: false, icon: icon("opencode") },
+    claude: { name: "Claude Code", scrollback: true, newline: "\x1b\r", icon: icon("claude") },
+    codex: { name: "Codex", scrollback: false, newline: "\n", icon: icon("codex") },
+  },
+};
+window.acquireVsCodeApi = () => ({ postMessage(m) { if (m.type === "ready") setTimeout(init, 50); }, getState() {}, setState() {} });
+
+const B = "\x1b[1m", D = "\x1b[2m", R = "\x1b[0m", G = "\x1b[32m", O = "\x1b[38;5;173m", C = "\x1b[36m";
+const claude = [
+  `${D}> ${R}the login test fails since the session refactor, fix it`, "",
+  `${O}●${R} I'll check the test, then the session code.`, "",
+  `${G}●${R} ${B}Read${R}(test/login.test.ts)`, `  ${D}└  Read 64 lines${R}`, "",
+  `${G}●${R} ${B}Update${R}(src/session.ts)`, `  ${D}└  1 addition, 1 removal${R}`,
+  `     \x1b[31m12 -   const id = cookie.get("sid")${R}`,
+  `     \x1b[32m12 +   const id = await cookie.read("sid")${R}`, "",
+  `${G}●${R} ${B}Bash${R}(npm test)`, `  ${D}└  42 passing (1.3s)${R}`, "",
+  `${O}●${R} Fixed: the cookie was read before the store`, "  was ready. All 42 tests pass.",
+].join("\r\n");
+const codex = [
+  `${B}>_ OpenAI Codex${R}`, "",
+  `${D}›${R} review the change in src/session.ts`, "",
+  `${C}•${R} ${B}Explored${R}`, `  ${D}└ Read session.ts, login.test.ts${R}`, "",
+  `${C}•${R} The fix is right: awaiting the read removes`, "  the race. One thing left: the error path", "  still returns an empty session.", "",
+  `  ${D}src/session.ts:18${R}  return {}  ${D}→ throw${R}`,
+].join("\r\n");
+
+function init() {
+  const state = {
+    sessions: [
+      { id: "s1", provider: "claude", name: "fix login", color: "yellow", group: "s1" },
+      { id: "s2", provider: "codex", name: "Codex", color: "blue", group: "s1" },
+      { id: "s3", provider: "opencode", name: "OpenCode", color: "green", group: "s3" },
+      { id: "s4", provider: "claude", name: "Claude Code", color: "magenta", group: "s4", title: "docs-api" },
+    ],
+    active: "s1", next: 5,
+  };
+  window.postMessage({ type: "init", state, screens: { s1: claude, s2: codex } }, "*");
+}
+</script>
+<script src="../../node_modules/@xterm/xterm/lib/xterm.js"></script>
+<script src="../../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+<script src="../../node_modules/@xterm/addon-webgl/lib/addon-webgl.js"></script>
+<script src="../../node_modules/@xterm/addon-web-links/lib/addon-web-links.js"></script>
+<script src="../../media/keys.js"></script>
+<script src="../../media/view.js"></script>
+</body>
+</html>
