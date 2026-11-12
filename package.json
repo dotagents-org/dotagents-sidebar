@@ -38,7 +38,9 @@
   ],
   "main": "./extension.js",
   "activationEvents": [
-    "onTerminalProfile:agentsSidebar.profile.opencode"
+    "onTerminalProfile:agentsSidebar.profile.opencode",
+    "onTerminalProfile:agentsSidebar.profile.claude",
+    "onTerminalProfile:agentsSidebar.profile.codex"
   ],
   "contributes": {
     "viewsContainers": {
@@ -64,6 +66,11 @@
         "command": "agentsSidebar.new",
         "title": "Agents: New Session",
         "icon": "$(add)"
+      },
+      {
+        "command": "agentsSidebar.newWith",
+        "title": "Agents: New Session With...",
+        "icon": "$(chevron-down)"
       },
       {
         "command": "agentsSidebar.split",
@@ -96,14 +103,19 @@
           "group": "navigation@1"
         },
         {
-          "command": "agentsSidebar.split",
+          "command": "agentsSidebar.newWith",
           "when": "view == agentsSidebar.view",
           "group": "navigation@2"
         },
         {
-          "command": "agentsSidebar.close",
+          "command": "agentsSidebar.split",
           "when": "view == agentsSidebar.view",
           "group": "navigation@3"
+        },
+        {
+          "command": "agentsSidebar.close",
+          "when": "view == agentsSidebar.view",
+          "group": "navigation@4"
         }
       ],
       "webview/context": [
@@ -137,6 +149,22 @@
           "icon": {
             "light": "media/opencode-light.svg",
             "dark": "media/opencode-dark.svg"
+          }
+        },
+        {
+          "id": "agentsSidebar.profile.claude",
+          "title": "Claude Code",
+          "icon": {
+            "light": "media/claude-light.svg",
+            "dark": "media/claude-dark.svg"
+          }
+        },
+        {
+          "id": "agentsSidebar.profile.codex",
+          "title": "Codex",
+          "icon": {
+            "light": "media/codex-light.svg",
+            "dark": "media/codex-dark.svg"
           }
         }
       ]

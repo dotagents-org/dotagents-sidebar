@@ -10,6 +10,22 @@ const PROVIDERS = [
     // Only for the view's process: the user's cli.json is left alone
     env: { OPENCODE_CLI_CONFIG_CONTENT: JSON.stringify({ theme: { name: "system", mode: "system" } }) },
   },
+  {
+    id: "claude",
+    name: "Claude Code",
+    command: "claude",
+    install: "Install it from https://claude.com/claude-code",
+    // Claude Code writes its conversation to the normal screen, so the history lives in scrollback
+    scrollback: true,
+    newline: "\x1b\r", // Alt+Enter
+  },
+  {
+    id: "codex",
+    name: "Codex",
+    command: "codex",
+    install: "Install it with npm install -g @openai/codex",
+    newline: "\n", // Ctrl+J
+  },
 ];
 
 function command(provider, platform) {

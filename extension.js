@@ -382,6 +382,13 @@ function activate(context) {
     // The view reads the theme's colors when it loads
     vscode.window.onDidChangeActiveColorTheme(() => view.reload()),
     vscode.commands.registerCommand("agentsSidebar.new", () => view.open(sessions.add)),
+    vscode.commands.registerCommand("agentsSidebar.newWith", async () => {
+      const pick = await vscode.window.showQuickPick(
+        PROVIDERS.map((p) => ({ label: p.name, id: p.id })),
+        { placeHolder: "Agent for the new session" }
+      );
+      if (pick) view.open(sessions.add, pick.id);
+    }),
     vscode.commands.registerCommand("agentsSidebar.split", () => view.open(sessions.split)),
     onSession("close", (id) => view.close(id)),
     onSession("restart", (id) => view.restart(id)),
