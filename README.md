@@ -13,6 +13,7 @@ The official OpenCode extension opens OpenCode in a terminal tab. This one gives
 - **Seamless rendering.** The view draws with xterm.js's WebGL renderer, which fills block and box characters exactly, so OpenCode's panels and logo have no hairlines between rows (the DOM renderer draws them from the font and leaves gaps at fractional zoom levels). Set `opencodeSidebar.renderer` to `dom` to use the DOM renderer instead; without WebGL it falls back to DOM on its own.
 - **Your terminal font.** `terminal.integrated.fontFamily`, `fontSize`, `lineHeight`, `letterSpacing`, `fontWeight`, `fontWeightBold` and `minimumContrastRatio` set the text (font settings fall back to the editor's). Changing any of them updates the view without restarting OpenCode.
 - **No frame, sharp at any scale.** The margin around the grid takes the background color OpenCode paints, so there is no frame whatever its theme, and any hairline gap between rows shows that same color. The grid is centered and snapped to whole device pixels, so it stays sharp at fractional display scales and zoom levels.
+- **Follows your theme.** Switching the color theme recolors the view at once, without restarting OpenCode.
 - **Clipboard.** <kbd>Ctrl</kbd>+<kbd>C</kbd> copies when text is selected and goes to OpenCode otherwise. <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes.
 - **Terminal profile.** An **OpenCode** entry in the terminal's new-terminal menu (⌄ next to `+`) opens OpenCode in a regular terminal, with the OpenCode mark as its tab icon.
 - **Remote ready.** It runs where your workspace runs, so it works in WSL, SSH and dev containers as well as locally.
@@ -58,7 +59,7 @@ If the icon doesn't show up, open the secondary sidebar with **View: Toggle Seco
 
 VS Code's API only lets extensions put terminals in the terminal panel or the editor area, not in a sidebar. So the view is a webview that draws its own terminal with xterm.js. The OpenCode process runs on the extension host through **node-pty**: the copy that ships inside VS Code itself, loaded from `vscode.env.appRoot`. Keystrokes go from the webview to the process, and output comes back the other way.
 
-Because the view is a webview, `retainContextWhenHidden` keeps it alive while hidden. The extension also keeps a headless copy of the screen ([`@xterm/headless`](https://www.npmjs.com/package/@xterm/headless)) and serializes it to redraw the view exactly when VS Code rebuilds it (for example after you move it to another sidebar or change a setting).
+Because the view is a webview, `retainContextWhenHidden` keeps it alive while hidden. The extension also keeps a headless copy of the screen ([`@xterm/headless`](https://www.npmjs.com/package/@xterm/headless)) and serializes it to redraw the view exactly when VS Code rebuilds it (for example after you move it to another sidebar or change a setting). OpenCode runs with VS Code's own `ELECTRON_*` and `VSCODE_*` variables removed from its environment, as in the integrated terminal.
 
 ## Known limitations
 

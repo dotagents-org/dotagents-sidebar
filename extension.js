@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const os = require("os");
 const path = require("path");
 const vscode = require("vscode");
@@ -36,6 +37,16 @@ function command() {
   return { file: "bash", args: ["-ic", "opencode"] };
 }
 
+// Like the integrated terminal, don't hand VS Code's own process variables to OpenCode:
+// ELECTRON_RUN_AS_NODE, for one, breaks any Electron app started from inside it
+function env() {
+  const result = { ...process.env, TERM: "xterm-256color", COLORTERM: "truecolor", TERM_PROGRAM: "vscode" };
+  for (const key of Object.keys(result)) {
+    if (key.startsWith("ELECTRON_") || (key.startsWith("VSCODE_") && key !== "VSCODE_IPC_HOOK_CLI")) delete result[key];
+  }
+  return result;
+}
+
 function cwd() {
   const folder = vscode.workspace.workspaceFolders?.[0];
   return folder && folder.uri.scheme === "file" ? folder.uri.fsPath : os.homedir();
@@ -43,7 +54,14 @@ function cwd() {
 
 // The view mirrors the integrated terminal's font settings, so text looks the way the user
 // already tuned it for their screen
-const WATCHED = ["opencodeSidebar", "terminal.integrated", "editor.fontFamily", "editor.fontSize"];
+const WATCHED = [
+  "opencodeSidebar",
+  "editor.fontFamily",
+  "editor.fontSize",
+  ...["fontFamily", "fontSize", "lineHeight", "letterSpacing", "fontWeight", "fontWeightBold", "minimumContrastRatio"].map(
+    (key) => `terminal.integrated.${key}`
+  ),
+];
 
 function terminalSettings() {
   const term = vscode.workspace.getConfiguration("terminal.integrated");
@@ -144,7 +162,7 @@ class OpencodeView {
       cols: this.size.cols,
       rows: this.size.rows,
       cwd: cwd(),
-      env: { ...process.env, TERM: "xterm-256color", COLORTERM: "truecolor", TERM_PROGRAM: "vscode" },
+      env: env(),
     });
     this.pty = proc;
     proc.onData((data) => this.output(data));
@@ -152,7 +170,12 @@ class OpencodeView {
       if (this.pty !== proc) return;
       this.pty = undefined;
       this.exited = true;
-      this.output(`\r\n\x1b[2m[OpenCode exited with code ${exitCode}. Press Enter to start it again.]\x1b[0m\r\n`);
+      // 127 is bash's "command not found"
+      const reason =
+        exitCode === 127
+          ? "opencode was not found on the PATH set up by ~/.bashrc. Install it from https://opencode.ai"
+          : `OpenCode exited with code ${exitCode}`;
+      this.output(`\r\n\x1b[2m[${reason}. Press Enter to start it again.]\x1b[0m\r\n`);
     });
   }
 
@@ -175,7 +198,7 @@ class OpencodeView {
 
   html(webview) {
     const uri = (...p) => webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, ...p));
-    const nonce = [...Array(32)].map(() => Math.floor(Math.random() * 36).toString(36)).join("");
+    const nonce = crypto.randomBytes(16).toString("base64");
     const settings = JSON.stringify(terminalSettings()).replace(/</g, "\\u003c");
     return `<!doctype html>
 <html>
@@ -220,6 +243,8 @@ function activate(context) {
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (WATCHED.some((key) => event.affectsConfiguration(key))) provider.reload();
     }),
+    // The view reads the theme's colors when it loads
+    vscode.window.onDidChangeActiveColorTheme(() => provider.reload()),
     vscode.commands.registerCommand("opencodeSidebar.restart", () => provider.restart()),
     vscode.commands.registerCommand("opencodeSidebar.openInTerminal", () =>
       vscode.window.createTerminal(terminalOptions(context)).show()
