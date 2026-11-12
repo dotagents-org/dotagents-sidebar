@@ -22,17 +22,35 @@ test("every agent has a terminal profile, its activation event and its icons", (
   assert.equal(profiles.length, PROVIDERS.length);
 });
 
-test("every command the menus use is declared", () => {
+test("every command and submenu the menus use is declared", () => {
   const declared = new Set(pkg.contributes.commands.map((c) => c.command));
+  const submenus = new Set(pkg.contributes.submenus.map((m) => m.id));
   for (const items of Object.values(pkg.contributes.menus)) {
-    for (const item of items) assert.ok(declared.has(item.command), item.command);
+    for (const item of items) {
+      if (item.submenu) assert.ok(submenus.has(item.submenu), item.submenu);
+      else assert.ok(declared.has(item.command), item.command);
+    }
   }
+  for (const id of submenus) assert.ok(pkg.contributes.menus[id]?.length, `items of ${id}`);
+});
+
+test("the + menu opens or splits a session with each agent, like the terminal panel's", () => {
+  const menu = (id) => pkg.contributes.menus[id].map((item) => item.command || item.submenu);
+  for (const p of PROVIDERS) {
+    assert.ok(menu("agentsSidebar.newMenu").includes(`agentsSidebar.new.${p.id}`), p.id);
+    assert.ok(menu("agentsSidebar.splitMenu").includes(`agentsSidebar.split.${p.id}`), p.id);
+  }
+  assert.ok(menu("agentsSidebar.newMenu").includes("agentsSidebar.splitMenu"));
 });
 
 test("every declared command is registered by the extension", () => {
   const source = fs.readFileSync(path.join(root, "extension.js"), "utf8");
   for (const { command } of pkg.contributes.commands) {
     const name = command.replace("agentsSidebar.", "");
-    assert.ok(source.includes(`"${command}"`) || source.includes(`onSession("${name}"`), command);
+    const perAgent = /^(new|split)\.(\w+)$/.exec(name);
+    if (perAgent) {
+      assert.ok(PROVIDERS.some((p) => p.id === perAgent[2]), command);
+      assert.ok(source.includes(`\`agentsSidebar.${perAgent[1]}.\${provider.id}\``), command);
+    } else assert.ok(source.includes(`"${command}"`) || source.includes(`onSession("${name}"`), command);
   }
 });
