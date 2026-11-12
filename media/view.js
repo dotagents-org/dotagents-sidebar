@@ -25,53 +25,6 @@
   const header = document.getElementById("header");
   const panes = document.getElementById("panes");
   const list = document.getElementById("list");
-  const saved = vscode.getState() || {};
-
-  // The list's width, dragged on its left edge like the terminal panel's. Narrow, it keeps only
-  // the icons. The width is kept across reloads of the page
-  const sash = document.createElement("div");
-  sash.id = "sash";
-  list.before(sash);
-  // The sizes of the terminal panel's list (terminalTabsList.ts in VS Code): icons only at 46,
-  // names from 80; in between, the width snaps to the nearer of the two
-  const NARROW = 46;
-  const WIDE = 80;
-  const DEFAULT_WIDTH = 120;
-  const MAX_WIDTH = 500;
-  function setListWidth(width) {
-    let w = Math.round(Math.min(Math.max(width, NARROW), MAX_WIDTH, Math.max(WIDE, document.body.clientWidth - WIDE)));
-    if (w < WIDE) w = w < (NARROW + WIDE) / 2 ? NARROW : WIDE;
-    list.style.width = `${w}px`;
-    list.classList.toggle("compact", w === NARROW);
-    return w;
-  }
-  // The width asked for; a narrow view squeezes the list, and widening the view gives it back
-  let wanted = saved.listWidth || DEFAULT_WIDTH;
-  setListWidth(wanted);
-  window.addEventListener("resize", () => setListWidth(wanted));
-  sash.addEventListener("pointerdown", (event) => {
-    event.preventDefault();
-    sash.setPointerCapture(event.pointerId);
-    sash.classList.add("active");
-    const startX = event.clientX;
-    const startWidth = list.getBoundingClientRect().width;
-    const move = (e) => setListWidth(startWidth + startX - e.clientX);
-    const up = (e) => {
-      sash.releasePointerCapture(e.pointerId);
-      sash.classList.remove("active");
-      sash.removeEventListener("pointermove", move);
-      sash.removeEventListener("pointerup", up);
-      wanted = list.getBoundingClientRect().width;
-      vscode.setState({ ...(vscode.getState() || {}), listWidth: wanted });
-    };
-    sash.addEventListener("pointermove", move);
-    sash.addEventListener("pointerup", up);
-  });
-  // Double-click puts the default width back
-  sash.addEventListener("dblclick", () => {
-    wanted = setListWidth(DEFAULT_WIDTH);
-    vscode.setState({ ...(vscode.getState() || {}), listWidth: wanted });
-  });
   const terminals = new Map(); // session id -> { el, term, fit, last }
   let state = { sessions: [], active: null };
 
@@ -212,18 +165,7 @@
     icon.className = "icon";
     icon.style.maskImage = `url("${provider.icon}")`;
     icon.style.backgroundColor = theme[session.color] || theme.foreground;
-    const name = document.createElement("span");
-    name.className = "name";
-    name.textContent = session.name;
-    const close = document.createElement("span");
-    close.className = "close";
-    close.textContent = "×";
-    close.title = "Close session";
-    close.addEventListener("click", (event) => {
-      event.stopPropagation();
-      vscode.postMessage({ type: "close", id: session.id });
-    });
-    el.append(icon, name, close);
+    el.append(icon);
     return el;
   }
 
