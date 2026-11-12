@@ -79,7 +79,8 @@
       },
       {
         "command": "agentsSidebar.restart",
-        "title": "Agents: Restart Session"
+        "title": "Agents: Restart Session",
+        "icon": "$(debug-restart)"
       },
       {
         "command": "agentsSidebar.rename",
@@ -138,9 +139,14 @@
           "group": "navigation@3"
         },
         {
-          "command": "agentsSidebar.close",
+          "command": "agentsSidebar.restart",
           "when": "view == agentsSidebar.view",
           "group": "navigation@4"
+        },
+        {
+          "command": "agentsSidebar.close",
+          "when": "view == agentsSidebar.view",
+          "group": "navigation@5"
         }
       ],
       "webview/context": [
