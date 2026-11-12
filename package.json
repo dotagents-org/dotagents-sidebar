@@ -62,10 +62,6 @@
         "command": "opencodeSidebar.restart",
         "title": "OpenCode: Restart",
         "icon": "$(debug-restart)"
-      },
-      {
-        "command": "opencodeSidebar.openInTerminal",
-        "title": "OpenCode: Open in Terminal Panel"
       }
     ],
     "menus": {
