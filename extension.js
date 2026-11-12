@@ -250,9 +250,6 @@ function activate(context) {
     // The view reads the theme's colors when it loads
     vscode.window.onDidChangeActiveColorTheme(() => provider.reload()),
     vscode.commands.registerCommand("opencodeSidebar.restart", () => provider.restart()),
-    vscode.commands.registerCommand("opencodeSidebar.openInTerminal", () =>
-      vscode.window.createTerminal(terminalOptions(context)).show()
-    ),
     vscode.window.registerTerminalProfileProvider("opencodeSidebar.profile", {
       provideTerminalProfile: () => new vscode.TerminalProfile(terminalOptions(context)),
     })

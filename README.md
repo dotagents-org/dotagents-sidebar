@@ -54,9 +54,8 @@ If the icon doesn't show up, open the secondary sidebar with **View: Toggle Seco
 | Command | What it does |
 |---|---|
 | `OpenCode: Restart` | Stops the OpenCode in the view and starts a fresh one |
-| `OpenCode: Open in Terminal Panel` | Opens OpenCode in a regular terminal instead |
 
-The restart command also sits as a button in the view's title bar.
+It also sits as a button in the view's title bar.
 
 ## How it works
 
