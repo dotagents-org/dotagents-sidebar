@@ -105,7 +105,7 @@ Open the secondary sidebar (**View: Toggle Secondary Side Bar Visibility**) and 
 | Setting | Default | What it does |
 |---|---|---|
 | `dotagentsSidebar.renderer` | `webgl` | `webgl` or `dom`: how the view draws the terminal. WebGL draws block characters without hairlines between rows |
-| `dotagentsSidebar.keysForVsCode` | `[]` | Keys that go to VS Code on top of the worked-out ones (`"ctrl+e"`), or back to the agent (`"-ctrl+b"`). The keys in use are listed in the **dotagents-sidebar** output |
+| `dotagentsSidebar.keysForVsCode` | `[]` | Keys that go to VS Code on top of the worked-out ones (`"ctrl+e"`), or back to the agent (`"-ctrl+p"`). The keys in use are listed in the **dotagents-sidebar** output |
 
 ## How it works
 
