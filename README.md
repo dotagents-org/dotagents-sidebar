@@ -37,6 +37,8 @@ The extension is not on the Marketplace. Install the `.vsix` from a release:
 
 In a remote window (WSL, SSH, containers), install it while connected, so it lands on the remote side where OpenCode runs.
 
+Since VS Code can't update an extension installed from a `.vsix`, the extension checks GitHub for a newer release once a day and offers to install it (or to skip that version).
+
 ## Usage
 
 Click the OpenCode icon in the secondary sidebar. OpenCode starts in the first workspace folder (or your home folder when no folder is open).

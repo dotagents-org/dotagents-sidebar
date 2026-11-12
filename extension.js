@@ -237,7 +237,62 @@ function terminalOptions(context) {
   };
 }
 
+// The extension is not on the Marketplace, so VS Code can't update it: once a day, look for
+// a newer GitHub release and offer to install its .vsix
+const RELEASES = "https://api.github.com/repos/gabrieldulolmarques/opencode-sidebar/releases/latest";
+const DAY = 24 * 60 * 60 * 1000;
+
+function newer(a, b) {
+  const x = a.split(".").map(Number);
+  const y = b.split(".").map(Number);
+  for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+  return false;
+}
+
+async function checkForUpdate(context) {
+  const state = context.globalState;
+  if (Date.now() - state.get("lastUpdateCheck", 0) < DAY) return;
+  await state.update("lastUpdateCheck", Date.now());
+
+  const res = await fetch(RELEASES, { headers: { Accept: "application/vnd.github+json" } });
+  if (!res.ok) return;
+  const release = await res.json();
+  const latest = String(release.tag_name).replace(/^v/, "");
+  const current = context.extension.packageJSON.version;
+  const asset = release.assets?.find((a) => a.name.endsWith(".vsix"));
+  if (!asset || !newer(latest, current) || state.get("ignoredVersion") === latest) return;
+
+  const choice = await vscode.window.showInformationMessage(
+    `${NAME} Sidebar ${latest} is available (you have ${current}).`,
+    "Install",
+    "Release notes",
+    "Skip this version"
+  );
+  if (choice === "Release notes") vscode.env.openExternal(vscode.Uri.parse(release.html_url));
+  else if (choice === "Skip this version") await state.update("ignoredVersion", latest);
+  else if (choice === "Install") {
+    try {
+      const vsix = await fetch(asset.browser_download_url);
+      if (!vsix.ok) throw new Error(`download failed (${vsix.status})`);
+      await vscode.workspace.fs.createDirectory(context.globalStorageUri);
+      const file = vscode.Uri.joinPath(context.globalStorageUri, asset.name);
+      await vscode.workspace.fs.writeFile(file, new Uint8Array(await vsix.arrayBuffer()));
+      await vscode.commands.executeCommand("workbench.extensions.installExtension", file);
+      const reload = await vscode.window.showInformationMessage(
+        `${NAME} Sidebar ${latest} is installed. Reload the window to use it.`,
+        "Reload"
+      );
+      if (reload) vscode.commands.executeCommand("workbench.action.reloadWindow");
+    } catch (err) {
+      const open = await vscode.window.showErrorMessage(`Could not install ${NAME} Sidebar ${latest}: ${err.message}`, "Open release");
+      if (open) vscode.env.openExternal(vscode.Uri.parse(release.html_url));
+    }
+  }
+}
+
 function activate(context) {
+  checkForUpdate(context).catch(() => {}); // offline or rate limited: try again tomorrow
+
   const provider = new OpencodeView(context);
   context.subscriptions.push(
     provider,
