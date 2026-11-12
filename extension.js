@@ -120,7 +120,7 @@ class AgentsView {
     const provider = session && PROVIDERS.find((p) => p.id === session.provider);
     this.view.title = provider ? provider.name : "Agents";
     const named = session && session.name !== provider.name ? session.name : "";
-    this.view.description = [vscode.workspace.name, named].filter(Boolean).join(" ");
+    this.view.description = [vscode.workspace.name, named].filter(Boolean).join(" / ");
   }
 
   session(id) {
