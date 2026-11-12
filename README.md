@@ -55,10 +55,10 @@ The agents' official extensions put them in a chat panel or a terminal tab. This
 
 **Back to yesterday's conversation.** Close VS Code at the end of the day. The next morning the sessions are in the list; click one and its agent opens the same conversation (`claude --resume <id>`, `opencode --session <id>`, `codex resume <id>`).
 
-**A shortcut of yours that the agent takes.** Say you bound Ctrl+E to **Go to File** in your keybindings and use VS Code over WSL, where the extension can't read your keybindings file. Add it to your settings, and give Ctrl+B back to Claude Code, which uses it to send a task to the background:
+**A shortcut of yours that the agent takes.** Say you bound Ctrl+E to **Go to File** in your keybindings and use VS Code over WSL, where the extension can't read your keybindings file. Add it to your settings, and give Ctrl+P back to the agent (VS Code keeps it for **Go to File**, and OpenCode opens its commands with it):
 
 ```jsonc
-"dotagentsSidebar.keysForVsCode": ["ctrl+e", "-ctrl+b"]
+"dotagentsSidebar.keysForVsCode": ["ctrl+e", "-ctrl+p"]
 ```
 
 The keys in use are listed in **View → Output → dotagents-sidebar**.
