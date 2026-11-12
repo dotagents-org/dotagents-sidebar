@@ -10,13 +10,14 @@ const sessions = require("./sessions");
 const keys = require("./media/keys.js");
 const SKIP_SHELL = require("./skip-shell.json");
 
-// One host per workspace and version of the extension. An empty window has nothing to come
-// back to, so its host is its own
-function hostKey(context) {
+// One host per workspace and protocol (host.js), not per version of the extension: an update
+// reaches the host the old version started, and its agents keep running. An empty window has
+// nothing to come back to, so its host is its own
+function hostKey() {
   const workspace = vscode.workspace.workspaceFile || vscode.workspace.workspaceFolders?.[0]?.uri;
   const id = workspace ? workspace.toString() : `window-${vscode.env.sessionId}`;
   const hash = crypto.createHash("sha256").update(id).digest("hex").slice(0, 16);
-  return `${context.extension.packageJSON.version}-${hash}`;
+  return `p${host.PROTOCOL}-${hash}`;
 }
 
 // Codex's saved conversations: the first line of each rollout has its id, folder and start time
@@ -183,7 +184,7 @@ class SidebarView {
   }
 
   async reachHost() {
-    const socket = host.socketPath(hostKey(this.context));
+    const socket = host.socketPath(hostKey());
     const connect = () =>
       host.connect(
         socket,
@@ -194,6 +195,17 @@ class SidebarView {
       return await connect();
     } catch {
       // not running yet
+    }
+    // A host started before the socket was named by protocol (0.7.0) was named by version
+    const legacy = host.socketPath(hostKey().replace(/^p\d+/, this.context.extension.packageJSON.version));
+    try {
+      return await host.connect(
+        legacy,
+        (msg) => this.onHost(msg),
+        () => this.onHostLost()
+      );
+    } catch {
+      // none either
     }
     // Detached, so it outlives the extension; ELECTRON_RUN_AS_NODE makes VS Code's own
     // executable run it as plain Node on the desktop
