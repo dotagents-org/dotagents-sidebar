@@ -131,6 +131,9 @@ class OpencodeView {
       case "resize":
         this.resize(msg.cols, msg.rows);
         break;
+      case "open":
+        if (/^https?:\/\//i.test(msg.uri)) vscode.env.openExternal(vscode.Uri.parse(msg.uri));
+        break;
     }
   }
 
@@ -214,6 +217,7 @@ class OpencodeView {
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "xterm", "lib", "xterm.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-fit", "lib", "addon-fit.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-webgl", "lib", "addon-webgl.js")}"></script>
+<script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-web-links", "lib", "addon-web-links.js")}"></script>
 <script nonce="${nonce}" src="${uri("media", "view.js")}"></script>
 </body>
 </html>`;
