@@ -420,7 +420,7 @@ function terminalOptions(context, provider) {
 
 // The extension is not on the Marketplace, so VS Code can't update it: once a day, look for
 // a newer GitHub release and offer to install its .vsix
-const RELEASES = "https://api.github.com/repos/gabrieldulolmarques/agents-sidebar/releases/latest";
+const RELEASES = "https://api.github.com/repos/gabrieldulolmarques/dotagents-sidebar/releases/latest";
 const DAY = 24 * 60 * 60 * 1000;
 
 async function checkForUpdate(context) {
