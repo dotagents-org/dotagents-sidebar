@@ -28,6 +28,17 @@
   const terminals = new Map(); // session id -> { el, term, fit, last }
   let state = { sessions: [], active: null };
 
+  // The keys VS Code keeps, like the integrated terminal's defaults: function keys, the workbench's
+  // Ctrl shortcuts, the Ctrl+K chords and Ctrl+Shift ones (but copy and paste)
+  const VS_CODE_CTRL_KEYS = new Set(["p", "b", "j", "k", ",", "`", "tab", "pageup", "pagedown"]);
+  function forVsCode(event) {
+    if (/^F([1-9]|1[0-2])$/.test(event.key)) return true;
+    if (!event.ctrlKey || event.altKey || event.metaKey) return false;
+    const key = event.key.toLowerCase();
+    if (event.shiftKey) return key !== "c" && key !== "v" && key !== "shift" && key !== "control";
+    return VS_CODE_CTRL_KEYS.has(key);
+  }
+
   // One terminal per session. It stays alive while hidden, so switching back is instant
   function open(session) {
     const provider = settings.providers[session.provider];
@@ -68,6 +79,9 @@
     }
 
     term.attachCustomKeyEventHandler((event) => {
+      // A key left to VS Code is not handled here: it bubbles out of the page, and VS Code runs
+      // its shortcut, as the integrated terminal does for terminal.integrated.commandsToSkipShell
+      if (forVsCode(event)) return false;
       if (event.type !== "keydown") return true;
       // Ctrl+C copies when there is a selection; otherwise it goes to the agent
       if (event.ctrlKey && event.key.toLowerCase() === "c" && term.hasSelection()) {
