@@ -97,7 +97,7 @@ class AgentsView {
     this.hostReady = undefined;
     this.disposed = false;
     this.keys = undefined; // the keys VS Code keeps, once worked out
-    this.log = vscode.window.createOutputChannel("Agents Sidebar");
+    this.log = vscode.window.createOutputChannel("dotagents-sidebar");
   }
 
   // The keys that go to VS Code while a session has focus (media/keys.js): the terminal's rule,
@@ -529,7 +529,7 @@ async function checkForUpdate(context) {
   if (!asset || !newer(latest, current) || state.get("ignoredVersion") === latest) return;
 
   const choice = await vscode.window.showInformationMessage(
-    `Agents Sidebar ${latest} is available (you have ${current}).`,
+    `dotagents-sidebar ${latest} is available (you have ${current}).`,
     "Install",
     "Release notes",
     "Skip this version"
@@ -545,12 +545,12 @@ async function checkForUpdate(context) {
       await vscode.workspace.fs.writeFile(file, new Uint8Array(await vsix.arrayBuffer()));
       await vscode.commands.executeCommand("workbench.extensions.installExtension", file);
       const reload = await vscode.window.showInformationMessage(
-        `Agents Sidebar ${latest} is installed. Reload the window to use it.`,
+        `dotagents-sidebar ${latest} is installed. Reload the window to use it.`,
         "Reload"
       );
       if (reload) vscode.commands.executeCommand("workbench.action.reloadWindow");
     } catch (err) {
-      const open = await vscode.window.showErrorMessage(`Could not install Agents Sidebar ${latest}: ${err.message}`, "Open release");
+      const open = await vscode.window.showErrorMessage(`Could not install dotagents-sidebar ${latest}: ${err.message}`, "Open release");
       if (open) vscode.env.openExternal(vscode.Uri.parse(release.html_url));
     }
   }

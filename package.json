@@ -1,7 +1,7 @@
 {
   "name": "agents-sidebar",
-  "displayName": "Agents Sidebar",
-  "description": "Run coding agents (OpenCode, Claude Code, Codex) in VS Code's secondary sidebar.",
+  "displayName": "dotagents-sidebar",
+  "description": "OpenCode, Claude Code and Codex in VS Code's secondary sidebar: several sessions, splits, and agents that keep working across window reloads.",
   "version": "0.7.0",
   "publisher": "gabrieldulolmarques",
   "license": "MIT",
@@ -26,6 +26,7 @@
   "categories": [
     "Other"
   ],
+  "icon": "media/icon.png",
   "scripts": {
     "test": "node --test",
     "package": "npx --yes @vscode/vsce@3 package -o agents-sidebar.vsix"
@@ -48,7 +49,7 @@
         {
           "id": "agentsSidebar",
           "title": "Agents",
-          "icon": "media/agents-view.svg"
+          "icon": "media/dotagents-sidebar-line.svg"
         }
       ]
     },
@@ -231,7 +232,7 @@
       ]
     },
     "configuration": {
-      "title": "Agents Sidebar",
+      "title": "dotagents-sidebar",
       "properties": {
         "agentsSidebar.renderer": {
           "type": "string",
@@ -252,7 +253,7 @@
             "type": "string"
           },
           "default": [],
-          "markdownDescription": "Keys that go to VS Code instead of the agent while a session has focus, on top of the ones worked out like the integrated terminal does (the keys of `#terminal.integrated.commandsToSkipShell#` and the first key of chords). A key starting with `-` goes to the agent instead. Example: `[\"ctrl+e\", \"-ctrl+b\"]`. The keys in use are listed in the Agents Sidebar output."
+          "markdownDescription": "Keys that go to VS Code instead of the agent while a session has focus, on top of the ones worked out like the integrated terminal does (the keys of `#terminal.integrated.commandsToSkipShell#` and the first key of chords). A key starting with `-` goes to the agent instead. Example: `[\"ctrl+e\", \"-ctrl+b\"]`. The keys in use are listed in the dotagents-sidebar output."
         }
       }
     },
