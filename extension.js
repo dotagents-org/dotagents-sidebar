@@ -109,18 +109,6 @@ class AgentsView {
     this.state = state;
     this.context.workspaceState.update("sessions", state);
     this.post({ type: "state", state });
-    this.describe();
-  }
-
-  // The title reads like a terminal tab: the agent, then the workspace and the session's own
-  // name, when it has one other than the agent's
-  describe() {
-    if (!this.view) return;
-    const session = this.session(this.state.active);
-    const provider = session && PROVIDERS.find((p) => p.id === session.provider);
-    this.view.title = provider ? provider.name : "Agents";
-    const named = session && session.name !== provider.name ? session.name : "";
-    this.view.description = [vscode.workspace.name, named].filter(Boolean).join(" / ");
   }
 
   session(id) {
@@ -281,7 +269,6 @@ class AgentsView {
       screens[id] = s.screen;
     }
     this.post({ type: "init", state: this.state, screens });
-    this.describe();
   }
 
   // Codex picks its own conversation ids: find the ones of the sessions that don't know theirs
@@ -395,7 +382,7 @@ class AgentsView {
         { name: p.name, scrollback: !!p.scrollback, newline: p.newline, icon: String(uri("media", `${p.id}-dark.svg`)) },
       ])
     );
-    const settings = JSON.stringify({ ...terminalSettings(), providers }).replace(/</g, "\\u003c");
+    const settings = JSON.stringify({ ...terminalSettings(), providers, workspace: vscode.workspace.name || "" }).replace(/</g, "\\u003c");
     return `<!doctype html>
 <html>
 <head>
@@ -405,8 +392,11 @@ class AgentsView {
 <link rel="stylesheet" href="${uri("media", "view.css")}">
 </head>
 <body>
+<div id="header"></div>
+<div id="main">
 <div id="panes"></div>
 <div id="list"></div>
+</div>
 <script nonce="${nonce}">window.AGENTS_SETTINGS = ${settings};</script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "xterm", "lib", "xterm.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-fit", "lib", "addon-fit.js")}"></script>
