@@ -131,7 +131,7 @@
     });
 
     const terminal = { el, term, fit, last: "" };
-    new ResizeObserver(() => layout(session.id, terminal)).observe(el);
+    new ResizeObserver(resizing).observe(el);
     return terminal;
   }
 
@@ -144,6 +144,15 @@
     } catch {
       return;
     }
+    place(terminal);
+    const key = `${term.cols}x${term.rows}`;
+    if (key !== terminal.last) {
+      terminal.last = key;
+      vscode.postMessage({ type: "resize", id, cols: term.cols, rows: term.rows });
+    }
+  }
+
+  function place({ el }) {
     const xterm = el.querySelector(".xterm");
     const screen = el.querySelector(".xterm-screen");
     if (xterm && screen) {
@@ -159,17 +168,23 @@
       const top = area.top + parseFloat(box.paddingTop) + Math.max(0, (parseFloat(box.height) - base.height) / 2);
       xterm.style.transform = `translate(${snap(left) - base.left}px, ${snap(top) - base.top}px)`;
     }
-    const key = `${term.cols}x${term.rows}`;
-    if (key !== terminal.last) {
-      terminal.last = key;
-      vscode.postMessage({ type: "resize", id, cols: term.cols, rows: term.rows });
-    }
   }
 
   function layoutAll() {
+    clearTimeout(settle);
     // A split goes side by side in a wide view and stacks in a tall one
     panes.classList.toggle("row", panes.clientWidth >= panes.clientHeight);
     for (const [id, terminal] of terminals) layout(id, terminal);
+  }
+
+  // While the view is being resized, the grid keeps its size and only stays centered: every new
+  // size makes the agent clear and redraw its whole screen, which flickers during a drag. The
+  // grid fits, and the agent redraws, once the size holds still, as in the integrated terminal
+  let settle;
+  function resizing() {
+    for (const terminal of terminals.values()) place(terminal);
+    clearTimeout(settle);
+    settle = setTimeout(layoutAll, 100);
   }
 
   function item(session) {
@@ -232,7 +247,7 @@
     if (terminal && !terminal.el.contains(document.activeElement)) terminal.term.focus();
   }
 
-  new ResizeObserver(layoutAll).observe(panes);
+  new ResizeObserver(resizing).observe(panes);
 
   // Zooming the window changes the device pixel ratio without resizing in CSS pixels
   function watchScale() {
