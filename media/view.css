@@ -9,7 +9,6 @@ body {
 
 body {
   display: flex;
-  flex-direction: column;
   color: var(--vscode-foreground);
   font-family: var(--vscode-font-family);
   font-size: var(--vscode-font-size);
@@ -27,42 +26,6 @@ body {
 .xterm .xterm-scrollable-element {
   background-color: transparent !important;
   overflow: hidden !important;
-}
-
-/* The active session's title, like a terminal tab */
-#header {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: safe center;
-  gap: 6px;
-  height: 22px;
-  padding: 0 8px;
-  overflow: hidden;
-  white-space: nowrap;
-  border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border));
-}
-
-#header:empty {
-  display: none;
-}
-
-#header .workspace,
-#header .slash {
-  color: var(--vscode-descriptionForeground);
-  opacity: 0.7;
-}
-
-#header .session {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* The panes and the session list, side by side under the title */
-#main {
-  flex: 1;
-  min-height: 0;
-  display: flex;
 }
 
 /* The active group's panes: stacked in a tall view, side by side (.row) in a wide one */
