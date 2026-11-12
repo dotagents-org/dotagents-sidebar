@@ -7,6 +7,13 @@ body {
   background: var(--vscode-sideBar-background);
 }
 
+body {
+  display: flex;
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+}
+
 :focus,
 :focus-visible,
 .xterm.focus,
@@ -14,16 +21,124 @@ body {
   outline: none;
 }
 
-/* xterm paints its viewport with the theme background inline; let the margin color show through */
+/* xterm paints its viewport with the theme background inline; let the view's show through */
 .xterm .xterm-viewport,
 .xterm .xterm-scrollable-element {
   background-color: transparent !important;
   overflow: hidden !important;
 }
 
-/* The padding is the margin around the grid; view.js paints it with OpenCode's background */
-#terminal {
-  position: absolute;
-  inset: 0;
+/* The active group's panes: stacked in a tall view, side by side (.row) in a wide one */
+#panes {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#panes.row {
+  flex-direction: row;
+}
+
+#panes.empty::before {
+  content: "No sessions. Use + to start one.";
+  margin: auto;
+  opacity: 0.6;
+}
+
+/* The padding is the margin around the grid */
+.pane {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   padding: 4px 6px;
+  overflow: hidden;
+}
+
+.pane.hidden {
+  display: none;
+}
+
+.pane:not(.hidden) ~ .pane:not(.hidden) {
+  border-top: 1px solid var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border));
+}
+
+#panes.row .pane:not(.hidden) ~ .pane:not(.hidden) {
+  border-top: none;
+  border-left: 1px solid var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border));
+}
+
+/* The sessions, like the terminal panel's list */
+#list {
+  width: 150px;
+  flex: none;
+  overflow-y: auto;
+  border-left: 1px solid var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border));
+  user-select: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 6px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+
+.item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.item.active {
+  background: var(--vscode-list-inactiveSelectionBackground);
+}
+
+/* Sessions that show together */
+.item.grouped {
+  border-left-color: var(--vscode-tree-indentGuidesStroke, currentColor);
+}
+
+/* The agent's mark, painted with the session's color */
+.icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.close {
+  visibility: hidden;
+  padding: 0 2px;
+  opacity: 0.7;
+}
+
+.item:hover .close {
+  visibility: visible;
+}
+
+.close:hover {
+  opacity: 1;
+}
+
+/* A narrow view keeps only the icons */
+@media (max-width: 420px) {
+  #list {
+    width: auto;
+  }
+
+  .name,
+  .close {
+    display: none;
+  }
 }

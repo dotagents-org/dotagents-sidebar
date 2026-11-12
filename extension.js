@@ -5,9 +5,7 @@ const vscode = require("vscode");
 const { Terminal } = require("@xterm/headless");
 const { SerializeAddon } = require("@xterm/addon-serialize");
 const { PROVIDERS, command, env, newer } = require("./providers");
-
-const PROVIDER = PROVIDERS[0];
-const NAME = PROVIDER.name;
+const sessions = require("./sessions");
 
 // node-pty ships inside VS Code (node_modules on the server, asar.unpacked on desktop)
 let ptyModule;
@@ -42,7 +40,7 @@ const WATCHED = [
   "agentsSidebar",
   "editor.fontFamily",
   "editor.fontSize",
-  ...["fontFamily", "fontSize", "lineHeight", "letterSpacing", "fontWeight", "fontWeightBold", "minimumContrastRatio"].map(
+  ...["fontFamily", "fontSize", "lineHeight", "letterSpacing", "fontWeight", "fontWeightBold", "minimumContrastRatio", "scrollback"].map(
     (key) => `terminal.integrated.${key}`
   ),
 ];
@@ -58,23 +56,22 @@ function terminalSettings() {
     fontWeight: term.get("fontWeight") || "normal",
     fontWeightBold: term.get("fontWeightBold") || "bold",
     minimumContrastRatio: term.get("minimumContrastRatio") ?? 4.5,
-    // Not the terminal's gpuAcceleration: OpenCode draws its panels and logo with block
-    // characters, which only the WebGL renderer draws seamlessly (DOM leaves hairlines)
+    // For the agents that write their conversation to the normal screen
+    scrollback: term.get("scrollback") ?? 1000,
+    // Not the terminal's gpuAcceleration: block and box characters only draw seamlessly
+    // with the WebGL renderer (DOM leaves hairlines)
     renderer: vscode.workspace.getConfiguration("agentsSidebar").get("renderer") || "webgl",
   };
 }
 
-class OpencodeView {
+class AgentsView {
   constructor(context) {
     this.context = context;
     this.view = undefined;
-    this.pty = undefined;
-    this.exited = false;
-    this.size = { cols: 80, rows: 24 };
-    // A headless copy of the screen, serialized to redraw the view when VS Code rebuilds it
-    this.screen = new Terminal({ cols: 80, rows: 24, scrollback: 0, allowProposedApi: true });
-    this.serializer = new SerializeAddon();
-    this.screen.loadAddon(this.serializer);
+    this.state = sessions.restore(context.workspaceState.get("sessions"), PROVIDERS.map((p) => p.id));
+    // Session id -> its process and a headless copy of its screen, serialized to redraw the
+    // view when VS Code rebuilds it
+    this.terminals = new Map();
   }
 
   resolveWebviewView(view) {
@@ -89,31 +86,62 @@ class OpencodeView {
     });
   }
 
-  // Rebuild the page with the new settings; the running OpenCode is kept and replayed
+  // Rebuild the page with the new settings; the running agents are kept and replayed
   reload() {
     if (this.view) this.view.webview.html = this.html(this.view.webview);
   }
 
+  update(state) {
+    this.state = state;
+    this.context.workspaceState.update("sessions", state);
+    this.post({ type: "state", state });
+  }
+
+  session(id) {
+    return this.state.sessions.find((s) => s.id === id);
+  }
+
+  terminal(id) {
+    let terminal = this.terminals.get(id);
+    if (!terminal) {
+      const provider = PROVIDERS.find((p) => p.id === this.session(id).provider);
+      const scrollback = provider.scrollback ? terminalSettings().scrollback : 0;
+      const screen = new Terminal({ cols: 80, rows: 24, scrollback, allowProposedApi: true });
+      const serializer = new SerializeAddon();
+      screen.loadAddon(serializer);
+      terminal = { provider, screen, serializer, pty: undefined, exited: false, size: { cols: 80, rows: 24 } };
+      this.terminals.set(id, terminal);
+    }
+    return terminal;
+  }
+
   onMessage(msg) {
+    if (msg.id && !this.session(msg.id)) return; // a message about a session closed meanwhile
     switch (msg.type) {
       case "ready":
-        if (this.pty || this.exited) {
-          // Wait for the pending output to be parsed, then redraw the screen as it is
-          this.screen.write("", () => {
-            this.post({ type: "output", data: this.serializer.serialize() });
-            this.resize(msg.cols, msg.rows);
-          });
-        } else {
-          this.resize(msg.cols, msg.rows);
-          this.start();
-        }
+        if (!this.state.sessions.length) this.state = this.added(sessions.add);
+        this.replay();
         break;
-      case "input":
-        if (this.pty) this.pty.write(msg.data);
-        else if (msg.data === "\r") this.start();
+      case "input": {
+        const terminal = this.terminal(msg.id);
+        if (terminal.pty) terminal.pty.write(msg.data);
+        else if (terminal.exited && msg.data === "\r") this.start(msg.id);
         break;
-      case "resize":
-        this.resize(msg.cols, msg.rows);
+      }
+      // The first size a pane reports is when its agent starts, so it starts at the right size
+      case "resize": {
+        const terminal = this.terminal(msg.id);
+        terminal.size = { cols: msg.cols, rows: msg.rows };
+        terminal.screen.resize(msg.cols, msg.rows);
+        if (terminal.pty) terminal.pty.resize(msg.cols, msg.rows);
+        else if (!terminal.exited) this.start(msg.id);
+        break;
+      }
+      case "activate":
+        this.update(sessions.activate(this.state, msg.id));
+        break;
+      case "close":
+        this.close(msg.id);
         break;
       case "open":
         if (/^https?:\/\//i.test(msg.uri)) vscode.env.openExternal(vscode.Uri.parse(msg.uri));
@@ -121,57 +149,118 @@ class OpencodeView {
     }
   }
 
-  resize(cols, rows) {
-    this.size = { cols, rows };
-    this.screen.resize(cols, rows);
-    if (this.pty) this.pty.resize(cols, rows);
+  // Send the page everything it draws: the sessions and each screen as it is now
+  async replay() {
+    const screens = {};
+    await Promise.all(
+      [...this.terminals].map(
+        ([id, terminal]) =>
+          // Wait for the pending output to be parsed
+          new Promise((resolve) =>
+            terminal.screen.write("", () => {
+              screens[id] = terminal.serializer.serialize();
+              resolve();
+            })
+          )
+      )
+    );
+    this.context.workspaceState.update("sessions", this.state);
+    this.post({ type: "init", state: this.state, screens });
   }
 
-  output(data) {
-    this.screen.write(data);
-    this.post({ type: "output", data });
+  output(id, data) {
+    this.terminal(id).screen.write(data);
+    this.post({ type: "output", id, data });
   }
 
-  start() {
+  start(id) {
+    const terminal = this.terminal(id);
     let pty;
     try {
       pty = loadPty();
     } catch (err) {
-      this.output(`\r\n${err.message.replace(/\n/g, "\r\n")}\r\n`);
+      terminal.exited = true;
+      this.output(id, `\r\n${err.message.replace(/\n/g, "\r\n")}\r\n`);
       return;
     }
-    const { file, args } = command(PROVIDER, process.platform);
-    this.exited = false;
-    this.screen.reset();
-    this.post({ type: "clear" });
+    const { provider } = terminal;
+    const { file, args } = command(provider, process.platform);
+    terminal.exited = false;
+    terminal.screen.reset();
+    this.post({ type: "clear", id });
     const proc = pty.spawn(file, args, {
       name: "xterm-256color",
-      cols: this.size.cols,
-      rows: this.size.rows,
+      cols: terminal.size.cols,
+      rows: terminal.size.rows,
       cwd: cwd(),
-      env: env(PROVIDER, process.env),
+      env: env(provider, process.env),
     });
-    this.pty = proc;
-    proc.onData((data) => this.output(data));
+    terminal.pty = proc;
+    proc.onData((data) => {
+      if (terminal.pty === proc) this.output(id, data);
+    });
     proc.onExit(({ exitCode }) => {
-      if (this.pty !== proc) return;
-      this.pty = undefined;
-      this.exited = true;
+      if (terminal.pty !== proc) return;
+      terminal.pty = undefined;
+      // Leaving the agent closes its session, like a shell closes its terminal
+      if (exitCode === 0) return this.close(id);
+      terminal.exited = true;
       // 127 is bash's "command not found"
       const reason =
         exitCode === 127
-          ? `${PROVIDER.command} was not found on the PATH set up by ~/.bashrc. ${PROVIDER.install}`
-          : `${NAME} exited with code ${exitCode}`;
-      this.output(`\r\n\x1b[2m[${reason}. Press Enter to start it again.]\x1b[0m\r\n`);
+          ? `${provider.command} was not found on the PATH set up by ~/.bashrc. ${provider.install}`
+          : `${provider.name} exited with code ${exitCode}`;
+      this.output(id, `\r\n\x1b[2m[${reason}. Press Enter to start it again.]\x1b[0m\r\n`);
     });
   }
 
-  restart() {
-    const old = this.pty;
-    this.pty = undefined;
+  stop(id) {
+    const terminal = this.terminals.get(id);
+    if (!terminal) return;
+    const old = terminal.pty;
+    terminal.pty = undefined;
     if (old) old.kill();
-    this.start();
+  }
+
+  // The state after `action` (add or split) opened a session of the agent used last
+  added(action, providerId) {
+    const known = (id) => PROVIDERS.find((p) => p.id === id);
+    const provider = known(providerId) || known(this.context.globalState.get("lastProvider")) || PROVIDERS[0];
+    this.context.globalState.update("lastProvider", provider.id);
+    return action(this.state, provider.id, provider.name);
+  }
+
+  open(action, providerId) {
+    this.update(this.added(action, providerId));
     vscode.commands.executeCommand("agentsSidebar.view.focus");
+  }
+
+  close(id = this.state.active) {
+    if (!this.session(id)) return;
+    this.stop(id);
+    const terminal = this.terminals.get(id);
+    if (terminal) terminal.screen.dispose();
+    this.terminals.delete(id);
+    this.update(sessions.close(this.state, id));
+  }
+
+  restart(id = this.state.active) {
+    if (!this.session(id)) return;
+    this.stop(id);
+    this.start(id);
+  }
+
+  async rename(id = this.state.active) {
+    const session = this.session(id);
+    if (!session) return;
+    const name = await vscode.window.showInputBox({ prompt: "Session name", value: session.name });
+    if (name !== undefined && this.session(id)) this.update(sessions.rename(this.state, id, name));
+  }
+
+  async recolor(id = this.state.active) {
+    if (!this.session(id)) return;
+    const color = await vscode.window.showQuickPick(sessions.COLORS, { placeHolder: "Session color" });
+    if (color && this.session(id)) this.update(sessions.recolor(this.state, id, color));
   }
 
   post(msg) {
@@ -179,24 +268,33 @@ class OpencodeView {
   }
 
   dispose() {
-    if (this.pty) this.pty.kill();
-    this.screen.dispose();
+    for (const [id, terminal] of this.terminals) {
+      this.stop(id);
+      terminal.screen.dispose();
+    }
   }
 
   html(webview) {
     const uri = (...p) => webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, ...p));
     const nonce = crypto.randomBytes(16).toString("base64");
-    const settings = JSON.stringify(terminalSettings()).replace(/</g, "\\u003c");
+    const providers = Object.fromEntries(
+      PROVIDERS.map((p) => [
+        p.id,
+        { name: p.name, scrollback: !!p.scrollback, newline: p.newline, icon: String(uri("media", `${p.id}-dark.svg`)) },
+      ])
+    );
+    const settings = JSON.stringify({ ...terminalSettings(), providers }).replace(/</g, "\\u003c");
     return `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; font-src ${webview.cspSource};">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; font-src ${webview.cspSource}; img-src ${webview.cspSource};">
 <link rel="stylesheet" href="${uri("node_modules", "@xterm", "xterm", "css", "xterm.css")}">
 <link rel="stylesheet" href="${uri("media", "view.css")}">
 </head>
 <body>
-<div id="terminal"></div>
+<div id="panes"></div>
+<div id="list"></div>
 <script nonce="${nonce}">window.AGENTS_SETTINGS = ${settings};</script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "xterm", "lib", "xterm.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-fit", "lib", "addon-fit.js")}"></script>
@@ -208,15 +306,15 @@ class OpencodeView {
   }
 }
 
-function terminalOptions(context) {
-  const { file, args } = command(PROVIDER, process.platform);
+function terminalOptions(context, provider) {
+  const { file, args } = command(provider, process.platform);
   return {
-    name: NAME,
+    name: provider.name,
     shellPath: file,
     shellArgs: args,
     iconPath: {
-      light: vscode.Uri.joinPath(context.extensionUri, "media", "opencode-light.svg"),
-      dark: vscode.Uri.joinPath(context.extensionUri, "media", "opencode-dark.svg"),
+      light: vscode.Uri.joinPath(context.extensionUri, "media", `${provider.id}-light.svg`),
+      dark: vscode.Uri.joinPath(context.extensionUri, "media", `${provider.id}-dark.svg`),
     },
   };
 }
@@ -270,21 +368,30 @@ async function checkForUpdate(context) {
 function activate(context) {
   checkForUpdate(context).catch(() => {}); // offline or rate limited: try again tomorrow
 
-  const provider = new OpencodeView(context);
+  const view = new AgentsView(context);
+  // A command run from a session's context menu gets that session; from the title bar, the active one
+  const onSession = (name, run) => vscode.commands.registerCommand(`agentsSidebar.${name}`, (arg) => run(arg?.sessionId));
   context.subscriptions.push(
-    provider,
-    vscode.window.registerWebviewViewProvider("agentsSidebar.view", provider, {
+    view,
+    vscode.window.registerWebviewViewProvider("agentsSidebar.view", view, {
       webviewOptions: { retainContextWhenHidden: true },
     }),
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (WATCHED.some((key) => event.affectsConfiguration(key))) provider.reload();
+      if (WATCHED.some((key) => event.affectsConfiguration(key))) view.reload();
     }),
     // The view reads the theme's colors when it loads
-    vscode.window.onDidChangeActiveColorTheme(() => provider.reload()),
-    vscode.commands.registerCommand("agentsSidebar.restart", () => provider.restart()),
-    vscode.window.registerTerminalProfileProvider("agentsSidebar.profile", {
-      provideTerminalProfile: () => new vscode.TerminalProfile(terminalOptions(context)),
-    })
+    vscode.window.onDidChangeActiveColorTheme(() => view.reload()),
+    vscode.commands.registerCommand("agentsSidebar.new", () => view.open(sessions.add)),
+    vscode.commands.registerCommand("agentsSidebar.split", () => view.open(sessions.split)),
+    onSession("close", (id) => view.close(id)),
+    onSession("restart", (id) => view.restart(id)),
+    onSession("rename", (id) => view.rename(id)),
+    onSession("recolor", (id) => view.recolor(id)),
+    ...PROVIDERS.map((provider) =>
+      vscode.window.registerTerminalProfileProvider(`agentsSidebar.profile.${provider.id}`, {
+        provideTerminalProfile: () => new vscode.TerminalProfile(terminalOptions(context, provider)),
+      })
+    )
   );
 }
 

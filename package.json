@@ -38,7 +38,7 @@
   ],
   "main": "./extension.js",
   "activationEvents": [
-    "onTerminalProfile:agentsSidebar.profile"
+    "onTerminalProfile:agentsSidebar.profile.opencode"
   ],
   "contributes": {
     "viewsContainers": {
@@ -61,24 +61,78 @@
     },
     "commands": [
       {
+        "command": "agentsSidebar.new",
+        "title": "Agents: New Session",
+        "icon": "$(add)"
+      },
+      {
+        "command": "agentsSidebar.split",
+        "title": "Agents: Split Session",
+        "icon": "$(split-horizontal)"
+      },
+      {
+        "command": "agentsSidebar.close",
+        "title": "Agents: Close Session",
+        "icon": "$(trash)"
+      },
+      {
         "command": "agentsSidebar.restart",
-        "title": "Agents: Restart",
-        "icon": "$(debug-restart)"
+        "title": "Agents: Restart Session"
+      },
+      {
+        "command": "agentsSidebar.rename",
+        "title": "Agents: Rename Session..."
+      },
+      {
+        "command": "agentsSidebar.recolor",
+        "title": "Agents: Change Session Color..."
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "agentsSidebar.restart",
+          "command": "agentsSidebar.new",
           "when": "view == agentsSidebar.view",
           "group": "navigation@1"
+        },
+        {
+          "command": "agentsSidebar.split",
+          "when": "view == agentsSidebar.view",
+          "group": "navigation@2"
+        },
+        {
+          "command": "agentsSidebar.close",
+          "when": "view == agentsSidebar.view",
+          "group": "navigation@3"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "agentsSidebar.rename",
+          "when": "webviewId == 'agentsSidebar.view' && webviewSection == 'session'",
+          "group": "1_edit@1"
+        },
+        {
+          "command": "agentsSidebar.recolor",
+          "when": "webviewId == 'agentsSidebar.view' && webviewSection == 'session'",
+          "group": "1_edit@2"
+        },
+        {
+          "command": "agentsSidebar.restart",
+          "when": "webviewId == 'agentsSidebar.view' && webviewSection == 'session'",
+          "group": "2_run@1"
+        },
+        {
+          "command": "agentsSidebar.close",
+          "when": "webviewId == 'agentsSidebar.view' && webviewSection == 'session'",
+          "group": "2_run@2"
         }
       ]
     },
     "terminal": {
       "profiles": [
         {
-          "id": "agentsSidebar.profile",
+          "id": "agentsSidebar.profile.opencode",
           "title": "OpenCode",
           "icon": {
             "light": "media/opencode-light.svg",
