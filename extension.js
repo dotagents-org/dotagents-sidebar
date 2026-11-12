@@ -41,6 +41,11 @@ function codexRollouts(since) {
   return rollouts;
 }
 
+// The workspace's name without what VS Code adds in a remote window (" [WSL: Ubuntu]")
+function workspaceName() {
+  return (vscode.workspace.name || "").replace(/\s*\[[^\]]*\]$/, "");
+}
+
 function cwd() {
   const folder = vscode.workspace.workspaceFolders?.[0];
   return folder && folder.uri.scheme === "file" ? folder.uri.fsPath : os.homedir();
@@ -228,6 +233,9 @@ class AgentsView {
       case "activate":
         this.update(sessions.activate(this.state, msg.id));
         break;
+      case "title":
+        if (this.session(msg.id).title !== msg.title) this.update(sessions.remember(this.state, msg.id, { title: String(msg.title).slice(0, 200) }));
+        break;
       case "close":
         this.close(msg.id);
         break;
@@ -382,7 +390,7 @@ class AgentsView {
         { name: p.name, scrollback: !!p.scrollback, newline: p.newline, icon: String(uri("media", `${p.id}-dark.svg`)) },
       ])
     );
-    const settings = JSON.stringify({ ...terminalSettings(), providers, workspace: vscode.workspace.name || "" }).replace(/</g, "\\u003c");
+    const settings = JSON.stringify({ ...terminalSettings(), providers, workspace: workspaceName() }).replace(/</g, "\\u003c");
     return `<!doctype html>
 <html>
 <head>

@@ -84,6 +84,16 @@
       return true;
     });
     term.onData((data) => vscode.postMessage({ type: "input", id: session.id, data }));
+    // The agent's window title names its conversation (Claude Code: "✳ fix login"). Without the
+    // status mark in front, and only when it says more than the agent's or the workspace's name
+    let lastTitle;
+    term.onTitleChange((raw) => {
+      const clean = raw.replace(/^[^\p{L}\p{N}]+/u, "").trim();
+      const title = clean === provider.name || clean === settings.workspace ? "" : clean;
+      if (title === lastTitle) return; // a spinner changes only the mark
+      lastTitle = title;
+      vscode.postMessage({ type: "title", id: session.id, title });
+    });
     // Typing in a pane of a split makes its session the active one
     el.addEventListener("focusin", () => {
       if (state.active !== session.id) vscode.postMessage({ type: "activate", id: session.id });
@@ -152,7 +162,8 @@
     el.className = "item";
     el.classList.toggle("active", session.id === state.active);
     el.classList.toggle("grouped", state.sessions.filter((s) => s.group === session.group).length > 1);
-    el.title = session.name === provider.name ? provider.name : `${session.name} (${provider.name})`;
+    const name = label(session);
+    el.title = name ? `${name} (${provider.name})` : provider.name;
     // The session's commands, in VS Code's own context menu
     el.dataset.vscodeContext = JSON.stringify({
       webviewSection: "session",
@@ -167,6 +178,12 @@
     icon.style.backgroundColor = theme[session.color] || theme.foreground;
     el.append(icon);
     return el;
+  }
+
+  // The session's name: the one given in the list, else the conversation's title from the agent
+  function label(session) {
+    const provider = settings.providers[session.provider];
+    return session.name !== provider.name ? session.name : session.title || "";
   }
 
   // The active session, like a terminal tab: the agent's mark in the session's color, the agent,
@@ -185,7 +202,8 @@
     icon.style.backgroundColor = theme[session.color] || theme.foreground;
     const parts = [icon, part("agent", provider.name)];
     if (settings.workspace) parts.push(part("workspace", settings.workspace));
-    if (session.name !== provider.name) parts.push(part("slash", "/"), part("session", session.name));
+    const name = label(session);
+    if (name) parts.push(part("slash", "/"), part("session", name));
     header.replaceChildren(...parts);
   }
 
