@@ -36,7 +36,7 @@
   ],
   "main": "./extension.js",
   "activationEvents": [
-    "onStartupFinished"
+    "onTerminalProfile:opencodeSidebar.profile"
   ],
   "contributes": {
     "viewsContainers": {
