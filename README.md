@@ -9,18 +9,10 @@
 
 <p align="center">
   <a href="#features">Features</a>&nbsp;&nbsp;&nbsp;
-  <a href="#examples">Examples</a>&nbsp;&nbsp;&nbsp;
   <a href="#install">Install</a>&nbsp;&nbsp;&nbsp;
   <a href="#usage">Usage</a>&nbsp;&nbsp;&nbsp;
   <a href="#settings">Settings</a>&nbsp;&nbsp;&nbsp;
   <a href="#how-it-works">How it works</a>
-</p>
-
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/view-dark.png">
-    <img alt="The dotagents: Sidebar view with Claude Code fixing a test and Codex reviewing the change side by side, the title strip on top and four sessions in the list on the right" src="assets/readme/view-light.png" width="800">
-  </picture>
 </p>
 
 The agents' official extensions put them in a chat panel or a terminal tab. This one gives them a view of their own in the secondary sidebar, laid out like VS Code's terminal panel: the agent's terminal UI on the left, the list of sessions on the right. It is part of the [dotagents](https://github.com/dotagents-org/dotagents-config) family, and works without it.
@@ -40,34 +32,6 @@ The agents' official extensions put them in a chat panel or a terminal tab. This
 - **Newlines.** Shift+Enter inserts a newline in Claude Code and Codex.
 - **Terminal profiles.** *OpenCode*, *Claude Code* and *Codex* entries in the terminal panel's `⌄` menu open an agent in a regular terminal.
 - **Remote ready.** It runs where the workspace runs, so it works in WSL, SSH and dev containers as well as locally.
-
-## Examples
-
-**Two agents on one change.** Claude Code fixes, Codex reviews, side by side, as in the picture above:
-
-1. Click `+` for a Claude Code session and ask for the fix.
-2. With that session active, open `⌄` → **Split Session With** → **Codex**. The Codex session opens next to it, in the same group.
-3. Ask Codex to review the change. A click in either pane makes it the active one, and the title strip follows.
-
-**Several tasks at once.** Open one session per task with `+`, give each a name (right-click → **Rename Session...**) and a color (**Change Session Color...**), and switch with a click in the list. The ones out of sight keep working: a session that finishes while you look at another is there with its whole screen when you come back.
-
-**A reload in the middle of a task.** Ask Claude Code for something long, then run **Developer: Reload Window** (or install a new version of the extension). The view comes back with every session, and the agent is still at it.
-
-**Back to yesterday's conversation.** Close VS Code at the end of the day. The next morning the sessions are in the list; click one and its agent opens the same conversation (`claude --resume <id>`, `opencode --session <id>`, `codex resume <id>`).
-
-**A shortcut of yours that the agent takes.** Say you bound Ctrl+E to **Go to File** in your keybindings and use VS Code over WSL, where the extension can't read your keybindings file. Add it to your settings, and give Ctrl+P back to the agent (VS Code keeps it for **Go to File**, and OpenCode opens its commands with it):
-
-```jsonc
-"dotagentsSidebar.keysForVsCode": ["ctrl+e", "-ctrl+p"]
-```
-
-The keys in use are listed in **View → Output → dotagents-sidebar**.
-
-**Hairlines in OpenCode's panels.** WebGL draws block characters seamlessly; if your machine has no WebGL, or you prefer font-drawn text:
-
-```jsonc
-"dotagentsSidebar.renderer": "dom"
-```
 
 ## Requirements
 
@@ -143,7 +107,6 @@ To debug, open the folder in VS Code and press <kbd>F5</kbd> to start an Extensi
 | `media/keys.js` | Which keys go to VS Code, worked out from the keybindings |
 | `media/view.js`, `media/view.css` | The webview: a terminal per session, the list, the title strip |
 | `skip-shell.json` | VS Code's default commands that skip the shell, copied from its source |
-| `scripts/readme/` | The README picture: the real view with example sessions (`view.html`), the sidebar around it (`frame.html`), and `shoot.sh` to take it again with a headless Chromium |
 | `scripts/lockup.py` | Makes the README lockup (SVG, then the PNGs the README shows) from the mark and Geist Mono |
 
 ## Credits
