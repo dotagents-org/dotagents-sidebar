@@ -6,6 +6,9 @@ const PROVIDERS = [
     name: "OpenCode",
     command: "opencode",
     install: "Install it from https://opencode.ai",
+    // OpenCode's "system" theme takes its colors from the terminal, which has the VS Code theme's.
+    // Only for the view's process: the user's cli.json is left alone
+    env: { OPENCODE_CLI_CONFIG_CONTENT: JSON.stringify({ theme: { name: "system", mode: "system" } }) },
   },
 ];
 
