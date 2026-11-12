@@ -7,6 +7,8 @@ const { spawn } = require("child_process");
 const host = require("./host");
 const { PROVIDERS, command, conversationArgs, env, findCodexSessions, newer } = require("./providers");
 const sessions = require("./sessions");
+const keys = require("./media/keys.js");
+const SKIP_SHELL = require("./skip-shell.json");
 
 // One host per workspace and version of the extension. An empty window has nothing to come
 // back to, so its host is its own
@@ -55,6 +57,9 @@ function cwd() {
 // already tuned it for their screen
 const WATCHED = [
   "agentsSidebar",
+  "terminal.integrated.commandsToSkipShell",
+  "terminal.integrated.sendKeybindingsToShell",
+  "terminal.integrated.allowChords",
   "editor.fontFamily",
   "editor.fontSize",
   ...["fontFamily", "fontSize", "lineHeight", "letterSpacing", "fontWeight", "fontWeightBold", "minimumContrastRatio", "scrollback"].map(
@@ -91,6 +96,42 @@ class AgentsView {
     this.snapshots = []; // the replies the host still owes, in order
     this.hostReady = undefined;
     this.disposed = false;
+    this.keys = undefined; // the keys VS Code keeps, once worked out
+    this.log = vscode.window.createOutputChannel("Agents Sidebar");
+  }
+
+  // The keys that go to VS Code while a session has focus (media/keys.js): the terminal's rule,
+  // from VS Code's default bindings and the user's when they can be read
+  async workOutKeys() {
+    const read = async (uri) => {
+      try {
+        return Buffer.from(await vscode.workspace.fs.readFile(uri)).toString("utf8");
+      } catch {
+        try {
+          return (await vscode.workspace.openTextDocument(uri)).getText();
+        } catch {
+          return undefined;
+        }
+      }
+    };
+    const defaults = keys.parseJsonc((await read(vscode.Uri.parse("vscode://defaultsettings/keybindings.json"))) || "");
+    // globalStorageUri is <user data>/User/globalStorage/<extension>; in a remote window it is on
+    // the remote side, where the user's keybindings.json isn't
+    const userFile = vscode.Uri.joinPath(this.context.globalStorageUri, "..", "..", "keybindings.json");
+    const user = keys.parseJsonc((await read(userFile)) || "") || [];
+    const terminal = vscode.workspace.getConfiguration("terminal.integrated");
+    this.keys = keys.keysForVsCode({
+      bindings: Array.isArray(defaults) ? [...defaults, ...(Array.isArray(user) ? user : [])] : undefined,
+      skip: keys.skipCommands(SKIP_SHELL.commands, terminal.get("commandsToSkipShell") || []),
+      allowChords: terminal.get("allowChords") ?? true,
+      sendKeybindingsToShell: terminal.get("sendKeybindingsToShell") ?? false,
+      extra: vscode.workspace.getConfiguration("agentsSidebar").get("keysForVsCode") || [],
+    });
+    const source = Array.isArray(defaults)
+      ? `VS Code's default keybindings (${defaults.length})${user.length ? ` and ${user.length} of yours` : ", without yours (not reachable from here)"}`
+      : "the built-in list (VS Code's default keybindings could not be read)";
+    this.log.appendLine(`${new Date().toISOString()} ${this.keys.length} keys go to VS Code, from ${source}: ${this.keys.join(" ")}`);
+    this.post({ type: "keys", keys: this.keys });
   }
 
   resolveWebviewView(view) {
@@ -416,6 +457,7 @@ class AgentsView {
   // The window is reloading or closing: let go of the host, which keeps the agents running
   dispose() {
     this.disposed = true;
+    this.log.dispose();
     this.hostReady?.then((channel) => channel.close()).catch(() => {});
   }
 
@@ -428,7 +470,7 @@ class AgentsView {
         { name: p.name, scrollback: !!p.scrollback, newline: p.newline, icon: String(uri("media", `${p.id}-dark.svg`)) },
       ])
     );
-    const settings = JSON.stringify({ ...terminalSettings(), providers, workspace: workspaceName() }).replace(/</g, "\\u003c");
+    const settings = JSON.stringify({ ...terminalSettings(), providers, workspace: workspaceName(), keys: this.keys }).replace(/</g, "\\u003c");
     return `<!doctype html>
 <html>
 <head>
@@ -448,6 +490,7 @@ class AgentsView {
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-fit", "lib", "addon-fit.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-webgl", "lib", "addon-webgl.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-web-links", "lib", "addon-web-links.js")}"></script>
+<script nonce="${nonce}" src="${uri("media", "keys.js")}"></script>
 <script nonce="${nonce}" src="${uri("media", "view.js")}"></script>
 </body>
 </html>`;
@@ -517,6 +560,7 @@ function activate(context) {
   checkForUpdate(context).catch(() => {}); // offline or rate limited: try again tomorrow
 
   const view = new AgentsView(context);
+  view.workOutKeys().catch((err) => view.log.appendLine(`Could not work out the shortcut keys: ${err.message}`));
   // A command run from a session's context menu gets that session; from the title bar, the active one
   const onSession = (name, run) => vscode.commands.registerCommand(`agentsSidebar.${name}`, (arg) => run(arg?.sessionId));
   context.subscriptions.push(
@@ -524,8 +568,10 @@ function activate(context) {
     vscode.window.registerWebviewViewProvider("agentsSidebar.view", view, {
       webviewOptions: { retainContextWhenHidden: true },
     }),
-    vscode.workspace.onDidChangeConfiguration((event) => {
-      if (WATCHED.some((key) => event.affectsConfiguration(key))) view.reload();
+    vscode.workspace.onDidChangeConfiguration(async (event) => {
+      if (!WATCHED.some((key) => event.affectsConfiguration(key))) return;
+      await view.workOutKeys().catch(() => {});
+      view.reload();
     }),
     // The view reads the theme's colors when it loads
     vscode.window.onDidChangeActiveColorTheme(() => view.reload()),

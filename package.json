@@ -245,6 +245,14 @@
             "DOM renderer. Font-drawn text, but an agent's panels may show hairlines between rows at fractional zoom levels."
           ],
           "description": "How the view draws the terminal. Independent of terminal.integrated.gpuAcceleration."
+        },
+        "agentsSidebar.keysForVsCode": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Keys that go to VS Code instead of the agent while a session has focus, on top of the ones worked out like the integrated terminal does (the keys of `#terminal.integrated.commandsToSkipShell#` and the first key of chords). A key starting with `-` goes to the agent instead. Example: `[\"ctrl+e\", \"-ctrl+b\"]`. The keys in use are listed in the Agents Sidebar output."
         }
       }
     },

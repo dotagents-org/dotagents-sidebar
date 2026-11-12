@@ -28,16 +28,10 @@
   const terminals = new Map(); // session id -> { el, term, fit, last }
   let state = { sessions: [], active: null };
 
-  // The keys VS Code keeps, like the integrated terminal's defaults: function keys, the workbench's
-  // Ctrl shortcuts, the Ctrl+K chords and Ctrl+Shift ones (but copy and paste)
-  const VS_CODE_CTRL_KEYS = new Set(["p", "b", "j", "k", ",", "`", "tab", "pageup", "pagedown"]);
-  function forVsCode(event) {
-    if (/^F([1-9]|1[0-2])$/.test(event.key)) return true;
-    if (!event.ctrlKey || event.altKey || event.metaKey) return false;
-    const key = event.key.toLowerCase();
-    if (event.shiftKey) return key !== "c" && key !== "v" && key !== "shift" && key !== "control";
-    return VS_CODE_CTRL_KEYS.has(key);
-  }
+  // The keys VS Code keeps while a session has focus, worked out by the extension (media/keys.js);
+  // the built-in list until it has
+  let vsCodeKeys = new Set(settings.keys || agentKeys.FALLBACK);
+  const forVsCode = (event) => vsCodeKeys.has(agentKeys.eventCombo(event));
 
   // One terminal per session. It stays alive while hidden, so switching back is instant
   function open(session) {
@@ -274,6 +268,7 @@
       render();
     } else if (msg.type === "output") terminals.get(msg.id)?.term.write(msg.data);
     else if (msg.type === "clear") terminals.get(msg.id)?.term.reset();
+    else if (msg.type === "keys") vsCodeKeys = new Set(msg.keys);
   });
   window.addEventListener("focus", focus);
 
