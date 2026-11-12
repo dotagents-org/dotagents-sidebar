@@ -155,18 +155,6 @@ class AgentsView {
     this.state = state;
     this.context.workspaceState.update("sessions", state);
     this.post({ type: "state", state });
-    this.describe();
-  }
-
-  // The view's header, like a terminal tab: the agent, then the workspace and the session's
-  // name (the one given in the list, else the conversation's title from the agent)
-  describe() {
-    if (!this.view) return;
-    const session = this.session(this.state.active);
-    const provider = session && PROVIDERS.find((p) => p.id === session.provider);
-    this.view.title = provider ? provider.name : "Agents";
-    const name = session && (session.name !== provider.name ? session.name : session.title || "");
-    this.view.description = [workspaceName(), name].filter(Boolean).join(" / ");
   }
 
   session(id) {
@@ -333,7 +321,6 @@ class AgentsView {
       screens[id] = s.screen;
     }
     this.post({ type: "init", state: this.state, screens });
-    this.describe();
   }
 
   // Codex picks its own conversation ids: find the ones of the sessions that don't know theirs
@@ -493,7 +480,10 @@ class AgentsView {
 <link rel="stylesheet" href="${uri("media", "view.css")}">
 </head>
 <body>
+<div id="main">
+<div id="header"></div>
 <div id="panes"></div>
+</div>
 <div id="list"></div>
 <script nonce="${nonce}">window.AGENTS_SETTINGS = ${settings};</script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "xterm", "lib", "xterm.js")}"></script>

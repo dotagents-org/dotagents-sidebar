@@ -22,6 +22,7 @@
     theme[`bright${name}`] = color(`terminal-ansiBright${name}`, xtermDefaults[i + 8]);
   });
 
+  const header = document.getElementById("header");
   const panes = document.getElementById("panes");
   const list = document.getElementById("list");
   const terminals = new Map(); // session id -> { el, term, fit, last }
@@ -193,6 +194,27 @@
     return session.name !== provider.name ? session.name : session.title || "";
   }
 
+  // The active session, like a terminal tab: the agent's mark in the session's color, the agent,
+  // the workspace (dimmer) and the session's own name, when it has one other than the agent's
+  function title(session) {
+    if (!session) return header.replaceChildren();
+    const provider = settings.providers[session.provider];
+    const part = (cls, text) => {
+      const el = document.createElement("span");
+      el.className = cls;
+      el.textContent = text;
+      return el;
+    };
+    const icon = part("icon", "");
+    icon.style.maskImage = `url("${provider.icon}")`;
+    icon.style.backgroundColor = theme[session.color] || theme.foreground;
+    const parts = [icon, part("agent", provider.name)];
+    if (settings.workspace) parts.push(part("workspace", settings.workspace));
+    const name = label(session);
+    if (name) parts.push(part("slash", "/"), part("session", name));
+    header.replaceChildren(...parts);
+  }
+
   // Draw the state: a terminal per session, the active group's panes, the list
   function render() {
     for (const [id, terminal] of terminals) {
@@ -210,6 +232,7 @@
     }
     panes.classList.toggle("empty", !state.sessions.length);
     list.replaceChildren(...state.sessions.map(item));
+    title(active);
     layoutAll();
     focus();
   }
