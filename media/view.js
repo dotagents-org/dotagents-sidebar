@@ -53,6 +53,8 @@
   });
   const fit = new FitAddon.FitAddon();
   term.loadAddon(fit);
+  // Webviews can't open links themselves; the extension opens them in the browser
+  term.loadAddon(new WebLinksAddon.WebLinksAddon((_event, uri) => vscode.postMessage({ type: "open", uri })));
   term.open(el);
 
   // WebGL by default: it draws block and box characters to fill the cell exactly, where the DOM

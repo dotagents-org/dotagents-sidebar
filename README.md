@@ -14,6 +14,7 @@ The official OpenCode extension opens OpenCode in a terminal tab. This one gives
 - **Your terminal font.** `terminal.integrated.fontFamily`, `fontSize`, `lineHeight`, `letterSpacing`, `fontWeight`, `fontWeightBold` and `minimumContrastRatio` set the text (font settings fall back to the editor's). Changing any of them updates the view without restarting OpenCode.
 - **No frame, sharp at any scale.** The margin around the grid takes the background color OpenCode paints, so there is no frame whatever its theme, and any hairline gap between rows shows that same color. The grid is centered and snapped to whole device pixels, so it stays sharp at fractional display scales and zoom levels.
 - **Follows your theme.** Switching the color theme recolors the view at once, without restarting OpenCode.
+- **Clickable links.** URLs in OpenCode's output open in your browser.
 - **Clipboard.** <kbd>Ctrl</kbd>+<kbd>C</kbd> copies when text is selected and goes to OpenCode otherwise. <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes.
 - **Terminal profile.** An **OpenCode** entry in the terminal's new-terminal menu (⌄ next to `+`) opens OpenCode in a regular terminal, with the OpenCode mark as its tab icon.
 - **Remote ready.** It runs where your workspace runs, so it works in WSL, SSH and dev containers as well as locally.
@@ -84,7 +85,7 @@ Then reload the VS Code window. To debug, open the folder in VS Code and press <
 | File | Role |
 |---|---|
 | `extension.js` | Extension host: the webview provider, the node-pty process, the headless screen copy, commands and terminal profile |
-| `media/view.js` | Webview: xterm.js and its renderer, theme colors, fitting, centering and pixel snapping, margin color, clipboard |
+| `media/view.js` | Webview: xterm.js and its renderer, theme colors, fitting, centering and pixel snapping, margin color, links, clipboard |
 | `media/view.css` | Webview layout |
 | `media/opencode*.svg` | Sidebar and terminal tab icons |
 
