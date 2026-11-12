@@ -216,26 +216,17 @@
         {
           "id": "agentsSidebar.profile.opencode",
           "title": "OpenCode",
-          "icon": {
-            "light": "media/opencode-light.svg",
-            "dark": "media/opencode-dark.svg"
-          }
+          "icon": "code"
         },
         {
           "id": "agentsSidebar.profile.claude",
           "title": "Claude Code",
-          "icon": {
-            "light": "media/claude-light.svg",
-            "dark": "media/claude-dark.svg"
-          }
+          "icon": "sparkle"
         },
         {
           "id": "agentsSidebar.profile.codex",
           "title": "Codex",
-          "icon": {
-            "light": "media/codex-light.svg",
-            "dark": "media/codex-dark.svg"
-          }
+          "icon": "hubot"
         }
       ]
     },

@@ -15,9 +15,11 @@ test("every agent has a terminal profile, its activation event and its icons", (
     const profile = profiles.find((x) => x.id === `agentsSidebar.profile.${p.id}`);
     assert.ok(profile, `profile for ${p.id}`);
     assert.equal(profile.title, p.name);
-    assert.deepEqual(profile.icon, { light: `media/${p.id}-light.svg`, dark: `media/${p.id}-dark.svg` });
+    // VS Code drops a contributed profile whose icon is a path (terminalExtensionPoints.ts), so
+    // the menu gets a codicon; the terminal's tab gets the agent's mark from the extension
+    assert.match(profile.icon, /^[a-z-]+$/, `codicon for ${p.id}`);
     assert.ok(pkg.activationEvents.includes(`onTerminalProfile:agentsSidebar.profile.${p.id}`), `activation for ${p.id}`);
-    for (const file of Object.values(profile.icon)) assert.ok(fs.existsSync(path.join(root, file)), file);
+    for (const theme of ["light", "dark"]) assert.ok(fs.existsSync(path.join(root, "media", `${p.id}-${theme}.svg`)), `${p.id}-${theme}`);
   }
   assert.equal(profiles.length, PROVIDERS.length);
 });
