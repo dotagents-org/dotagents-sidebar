@@ -39,7 +39,7 @@ function cwd() {
 // The view mirrors the integrated terminal's font settings, so text looks the way the user
 // already tuned it for their screen
 const WATCHED = [
-  "opencodeSidebar",
+  "agentsSidebar",
   "editor.fontFamily",
   "editor.fontSize",
   ...["fontFamily", "fontSize", "lineHeight", "letterSpacing", "fontWeight", "fontWeightBold", "minimumContrastRatio"].map(
@@ -60,7 +60,7 @@ function terminalSettings() {
     minimumContrastRatio: term.get("minimumContrastRatio") ?? 4.5,
     // Not the terminal's gpuAcceleration: OpenCode draws its panels and logo with block
     // characters, which only the WebGL renderer draws seamlessly (DOM leaves hairlines)
-    renderer: vscode.workspace.getConfiguration("opencodeSidebar").get("renderer") || "webgl",
+    renderer: vscode.workspace.getConfiguration("agentsSidebar").get("renderer") || "webgl",
   };
 }
 
@@ -171,7 +171,7 @@ class OpencodeView {
     this.pty = undefined;
     if (old) old.kill();
     this.start();
-    vscode.commands.executeCommand("opencodeSidebar.view.focus");
+    vscode.commands.executeCommand("agentsSidebar.view.focus");
   }
 
   post(msg) {
@@ -197,7 +197,7 @@ class OpencodeView {
 </head>
 <body>
 <div id="terminal"></div>
-<script nonce="${nonce}">window.OPENCODE_SETTINGS = ${settings};</script>
+<script nonce="${nonce}">window.AGENTS_SETTINGS = ${settings};</script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "xterm", "lib", "xterm.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-fit", "lib", "addon-fit.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-webgl", "lib", "addon-webgl.js")}"></script>
@@ -223,7 +223,7 @@ function terminalOptions(context) {
 
 // The extension is not on the Marketplace, so VS Code can't update it: once a day, look for
 // a newer GitHub release and offer to install its .vsix
-const RELEASES = "https://api.github.com/repos/gabrieldulolmarques/opencode-sidebar/releases/latest";
+const RELEASES = "https://api.github.com/repos/gabrieldulolmarques/agents-sidebar/releases/latest";
 const DAY = 24 * 60 * 60 * 1000;
 
 async function checkForUpdate(context) {
@@ -240,7 +240,7 @@ async function checkForUpdate(context) {
   if (!asset || !newer(latest, current) || state.get("ignoredVersion") === latest) return;
 
   const choice = await vscode.window.showInformationMessage(
-    `${NAME} Sidebar ${latest} is available (you have ${current}).`,
+    `Agents Sidebar ${latest} is available (you have ${current}).`,
     "Install",
     "Release notes",
     "Skip this version"
@@ -256,12 +256,12 @@ async function checkForUpdate(context) {
       await vscode.workspace.fs.writeFile(file, new Uint8Array(await vsix.arrayBuffer()));
       await vscode.commands.executeCommand("workbench.extensions.installExtension", file);
       const reload = await vscode.window.showInformationMessage(
-        `${NAME} Sidebar ${latest} is installed. Reload the window to use it.`,
+        `Agents Sidebar ${latest} is installed. Reload the window to use it.`,
         "Reload"
       );
       if (reload) vscode.commands.executeCommand("workbench.action.reloadWindow");
     } catch (err) {
-      const open = await vscode.window.showErrorMessage(`Could not install ${NAME} Sidebar ${latest}: ${err.message}`, "Open release");
+      const open = await vscode.window.showErrorMessage(`Could not install Agents Sidebar ${latest}: ${err.message}`, "Open release");
       if (open) vscode.env.openExternal(vscode.Uri.parse(release.html_url));
     }
   }
@@ -273,7 +273,7 @@ function activate(context) {
   const provider = new OpencodeView(context);
   context.subscriptions.push(
     provider,
-    vscode.window.registerWebviewViewProvider("opencodeSidebar.view", provider, {
+    vscode.window.registerWebviewViewProvider("agentsSidebar.view", provider, {
       webviewOptions: { retainContextWhenHidden: true },
     }),
     vscode.workspace.onDidChangeConfiguration((event) => {
@@ -281,8 +281,8 @@ function activate(context) {
     }),
     // The view reads the theme's colors when it loads
     vscode.window.onDidChangeActiveColorTheme(() => provider.reload()),
-    vscode.commands.registerCommand("opencodeSidebar.restart", () => provider.restart()),
-    vscode.window.registerTerminalProfileProvider("opencodeSidebar.profile", {
+    vscode.commands.registerCommand("agentsSidebar.restart", () => provider.restart()),
+    vscode.window.registerTerminalProfileProvider("agentsSidebar.profile", {
       provideTerminalProfile: () => new vscode.TerminalProfile(terminalOptions(context)),
     })
   );
