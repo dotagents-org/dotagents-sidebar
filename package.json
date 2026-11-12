@@ -1,21 +1,23 @@
 {
-  "name": "opencode-sidebar",
-  "displayName": "OpenCode Sidebar",
-  "description": "Run the OpenCode terminal UI in VS Code's secondary sidebar.",
-  "version": "0.6.0",
+  "name": "agents-sidebar",
+  "displayName": "Agents Sidebar",
+  "description": "Run coding agents (OpenCode, Claude Code, Codex) in VS Code's secondary sidebar.",
+  "version": "0.7.0",
   "publisher": "gabrieldulolmarques",
   "license": "MIT",
   "author": "Gabriel R. Marques",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gabrieldulolmarques/opencode-sidebar.git"
+    "url": "https://github.com/gabrieldulolmarques/agents-sidebar.git"
   },
   "bugs": {
-    "url": "https://github.com/gabrieldulolmarques/opencode-sidebar/issues"
+    "url": "https://github.com/gabrieldulolmarques/agents-sidebar/issues"
   },
-  "homepage": "https://github.com/gabrieldulolmarques/opencode-sidebar#readme",
+  "homepage": "https://github.com/gabrieldulolmarques/agents-sidebar#readme",
   "keywords": [
     "opencode",
+    "claude-code",
+    "codex",
     "terminal",
     "sidebar",
     "ai",
@@ -24,10 +26,9 @@
   "categories": [
     "Other"
   ],
-  "icon": "media/icon.png",
   "scripts": {
     "test": "node --test",
-    "package": "npx --yes @vscode/vsce@3 package -o opencode-sidebar.vsix"
+    "package": "npx --yes @vscode/vsce@3 package -o agents-sidebar.vsix"
   },
   "engines": {
     "vscode": "^1.106.0"
@@ -37,39 +38,39 @@
   ],
   "main": "./extension.js",
   "activationEvents": [
-    "onTerminalProfile:opencodeSidebar.profile"
+    "onTerminalProfile:agentsSidebar.profile"
   ],
   "contributes": {
     "viewsContainers": {
       "secondarySidebar": [
         {
-          "id": "opencodeSidebar",
-          "title": "OpenCode",
-          "icon": "media/opencode.svg"
+          "id": "agentsSidebar",
+          "title": "Agents",
+          "icon": "media/agents.svg"
         }
       ]
     },
     "views": {
-      "opencodeSidebar": [
+      "agentsSidebar": [
         {
           "type": "webview",
-          "id": "opencodeSidebar.view",
-          "name": "OpenCode"
+          "id": "agentsSidebar.view",
+          "name": "Agents"
         }
       ]
     },
     "commands": [
       {
-        "command": "opencodeSidebar.restart",
-        "title": "OpenCode: Restart",
+        "command": "agentsSidebar.restart",
+        "title": "Agents: Restart",
         "icon": "$(debug-restart)"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "opencodeSidebar.restart",
-          "when": "view == opencodeSidebar.view",
+          "command": "agentsSidebar.restart",
+          "when": "view == agentsSidebar.view",
           "group": "navigation@1"
         }
       ]
@@ -77,7 +78,7 @@
     "terminal": {
       "profiles": [
         {
-          "id": "opencodeSidebar.profile",
+          "id": "agentsSidebar.profile",
           "title": "OpenCode",
           "icon": {
             "light": "media/opencode-light.svg",
@@ -87,9 +88,9 @@
       ]
     },
     "configuration": {
-      "title": "OpenCode Sidebar",
+      "title": "Agents Sidebar",
       "properties": {
-        "opencodeSidebar.renderer": {
+        "agentsSidebar.renderer": {
           "type": "string",
           "enum": [
             "webgl",
@@ -97,10 +98,10 @@
           ],
           "default": "webgl",
           "enumDescriptions": [
-            "GPU renderer. Draws OpenCode's block characters seamlessly; falls back to DOM when WebGL is unavailable.",
-            "DOM renderer. Font-drawn text, but OpenCode's panels may show hairlines between rows at fractional zoom levels."
+            "GPU renderer. Draws block and box characters seamlessly; falls back to DOM when WebGL is unavailable.",
+            "DOM renderer. Font-drawn text, but an agent's panels may show hairlines between rows at fractional zoom levels."
           ],
-          "description": "How the OpenCode view draws the terminal. Independent of terminal.integrated.gpuAcceleration."
+          "description": "How the view draws the terminal. Independent of terminal.integrated.gpuAcceleration."
         }
       }
     }

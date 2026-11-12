@@ -1,6 +1,6 @@
 (function () {
   const vscode = acquireVsCodeApi();
-  const settings = window.OPENCODE_SETTINGS;
+  const settings = window.AGENTS_SETTINGS;
   const css = getComputedStyle(document.documentElement);
   const color = (name, fallback) => css.getPropertyValue(`--vscode-${name}`).trim() || fallback;
 
