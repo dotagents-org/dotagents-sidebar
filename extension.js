@@ -3,31 +3,18 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const vscode = require("vscode");
-const { Terminal } = require("@xterm/headless");
-const { SerializeAddon } = require("@xterm/addon-serialize");
+const { spawn } = require("child_process");
+const host = require("./host");
 const { PROVIDERS, command, conversationArgs, env, findCodexSessions, newer } = require("./providers");
 const sessions = require("./sessions");
 
-// node-pty ships inside VS Code (node_modules on the server, asar.unpacked on desktop)
-let ptyModule;
-function loadPty() {
-  if (ptyModule) return ptyModule;
-  const root = vscode.env.appRoot;
-  const candidates = [
-    path.join(root, "node_modules", "node-pty"),
-    path.join(root, "node_modules.asar.unpacked", "node-pty"),
-    path.join(root, "node_modules.asar", "node-pty"),
-  ];
-  const errors = [];
-  for (const candidate of candidates) {
-    try {
-      ptyModule = require(candidate);
-      return ptyModule;
-    } catch (err) {
-      errors.push(`${candidate}: ${err.message}`);
-    }
-  }
-  throw new Error(`node-pty not found in VS Code:\n${errors.join("\n")}`);
+// One host per workspace and version of the extension. An empty window has nothing to come
+// back to, so its host is its own
+function hostKey(context) {
+  const workspace = vscode.workspace.workspaceFile || vscode.workspace.workspaceFolders?.[0]?.uri;
+  const id = workspace ? workspace.toString() : `window-${vscode.env.sessionId}`;
+  const hash = crypto.createHash("sha256").update(id).digest("hex").slice(0, 16);
+  return `${context.extension.packageJSON.version}-${hash}`;
 }
 
 // Codex's saved conversations: the first line of each rollout has its id, folder and start time
@@ -94,9 +81,11 @@ class AgentsView {
     this.context = context;
     this.view = undefined;
     this.state = sessions.restore(context.workspaceState.get("sessions"), PROVIDERS.map((p) => p.id));
-    // Session id -> its process and a headless copy of its screen, serialized to redraw the
-    // view when VS Code rebuilds it
+    // Session id -> what the extension knows of its agent; the process and the screen live in the host
     this.terminals = new Map();
+    this.snapshots = []; // the replies the host still owes, in order
+    this.hostReady = undefined;
+    this.disposed = false;
   }
 
   resolveWebviewView(view) {
@@ -130,36 +119,110 @@ class AgentsView {
     let terminal = this.terminals.get(id);
     if (!terminal) {
       const provider = PROVIDERS.find((p) => p.id === this.session(id).provider);
-      const scrollback = provider.scrollback ? terminalSettings().scrollback : 0;
-      const screen = new Terminal({ cols: 80, rows: 24, scrollback, allowProposedApi: true });
-      const serializer = new SerializeAddon();
-      screen.loadAddon(serializer);
-      terminal = { provider, screen, serializer, pty: undefined, exited: false, size: { cols: 80, rows: 24 } };
+      terminal = { provider, started: false, exited: false, resume: false, startedAt: 0, size: { cols: 80, rows: 24 } };
       this.terminals.set(id, terminal);
     }
     return terminal;
+  }
+
+  // The connection to this window's host, which is started when it isn't running
+  connectHost() {
+    if (!this.hostReady) {
+      this.hostReady = this.reachHost().catch((err) => {
+        this.hostReady = undefined;
+        throw err;
+      });
+    }
+    return this.hostReady;
+  }
+
+  async reachHost() {
+    const socket = host.socketPath(hostKey(this.context));
+    const connect = () =>
+      host.connect(
+        socket,
+        (msg) => this.onHost(msg),
+        () => this.onHostLost()
+      );
+    try {
+      return await connect();
+    } catch {
+      // not running yet
+    }
+    // Detached, so it outlives the extension; ELECTRON_RUN_AS_NODE makes VS Code's own
+    // executable run it as plain Node on the desktop
+    const child = spawn(process.execPath, [path.join(__dirname, "host.js"), socket, vscode.env.appRoot], {
+      detached: true,
+      stdio: "ignore",
+      cwd: os.homedir(),
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" },
+    });
+    child.unref();
+    for (let i = 0; i < 50; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      try {
+        return await connect();
+      } catch {
+        // still starting
+      }
+    }
+    throw new Error("The agents' host did not start.");
+  }
+
+  async send(msg) {
+    try {
+      (await this.connectHost()).send(msg);
+    } catch (err) {
+      if (msg.id) this.post({ type: "output", id: msg.id, data: `\r\n\x1b[2m[${err.message}]\x1b[0m\r\n` });
+    }
+  }
+
+  onHost(msg) {
+    switch (msg.type) {
+      case "output":
+        if (this.session(msg.id)) this.post(msg);
+        break;
+      case "exit":
+        this.exited(msg.id, msg.exitCode);
+        break;
+      case "snapshot":
+        this.snapshots.shift()?.(msg.sessions);
+        break;
+    }
+  }
+
+  // The host stopped (killed, or the machine is low on memory): the agents stopped with it
+  onHostLost() {
+    if (this.disposed) return;
+    this.hostReady = undefined;
+    for (const [, resolve] of this.snapshots.entries()) resolve({});
+    this.snapshots = [];
+    for (const [id, terminal] of this.terminals) {
+      if (terminal.exited || !terminal.started) continue;
+      terminal.exited = true;
+      this.post({ type: "output", id, data: "\r\n\x1b[2m[The agents' host stopped. Press Enter to resume the session.]\x1b[0m\r\n" });
+    }
   }
 
   onMessage(msg) {
     if (msg.id && !this.session(msg.id)) return; // a message about a session closed meanwhile
     switch (msg.type) {
       case "ready":
-        if (!this.state.sessions.length) this.state = this.added(sessions.add);
         this.replay();
         break;
       case "input": {
         const terminal = this.terminal(msg.id);
-        if (terminal.pty) terminal.pty.write(msg.data);
-        else if (terminal.exited && msg.data === "\r") this.start(msg.id);
+        if (terminal.exited) {
+          if (msg.data === "\r") this.start(msg.id);
+        } else if (terminal.started) this.send({ type: "input", id: msg.id, data: msg.data });
         break;
       }
       // The first size a pane reports is when its agent starts, so it starts at the right size
       case "resize": {
         const terminal = this.terminal(msg.id);
         terminal.size = { cols: msg.cols, rows: msg.rows };
-        terminal.screen.resize(msg.cols, msg.rows);
-        if (terminal.pty) terminal.pty.resize(msg.cols, msg.rows);
-        else if (!terminal.exited) this.start(msg.id);
+        if (terminal.started) this.send({ type: "resize", id: msg.id, cols: msg.cols, rows: msg.rows });
+        else this.start(msg.id);
         break;
       }
       case "activate":
@@ -174,28 +237,38 @@ class AgentsView {
     }
   }
 
-  // Send the page everything it draws: the sessions and each screen as it is now
-  async replay() {
-    const screens = {};
-    await Promise.all(
-      [...this.terminals].map(
-        ([id, terminal]) =>
-          // Wait for the pending output to be parsed
-          new Promise((resolve) =>
-            terminal.screen.write("", () => {
-              screens[id] = terminal.serializer.serialize();
-              resolve();
-            })
-          )
-      )
-    );
-    this.context.workspaceState.update("sessions", this.state);
-    this.post({ type: "init", state: this.state, screens });
+  async snapshot() {
+    try {
+      const channel = await this.connectHost();
+      return await new Promise((resolve) => {
+        this.snapshots.push(resolve);
+        channel.send({ type: "snapshot" });
+      });
+    } catch {
+      return {};
+    }
   }
 
-  output(id, data) {
-    this.terminal(id).screen.write(data);
-    this.post({ type: "output", id, data });
+  // Send the page everything it draws: the sessions and each screen as the host has it. After a
+  // window reload, this is where the agents that kept running show up again
+  async replay() {
+    if (!this.state.sessions.length) {
+      this.state = this.added(sessions.add);
+      this.context.workspaceState.update("sessions", this.state);
+    }
+    const running = await this.snapshot();
+    const screens = {};
+    for (const [id, s] of Object.entries(running)) {
+      if (!this.session(id)) {
+        this.send({ type: "kill", id }); // its session was closed while the host was out of reach
+        continue;
+      }
+      const terminal = this.terminal(id);
+      terminal.started = true;
+      terminal.exited = !s.running;
+      screens[id] = s.screen;
+    }
+    this.post({ type: "init", state: this.state, screens });
   }
 
   // Codex picks its own conversation ids: find the ones of the sessions that don't know theirs
@@ -211,14 +284,6 @@ class AgentsView {
 
   start(id, fresh = false) {
     const terminal = this.terminal(id);
-    let pty;
-    try {
-      pty = loadPty();
-    } catch (err) {
-      terminal.exited = true;
-      this.output(id, `\r\n${err.message.replace(/\n/g, "\r\n")}\r\n`);
-      return;
-    }
     const { provider } = terminal;
     // Open the session's conversation again; the first time, a new one with an id of our own
     if (provider.id === "codex") this.findCodexConversations();
@@ -227,44 +292,37 @@ class AgentsView {
     if (!conversation && provider.newConversation) conversation = provider.newConversation();
     const startedAt = Date.now();
     this.update(sessions.remember(this.state, id, { conversation, startedAt }));
+    Object.assign(terminal, { started: true, exited: false, resume, startedAt });
     const { file, args } = command(provider, process.platform, conversationArgs(provider, conversation, resume));
-    terminal.exited = false;
-    terminal.screen.reset();
     this.post({ type: "clear", id });
-    const proc = pty.spawn(file, args, {
-      name: "xterm-256color",
-      cols: terminal.size.cols,
-      rows: terminal.size.rows,
+    this.send({
+      type: "create",
+      id,
+      file,
+      args,
       cwd: cwd(),
       env: env(provider, process.env),
-    });
-    terminal.pty = proc;
-    proc.onData((data) => {
-      if (terminal.pty === proc) this.output(id, data);
-    });
-    proc.onExit(({ exitCode }) => {
-      if (terminal.pty !== proc) return;
-      terminal.pty = undefined;
-      // Leaving the agent closes its session, like a shell closes its terminal
-      if (exitCode === 0) return this.close(id);
-      // A conversation that can't be resumed (never saved, or deleted): start a new one
-      if (resume && Date.now() - startedAt < 5000) return this.start(id, true);
-      terminal.exited = true;
-      // 127 is bash's "command not found"
-      const reason =
-        exitCode === 127
-          ? `${provider.command} was not found on the PATH set up by ~/.bashrc. ${provider.install}`
-          : `${provider.name} exited with code ${exitCode}`;
-      this.output(id, `\r\n\x1b[2m[${reason}. Press Enter to start it again.]\x1b[0m\r\n`);
+      cols: terminal.size.cols,
+      rows: terminal.size.rows,
+      scrollback: provider.scrollback ? terminalSettings().scrollback : 0,
     });
   }
 
-  stop(id) {
+  exited(id, exitCode) {
     const terminal = this.terminals.get(id);
-    if (!terminal) return;
-    const old = terminal.pty;
-    terminal.pty = undefined;
-    if (old) old.kill();
+    if (!terminal || !this.session(id)) return;
+    // Leaving the agent closes its session, like a shell closes its terminal
+    if (exitCode === 0) return this.close(id);
+    // A conversation that can't be resumed (never saved, or deleted): start a new one
+    if (terminal.resume && Date.now() - terminal.startedAt < 5000) return this.start(id, true);
+    terminal.exited = true;
+    const { provider } = terminal;
+    // 127 is bash's "command not found"
+    const reason =
+      exitCode === 127
+        ? `${provider.command} was not found on the PATH set up by ~/.bashrc. ${provider.install}`
+        : `${provider.name} exited with code ${exitCode}`;
+    this.send({ type: "note", id, data: `\r\n\x1b[2m[${reason}. Press Enter to start it again.]\x1b[0m\r\n` });
   }
 
   // The state after `action` (add or split) opened a session of the agent used last
@@ -282,17 +340,14 @@ class AgentsView {
 
   close(id = this.state.active) {
     if (!this.session(id)) return;
-    this.stop(id);
-    const terminal = this.terminals.get(id);
-    if (terminal) terminal.screen.dispose();
+    this.send({ type: "kill", id });
     this.terminals.delete(id);
     this.update(sessions.close(this.state, id));
   }
 
+  // A new process in the same conversation
   restart(id = this.state.active) {
-    if (!this.session(id)) return;
-    this.stop(id);
-    this.start(id);
+    if (this.session(id)) this.start(id);
   }
 
   async rename(id = this.state.active) {
@@ -312,11 +367,10 @@ class AgentsView {
     if (this.view) this.view.webview.postMessage(msg);
   }
 
+  // The window is reloading or closing: let go of the host, which keeps the agents running
   dispose() {
-    for (const [id, terminal] of this.terminals) {
-      this.stop(id);
-      terminal.screen.dispose();
-    }
+    this.disposed = true;
+    this.hostReady?.then((channel) => channel.close()).catch(() => {});
   }
 
   html(webview) {
