@@ -16,6 +16,11 @@ const { SerializeAddon } = require("@xterm/addon-serialize");
 
 const GRACE = 60 * 1000;
 
+// The version of the messages between the extension and the host. It names the socket, so a new
+// extension reaches a host started by an older one, and the agents survive an update, as long as
+// this stays the same. Bump it whenever a message changes.
+const PROTOCOL = 1;
+
 // node-pty ships inside VS Code (node_modules on the server, asar.unpacked on desktop)
 function loadPty(appRoot) {
   const candidates = [
@@ -238,7 +243,7 @@ async function createHost({ pty, socketPath, grace = GRACE, onExit = () => {} })
   return { socketPath, close };
 }
 
-module.exports = { GRACE, connect, createHost, loadPty, socketDir, socketPath };
+module.exports = { GRACE, PROTOCOL, connect, createHost, loadPty, socketDir, socketPath };
 
 // Started by the extension: node host.js <socket> <VS Code's appRoot>
 if (require.main === module) {
