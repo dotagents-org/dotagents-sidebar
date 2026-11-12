@@ -60,13 +60,23 @@
     "commands": [
       {
         "command": "opencodeSidebar.restart",
-        "title": "OpenCode: Restart"
+        "title": "OpenCode: Restart",
+        "icon": "$(debug-restart)"
       },
       {
         "command": "opencodeSidebar.openInTerminal",
         "title": "OpenCode: Open in Terminal Panel"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "opencodeSidebar.restart",
+          "when": "view == opencodeSidebar.view",
+          "group": "navigation@1"
+        }
+      ]
+    },
     "terminal": {
       "profiles": [
         {
