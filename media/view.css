@@ -104,28 +104,10 @@ body {
   border-left: 1px solid var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border));
 }
 
-/* The handle that resizes the list */
-#sash {
-  flex: none;
-  width: 4px;
-  margin-right: -4px;
-  z-index: 1;
-  cursor: ew-resize;
-  transition: background-color 0.1s ease-out 0.3s;
-}
-
-#sash:hover,
-#sash.active {
-  background: var(--vscode-sash-hoverBorder, var(--vscode-focusBorder));
-}
-
-#sash.active {
-  transition: none;
-}
-
-/* The sessions, like the terminal panel's list */
+/* The sessions, as icons, like the terminal panel's list at its narrowest */
 #list {
   flex: none;
+  width: 46px;
   overflow-y: auto;
   border-left: 1px solid var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border));
   user-select: none;
@@ -134,9 +116,8 @@ body {
 .item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   height: 22px;
-  padding: 0 6px;
   cursor: pointer;
   border-left: 2px solid transparent;
 }
@@ -162,36 +143,4 @@ body {
   mask-size: contain;
   mask-repeat: no-repeat;
   mask-position: center;
-}
-
-.name {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.close {
-  visibility: hidden;
-  padding: 0 2px;
-  opacity: 0.7;
-}
-
-.item:hover .close {
-  visibility: visible;
-}
-
-.close:hover {
-  opacity: 1;
-}
-
-/* A narrow list keeps only the icons */
-#list.compact .name,
-#list.compact .close {
-  display: none;
-}
-
-#list.compact .item {
-  justify-content: center;
-  padding: 0;
 }
