@@ -31,16 +31,21 @@
   const sash = document.createElement("div");
   sash.id = "sash";
   list.before(sash);
-  const COMPACT = 80;
+  // The sizes of the terminal panel's list (terminalTabsList.ts in VS Code): icons only at 46,
+  // names from 80; in between, the width snaps to the nearer of the two
+  const NARROW = 46;
+  const WIDE = 80;
+  const DEFAULT_WIDTH = 120;
+  const MAX_WIDTH = 500;
   function setListWidth(width) {
-    const max = Math.max(COMPACT, document.body.clientWidth / 2);
-    const w = Math.round(Math.min(Math.max(width, 36), max));
+    let w = Math.round(Math.min(Math.max(width, NARROW), MAX_WIDTH, Math.max(WIDE, document.body.clientWidth - WIDE)));
+    if (w < WIDE) w = w < (NARROW + WIDE) / 2 ? NARROW : WIDE;
     list.style.width = `${w}px`;
-    list.classList.toggle("compact", w < COMPACT);
+    list.classList.toggle("compact", w === NARROW);
     return w;
   }
   // The width asked for; a narrow view squeezes the list, and widening the view gives it back
-  let wanted = saved.listWidth || 150;
+  let wanted = saved.listWidth || DEFAULT_WIDTH;
   setListWidth(wanted);
   window.addEventListener("resize", () => setListWidth(wanted));
   sash.addEventListener("pointerdown", (event) => {
@@ -63,7 +68,7 @@
   });
   // Double-click puts the default width back
   sash.addEventListener("dblclick", () => {
-    wanted = setListWidth(150);
+    wanted = setListWidth(DEFAULT_WIDTH);
     vscode.setState({ ...(vscode.getState() || {}), listWidth: wanted });
   });
   const terminals = new Map(); // session id -> { el, term, fit, last }
