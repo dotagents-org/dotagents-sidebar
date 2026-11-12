@@ -233,6 +233,9 @@ class AgentsView {
       case "activate":
         this.update(sessions.activate(this.state, msg.id));
         break;
+      case "palette":
+        this.palette = msg.colors;
+        break;
       case "title":
         if (this.session(msg.id).title !== msg.title) this.update(sessions.remember(this.state, msg.id, { title: String(msg.title).slice(0, 200) }));
         break;
@@ -369,11 +372,12 @@ class AgentsView {
     if (!this.session(id)) return;
     // Like the terminal panel's Change Color: each color with a dot of itself, then a reset
     const name = (c) => c[0].toUpperCase() + c.slice(1);
+    const dots = await this.dots();
     const items = [
       ...sessions.COLORS.map((c) => ({
         label: name(c),
         description: `terminal.ansi${name(c)}`,
-        iconPath: new vscode.ThemeIcon("circle-filled", new vscode.ThemeColor(`terminal.ansi${name(c)}`)),
+        iconPath: dots[c] || new vscode.ThemeIcon("circle-filled"),
         color: c,
       })),
       { label: "", kind: vscode.QuickPickItemKind.Separator },
@@ -381,6 +385,28 @@ class AgentsView {
     ];
     const pick = await vscode.window.showQuickPick(items, { placeHolder: "Session color" });
     if (pick && this.session(id)) this.update(sessions.recolor(this.state, id, pick.color));
+  }
+
+  // A dot of each color as the theme paints it, for the color picker, which ignores the color of
+  // a theme icon. They are files, one per color value, in the extension's storage
+  async dots() {
+    const dots = {};
+    if (!this.palette) return dots;
+    const folder = vscode.Uri.joinPath(this.context.globalStorageUri, "dots");
+    await vscode.workspace.fs.createDirectory(folder);
+    for (const [name, value] of Object.entries(this.palette)) {
+      // A color of the theme as CSS gives it: #hex or rgb(a); anything else is skipped
+      if (typeof value !== "string" || !/^(#[0-9a-f]{3,8}|rgba?\([\d.,\s%]+\))$/i.test(value.trim())) continue;
+      const file = vscode.Uri.joinPath(folder, `${crypto.createHash("sha256").update(value).digest("hex").slice(0, 12)}.svg`);
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="5" fill="${value.trim()}"/></svg>`;
+      try {
+        await vscode.workspace.fs.stat(file);
+      } catch {
+        await vscode.workspace.fs.writeFile(file, Buffer.from(svg));
+      }
+      dots[name] = file;
+    }
+    return dots;
   }
 
   post(msg) {
