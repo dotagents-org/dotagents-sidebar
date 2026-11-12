@@ -2,7 +2,7 @@
   "name": "opencode-sidebar",
   "displayName": "OpenCode Sidebar",
   "description": "Run the OpenCode terminal UI in VS Code's secondary sidebar.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "publisher": "gabrieldulolmarques",
   "license": "MIT",
   "author": "Gabriel R. Marques",
