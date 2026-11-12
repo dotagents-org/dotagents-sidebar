@@ -75,7 +75,10 @@
       {
         "command": "agentsSidebar.close",
         "title": "Agents: Close Session",
-        "icon": "$(trash)"
+        "icon": {
+          "light": "media/trash-light.svg",
+          "dark": "media/trash-dark.svg"
+        }
       },
       {
         "command": "agentsSidebar.restart",
