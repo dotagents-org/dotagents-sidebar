@@ -55,9 +55,9 @@
   term.loadAddon(fit);
   term.open(el);
 
-  // Same renderer choice as VS Code's terminal: WebGL unless gpuAcceleration is "off", falling
-  // back to the DOM renderer when WebGL is missing or its context is lost
-  if (settings.gpuAcceleration !== "off") {
+  // WebGL by default: it draws block and box characters to fill the cell exactly, where the DOM
+  // renderer leaves hairlines across OpenCode's panels. Falls back to DOM without WebGL
+  if (settings.renderer !== "dom") {
     try {
       const webgl = new WebglAddon.WebglAddon();
       webgl.onContextLoss(() => webgl.dispose());

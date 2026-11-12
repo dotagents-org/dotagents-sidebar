@@ -40,9 +40,9 @@ function cwd() {
   return folder && folder.uri.scheme === "file" ? folder.uri.fsPath : os.homedir();
 }
 
-// The view mirrors the integrated terminal's own settings, so it renders the way the user
-// already tuned their terminal for their screen (renderer, font, spacing)
-const WATCHED = ["terminal.integrated", "editor.fontFamily", "editor.fontSize"];
+// The view mirrors the integrated terminal's font settings, so text looks the way the user
+// already tuned it for their screen
+const WATCHED = ["opencodeSidebar", "terminal.integrated", "editor.fontFamily", "editor.fontSize"];
 
 function terminalSettings() {
   const term = vscode.workspace.getConfiguration("terminal.integrated");
@@ -55,8 +55,9 @@ function terminalSettings() {
     fontWeight: term.get("fontWeight") || "normal",
     fontWeightBold: term.get("fontWeightBold") || "bold",
     minimumContrastRatio: term.get("minimumContrastRatio") ?? 4.5,
-    // "auto" and "on" use WebGL (falling back to the DOM renderer), "off" uses the DOM renderer
-    gpuAcceleration: term.get("gpuAcceleration") || "auto",
+    // Not the terminal's gpuAcceleration: OpenCode draws its panels and logo with block
+    // characters, which only the WebGL renderer draws seamlessly (DOM leaves hairlines)
+    renderer: vscode.workspace.getConfiguration("opencodeSidebar").get("renderer") || "webgl",
   };
 }
 

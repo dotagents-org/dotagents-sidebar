@@ -2,7 +2,7 @@
   "name": "opencode-sidebar",
   "displayName": "OpenCode Sidebar",
   "description": "Runs the OpenCode terminal UI inside a secondary sidebar view, next to Claude Code and Codex.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "publisher": "gabrieldulolmarques",
   "license": "MIT",
   "author": "Gabriel R. Marques",
@@ -75,6 +75,24 @@
           "icon": "media/opencode.svg"
         }
       ]
+    },
+    "configuration": {
+      "title": "OpenCode Sidebar",
+      "properties": {
+        "opencodeSidebar.renderer": {
+          "type": "string",
+          "enum": [
+            "webgl",
+            "dom"
+          ],
+          "default": "webgl",
+          "enumDescriptions": [
+            "GPU renderer. Draws OpenCode's block characters seamlessly; falls back to DOM when WebGL is unavailable.",
+            "DOM renderer. Font-drawn text, but OpenCode's panels may show hairlines between rows at fractional zoom levels."
+          ],
+          "description": "How the OpenCode view draws the terminal. Independent of terminal.integrated.gpuAcceleration."
+        }
+      }
     }
   },
   "dependencies": {
