@@ -109,6 +109,12 @@ class AgentsView {
     this.state = state;
     this.context.workspaceState.update("sessions", state);
     this.post({ type: "state", state });
+    this.describe();
+  }
+
+  // The active session's name, next to the view's title
+  describe() {
+    if (this.view) this.view.description = this.session(this.state.active)?.name || "";
   }
 
   session(id) {
@@ -269,6 +275,7 @@ class AgentsView {
       screens[id] = s.screen;
     }
     this.post({ type: "init", state: this.state, screens });
+    this.describe();
   }
 
   // Codex picks its own conversation ids: find the ones of the sessions that don't know theirs
