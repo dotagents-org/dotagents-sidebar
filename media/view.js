@@ -277,5 +277,7 @@
   });
   window.addEventListener("focus", focus);
 
+  // The theme's colors, so the color picker can show each one as it looks here
+  vscode.postMessage({ type: "palette", colors: Object.fromEntries(ansiNames.map((n) => [n.toLowerCase(), theme[n.toLowerCase()]])) });
   document.fonts.ready.then(() => vscode.postMessage({ type: "ready" }));
 })();
