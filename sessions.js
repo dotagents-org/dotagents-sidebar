@@ -3,12 +3,15 @@
 
 const EMPTY = { sessions: [], active: null, next: 1 };
 
-// Names of the terminal's ANSI colors, handed out in turn so sessions are easy to tell apart
-const COLORS = ["blue", "green", "yellow", "magenta", "cyan", "red"];
+// The colors a session can take: the terminal panel's (the theme's ANSI colors but the bright
+// ones, getStandardColors in VS Code), in its order. New sessions take turns among those that
+// stand out on dark and light themes alike, so they are easy to tell apart
+const COLORS = ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"];
+const ROTATION = ["blue", "green", "yellow", "magenta", "cyan", "red"];
 
 function create(state, provider, name, group) {
   const id = `s${state.next}`;
-  const session = { id, provider, name, color: COLORS[(state.next - 1) % COLORS.length], group: group || id };
+  const session = { id, provider, name, color: ROTATION[(state.next - 1) % ROTATION.length], group: group || id };
   return { session, next: state.next + 1 };
 }
 
@@ -70,4 +73,4 @@ function restore(saved, providers) {
   return { sessions, active, next: saved.next };
 }
 
-module.exports = { EMPTY, COLORS, add, split, close, remember, rename, recolor, activate, visible, restore };
+module.exports = { EMPTY, COLORS, ROTATION, add, split, close, remember, rename, recolor, activate, visible, restore };
