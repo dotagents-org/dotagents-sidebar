@@ -11,6 +11,7 @@ test("every provider has what the view needs", () => {
     for (const key of ["id", "name", "command", "install"]) assert.equal(typeof p[key], "string", `${p.id}.${key}`);
   }
   assert.equal(new Set(PROVIDERS.map((p) => p.id)).size, PROVIDERS.length);
+  assert.deepEqual(PROVIDERS.map((p) => p.id), ["opencode", "claude", "codex"]);
 });
 
 test("command starts the provider through the shell that has it on the PATH", () => {
