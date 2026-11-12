@@ -58,7 +58,7 @@ If the icon doesn't show up, open the secondary sidebar with **View: Toggle Seco
 
 VS Code's API only lets extensions put terminals in the terminal panel or the editor area, not in a sidebar. So the view is a webview that draws its own terminal with xterm.js. The OpenCode process runs on the extension host through **node-pty**: the copy that ships inside VS Code itself, loaded from `vscode.env.appRoot`. Keystrokes go from the webview to the process, and output comes back the other way.
 
-Because the view is a webview, `retainContextWhenHidden` keeps it alive while hidden. The extension also keeps the last 512 KB of output to redraw the view if VS Code rebuilds it (for example after you move it to another sidebar).
+Because the view is a webview, `retainContextWhenHidden` keeps it alive while hidden. The extension also keeps a headless copy of the screen ([`@xterm/headless`](https://www.npmjs.com/package/@xterm/headless)) and serializes it to redraw the view exactly when VS Code rebuilds it (for example after you move it to another sidebar or change a setting).
 
 ## Known limitations
 
@@ -73,7 +73,7 @@ There is no build step: the extension is plain JavaScript.
 ```bash
 git clone https://github.com/gabrieldulolmarques/opencode-sidebar.git
 cd opencode-sidebar
-npm install # xterm.js with its fit and WebGL addons
+npm install # xterm.js with its addons, plus the headless copy and serializer
 npm run package # writes opencode-sidebar.vsix
 code --install-extension opencode-sidebar.vsix --force
 ```
@@ -82,7 +82,7 @@ Then reload the VS Code window. To debug, open the folder in VS Code and press <
 
 | File | Role |
 |---|---|
-| `extension.js` | Extension host: the webview provider, the node-pty process, commands and terminal profile |
+| `extension.js` | Extension host: the webview provider, the node-pty process, the headless screen copy, commands and terminal profile |
 | `media/view.js` | Webview: xterm.js and its renderer, theme colors, fitting, centering and pixel snapping, margin color, clipboard |
 | `media/view.css` | Webview layout |
 | `media/opencode*.svg` | Sidebar and terminal tab icons |

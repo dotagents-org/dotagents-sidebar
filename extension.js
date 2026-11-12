@@ -1,9 +1,10 @@
 const os = require("os");
 const path = require("path");
 const vscode = require("vscode");
+const { Terminal } = require("@xterm/headless");
+const { SerializeAddon } = require("@xterm/addon-serialize");
 
 const NAME = "OpenCode";
-const REPLAY_LIMIT = 512 * 1024; // output kept to redraw the view after it is rebuilt
 
 // node-pty ships inside VS Code (node_modules on the server, asar.unpacked on desktop)
 let ptyModule;
@@ -66,8 +67,12 @@ class OpencodeView {
     this.context = context;
     this.view = undefined;
     this.pty = undefined;
-    this.replay = "";
+    this.exited = false;
     this.size = { cols: 80, rows: 24 };
+    // A headless copy of the screen, serialized to redraw the view when VS Code rebuilds it
+    this.screen = new Terminal({ cols: 80, rows: 24, scrollback: 0, allowProposedApi: true });
+    this.serializer = new SerializeAddon();
+    this.screen.loadAddon(this.serializer);
   }
 
   resolveWebviewView(view) {
@@ -90,11 +95,14 @@ class OpencodeView {
   onMessage(msg) {
     switch (msg.type) {
       case "ready":
-        this.size = { cols: msg.cols, rows: msg.rows };
-        if (this.pty) {
-          if (this.replay) this.post({ type: "output", data: this.replay });
-          this.pty.resize(msg.cols, msg.rows);
+        if (this.pty || this.exited) {
+          // Wait for the pending output to be parsed, then redraw the screen as it is
+          this.screen.write("", () => {
+            this.post({ type: "output", data: this.serializer.serialize() });
+            this.resize(msg.cols, msg.rows);
+          });
         } else {
+          this.resize(msg.cols, msg.rows);
           this.start();
         }
         break;
@@ -103,10 +111,20 @@ class OpencodeView {
         else if (msg.data === "\r") this.start();
         break;
       case "resize":
-        this.size = { cols: msg.cols, rows: msg.rows };
-        if (this.pty) this.pty.resize(msg.cols, msg.rows);
+        this.resize(msg.cols, msg.rows);
         break;
     }
+  }
+
+  resize(cols, rows) {
+    this.size = { cols, rows };
+    this.screen.resize(cols, rows);
+    if (this.pty) this.pty.resize(cols, rows);
+  }
+
+  output(data) {
+    this.screen.write(data);
+    this.post({ type: "output", data });
   }
 
   start() {
@@ -114,11 +132,12 @@ class OpencodeView {
     try {
       pty = loadPty();
     } catch (err) {
-      this.post({ type: "output", data: `\r\n${err.message.replace(/\n/g, "\r\n")}\r\n` });
+      this.output(`\r\n${err.message.replace(/\n/g, "\r\n")}\r\n`);
       return;
     }
     const { file, args } = command();
-    this.replay = "";
+    this.exited = false;
+    this.screen.reset();
     this.post({ type: "clear" });
     const proc = pty.spawn(file, args, {
       name: "xterm-256color",
@@ -128,16 +147,12 @@ class OpencodeView {
       env: { ...process.env, TERM: "xterm-256color", COLORTERM: "truecolor", TERM_PROGRAM: "vscode" },
     });
     this.pty = proc;
-    proc.onData((data) => {
-      this.replay = (this.replay + data).slice(-REPLAY_LIMIT);
-      this.post({ type: "output", data });
-    });
+    proc.onData((data) => this.output(data));
     proc.onExit(({ exitCode }) => {
       if (this.pty !== proc) return;
       this.pty = undefined;
-      const data = `\r\n\x1b[2m[OpenCode exited with code ${exitCode}. Press Enter to start it again.]\x1b[0m\r\n`;
-      this.replay += data;
-      this.post({ type: "output", data });
+      this.exited = true;
+      this.output(`\r\n\x1b[2m[OpenCode exited with code ${exitCode}. Press Enter to start it again.]\x1b[0m\r\n`);
     });
   }
 
@@ -155,6 +170,7 @@ class OpencodeView {
 
   dispose() {
     if (this.pty) this.pty.kill();
+    this.screen.dispose();
   }
 
   html(webview) {
