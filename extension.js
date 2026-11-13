@@ -51,6 +51,41 @@ function workspaceName() {
   return (vscode.workspace.name || "").replace(/\s*\[[^\]]*\]$/, "");
 }
 
+// File links: which of the paths a session printed exist, and opening one. A path is tried as it
+// is when absolute (~ is home), else from the folder the sessions run in and from each workspace
+// folder, as the integrated terminal does from its cwd. What a lookup found, or didn't, is kept
+// for 10 seconds, so hovering over the same line asks the disk once.
+const FILE_CACHE_MS = 10_000;
+const fileCache = new Map();
+async function existingPath(text) {
+  let p = text.replace(/^file:\/\//i, "");
+  if (p === "~" || p.startsWith("~/")) p = path.join(os.homedir(), p.slice(2));
+  const bases = [cwd(), ...(vscode.workspace.workspaceFolders || []).filter((f) => f.uri.scheme === "file").map((f) => f.uri.fsPath)];
+  const tries = path.isAbsolute(p) ? [p] : [...new Set(bases.map((base) => path.resolve(base, p)))];
+  for (const file of tries) {
+    const hit = fileCache.get(file);
+    if (hit && Date.now() - hit.at < FILE_CACHE_MS) {
+      if (hit.kind) return { file, kind: hit.kind };
+      continue;
+    }
+    const stat = await fs.promises.stat(file).catch(() => null);
+    const kind = stat?.isFile() ? "file" : stat?.isDirectory() ? "folder" : null;
+    fileCache.set(file, { kind, at: Date.now() });
+    if (kind) return { file, kind };
+  }
+  return null;
+}
+
+// Opens a file at its line and column, or shows a folder in the Explorer; only what exists
+async function openPath(text, line, column) {
+  const found = await existingPath(text);
+  if (!found) return;
+  const uri = vscode.Uri.file(found.file);
+  if (found.kind === "folder") return vscode.commands.executeCommand("revealInExplorer", uri);
+  const position = new vscode.Position(Math.max(0, (line || 1) - 1), Math.max(0, (column || 1) - 1));
+  await vscode.commands.executeCommand("vscode.open", uri, { selection: new vscode.Range(position, position), preview: false });
+}
+
 function cwd() {
   const folder = vscode.workspace.workspaceFolders?.[0];
   return folder && folder.uri.scheme === "file" ? folder.uri.fsPath : os.homedir();
@@ -317,6 +352,19 @@ class SidebarView {
       case "close":
         this.close(msg.id);
         break;
+      case "links": {
+        // Which of a hovered line's paths exist: { path: the file it is }
+        const paths = Array.isArray(msg.paths) ? msg.paths.filter((p) => typeof p === "string" && p.length <= 1024).slice(0, 10) : [];
+        Promise.all(paths.map((p) => existingPath(p).then((found) => [p, found?.file]))).then((pairs) => {
+          this.post({ type: "links", id: msg.id, files: Object.fromEntries(pairs.filter(([, file]) => file)) });
+        });
+        break;
+      }
+      case "openFile":
+        if (typeof msg.file === "string" && msg.file.length <= 1024) {
+          openPath(msg.file, Number(msg.line) || undefined, Number(msg.column) || undefined).catch((err) => this.log.appendLine(`Could not open ${msg.file}: ${err.message}`));
+        }
+        break;
       case "open":
         if (/^https?:\/\//i.test(msg.uri)) vscode.env.openExternal(vscode.Uri.parse(msg.uri));
         break;
@@ -536,6 +584,7 @@ ${accounts ? `<link rel="stylesheet" href="${panel("panel.css")}">` : ""}
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-webgl", "lib", "addon-webgl.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-web-links", "lib", "addon-web-links.js")}"></script>
 <script nonce="${nonce}" src="${uri("media", "keys.js")}"></script>
+<script nonce="${nonce}" src="${uri("media", "links.js")}"></script>
 <script nonce="${nonce}" src="${uri("media", "view.js")}"></script>
 </body>
 </html>`;

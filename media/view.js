@@ -33,6 +33,72 @@
   let vsCodeKeys = new Set(settings.keys || agentKeys.FALLBACK);
   const forVsCode = (event) => vsCodeKeys.has(agentKeys.eventCombo(event));
 
+  // File links (media/links.js finds the paths; the extension says which exist and opens them).
+  // A request per hovered line, answered by id; the answers are cached there for a few seconds
+  const linkRequests = new Map();
+  let nextLinkRequest = 0;
+  function existing(sessionId, paths) {
+    return new Promise((resolve) => {
+      const id = ++nextLinkRequest;
+      linkRequests.set(id, resolve);
+      vscode.postMessage({ type: "links", id, session: sessionId, paths });
+      setTimeout(() => linkRequests.delete(id) && resolve({}), 3000);
+    });
+  }
+  // The text of the line at y and the lines wrapped onto it, with where each character sits on the
+  // screen (a wide character takes two cells, its second one has no character)
+  function wrappedLine(term, y) {
+    const buffer = term.buffer.active;
+    let first = y;
+    while (first > 0 && buffer.getLine(first)?.isWrapped) first--;
+    let last = y;
+    while (buffer.getLine(last + 1)?.isWrapped) last++;
+    let text = "";
+    const cells = [];
+    for (let row = first; row <= last; row++) {
+      const line = buffer.getLine(row);
+      if (!line) break;
+      for (let x = 0; x < term.cols; x++) {
+        const cell = line.getCell(x);
+        if (!cell || cell.getWidth() === 0) continue;
+        const chars = cell.getChars() || " ";
+        for (let i = 0; i < chars.length; i++) cells.push({ x: x + 1, y: row + 1, width: cell.getWidth() });
+        text += chars;
+      }
+    }
+    const end = text.trimEnd().length;
+    return { text: text.slice(0, end), cells: cells.slice(0, end) };
+  }
+  function linkProvider(term, session) {
+    return {
+      provideLinks(y, callback) {
+        const { text, cells } = wrappedLine(term, y - 1);
+        const found = agentLinks.findPaths(text);
+        if (!found.length) return callback(undefined);
+        existing(session.id, [...new Set(found.map((f) => f.path))]).then((files) => {
+          const links = found
+            .filter((f) => files[f.path])
+            .map((f) => {
+              const from = cells[f.start];
+              const to = cells[f.end - 1];
+              return {
+                range: { start: { x: from.x, y: from.y }, end: { x: to.x + to.width - 1, y: to.y } },
+                text: text.slice(f.start, f.end),
+                decorations: { pointerCursor: true, underline: true },
+                // Ctrl+click (Cmd+click on a Mac), as in the integrated terminal
+                activate: (event) => {
+                  if (!event.ctrlKey && !event.metaKey) return;
+                  vscode.postMessage({ type: "openFile", file: files[f.path], line: f.line, column: f.column });
+                },
+              };
+            })
+            .filter((link) => link.range.start.y <= y && link.range.end.y >= y);
+          callback(links.length ? links : undefined);
+        });
+      },
+    };
+  }
+
   // The dotagents accounts panel, a fixed tab first in the list, when that extension is installed:
   // its scripts load the first time the tab opens, into #accounts. A webview gets one acquireVsCodeApi, so the
   // panel gets this page's, its messages marked as the accounts'; the answers come back as they are
@@ -79,7 +145,19 @@
     term.loadAddon(fit);
     // Webviews can't open links themselves; the extension opens them in the browser
     term.loadAddon(new WebLinksAddon.WebLinksAddon((_event, uri) => vscode.postMessage({ type: "open", uri })));
+    // Links an agent marks itself (OSC 8): web pages in the browser, files in the editor
+    term.options.linkHandler = {
+      allowNonHttpProtocols: true,
+      activate: (_event, uri) => {
+        if (/^https?:\/\//i.test(uri)) vscode.postMessage({ type: "open", uri });
+        else if (/^file:\/\//i.test(uri)) {
+          const m = /^(.*?)(?::(\d+)(?::(\d+))?)?$/.exec(decodeURIComponent(uri.replace(/^file:\/\//i, "")));
+          vscode.postMessage({ type: "openFile", file: m[1], line: m[2] && Number(m[2]), column: m[3] && Number(m[3]), check: true });
+        }
+      },
+    };
     term.open(el);
+    term.registerLinkProvider(linkProvider(term, session));
 
     // WebGL by default: it draws block and box characters to fill the cell exactly, where the DOM
     // renderer leaves hairlines between rows. Falls back to DOM without WebGL
@@ -352,6 +430,10 @@
       state = msg.state;
       render();
     } else if (msg.type === "output") terminals.get(msg.id)?.term.write(msg.data);
+    else if (msg.type === "links" && linkRequests.has(msg.id)) {
+      linkRequests.get(msg.id)(msg.files || {});
+      linkRequests.delete(msg.id);
+    }
     else if (msg.type === "clear") terminals.get(msg.id)?.term.reset();
     else if (msg.type === "keys") vsCodeKeys = new Set(msg.keys);
   });

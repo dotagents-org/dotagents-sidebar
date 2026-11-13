@@ -24,6 +24,10 @@ While a session has focus, the keys VS Code would keep in its integrated termina
 
 As in the integrated terminal: Ctrl+C copies when there is a selection (otherwise it goes to the agent), Ctrl+Shift+C always copies, Ctrl+V and Ctrl+Shift+V paste. A right click follows `terminal.integrated.rightClickBehavior`: `copyPaste` (Windows' default) copies the selection or, with none, pastes; `paste` always pastes; any other value leaves the click alone.
 
+## File links
+
+As in the integrated terminal, file paths an agent prints are links: Ctrl+click (Cmd+click on a Mac) opens the file in the editor, at the line and column when the path says them (`src/a.ts:41`, `src/a.ts:41:7`, `src/a.ts (41,7)`, `"a.py", line 12`), and a folder in the Explorer. A path is a link only when it exists: as it is when absolute (`~` is home, `file://` too), else from the folder the sessions run in and from each workspace folder. A path with spaces is found only in double quotes. Links an agent marks itself (OSC 8) work too: web pages open in the browser, `file://` in the editor.
+
 ## The terminal's look
 
 The view uses `terminal.integrated.fontFamily`, `fontSize`, `lineHeight`, `letterSpacing`, `fontWeight`, `fontWeightBold`, `minimumContrastRatio` and `scrollback`, and the theme's terminal colors. Changes apply without restarting the agents.
