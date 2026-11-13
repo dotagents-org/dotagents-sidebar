@@ -9,6 +9,7 @@ const PROVIDERS = [
   {
     id: "opencode",
     name: "OpenCode",
+    off: true, // off for now (2026-11-13): only Claude Code is offered
     command: "opencode",
     install: "Install it from https://opencode.ai",
     // OpenCode's "system" theme takes its colors from the terminal, which has the VS Code theme's.
@@ -34,6 +35,7 @@ const PROVIDERS = [
   {
     id: "codex",
     name: "Codex",
+    off: true, // off for now (2026-11-13): only Claude Code is offered
     command: "codex",
     install: "Install it with npm install -g @openai/codex",
     newline: "\n", // Ctrl+J
@@ -92,4 +94,8 @@ function newer(a, b) {
   return false;
 }
 
-module.exports = { PROVIDERS, command, conversationArgs, env, findCodexSessions, newer };
+// Every agent the view knows (ALL_PROVIDERS) and the ones it offers (PROVIDERS): one switched off
+// keeps its definition, so turning it back on is taking its off: true away and restoring its
+// entries in package.json.
+const ALL_PROVIDERS = PROVIDERS;
+module.exports = { ALL_PROVIDERS, PROVIDERS: PROVIDERS.filter((p) => !p.off), command, conversationArgs, env, findCodexSessions, newer };

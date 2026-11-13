@@ -3,15 +3,16 @@ import { createRequire } from "node:module";
 import { test } from "node:test";
 
 // Plain CommonJS, loaded as VS Code loads it
-const { PROVIDERS, command, env, newer } = createRequire(import.meta.url)("../providers.js");
+const { ALL_PROVIDERS, PROVIDERS, command, env, newer } = createRequire(import.meta.url)("../providers.js");
 
 test("every provider has what the view needs", () => {
-  assert.ok(PROVIDERS.length > 0);
-  for (const p of PROVIDERS) {
+  for (const p of ALL_PROVIDERS) {
     for (const key of ["id", "name", "command", "install"]) assert.equal(typeof p[key], "string", `${p.id}.${key}`);
   }
-  assert.equal(new Set(PROVIDERS.map((p) => p.id)).size, PROVIDERS.length);
-  assert.deepEqual(PROVIDERS.map((p) => p.id), ["opencode", "claude", "codex"]);
+  assert.equal(new Set(ALL_PROVIDERS.map((p) => p.id)).size, ALL_PROVIDERS.length);
+  assert.deepEqual(ALL_PROVIDERS.map((p) => p.id), ["opencode", "claude", "codex"]);
+  // OpenCode and Codex are off for now: only Claude Code is offered.
+  assert.deepEqual(PROVIDERS.map((p) => p.id), ["claude"]);
 });
 
 test("command starts the provider through the shell that has it on the PATH", () => {
@@ -50,7 +51,7 @@ test("newer compares versions by number, not by text", () => {
 });
 
 const { conversationArgs, findCodexSessions } = createRequire(import.meta.url)("../providers.js");
-const byId = (id) => PROVIDERS.find((p) => p.id === id);
+const byId = (id) => ALL_PROVIDERS.find((p) => p.id === id);
 
 test("claude and opencode open a conversation with an id the view chooses", () => {
   const claude = byId("claude");
