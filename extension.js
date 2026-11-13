@@ -65,7 +65,7 @@ const WATCHED = [
   "terminal.integrated.allowChords",
   "editor.fontFamily",
   "editor.fontSize",
-  ...["fontFamily", "fontSize", "lineHeight", "letterSpacing", "fontWeight", "fontWeightBold", "minimumContrastRatio", "scrollback"].map(
+  ...["fontFamily", "fontSize", "lineHeight", "letterSpacing", "fontWeight", "fontWeightBold", "minimumContrastRatio", "scrollback", "rightClickBehavior"].map(
     (key) => `terminal.integrated.${key}`
   ),
 ];
@@ -83,6 +83,9 @@ function terminalSettings() {
     minimumContrastRatio: term.get("minimumContrastRatio") ?? 4.5,
     // For the agents that write their conversation to the normal screen
     scrollback: term.get("scrollback") ?? 1000,
+    // What a right click does, as in the integrated terminal: copyPaste (Windows' default) copies
+    // the selection or pastes, paste always pastes; anything else leaves the click alone
+    rightClickBehavior: term.get("rightClickBehavior") || "copyPaste",
     // Not the terminal's gpuAcceleration: block and box characters only draw seamlessly
     // with the WebGL renderer (DOM leaves hairlines)
     renderer: vscode.workspace.getConfiguration("dotagentsSidebar").get("renderer") || "webgl",
