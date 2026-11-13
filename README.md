@@ -12,7 +12,7 @@
   <a href="#how-it-works">How it works</a>&nbsp;&nbsp;&nbsp;
   <a href="#quick-start">Quick start</a>&nbsp;&nbsp;&nbsp;
   <a href="docs/README.md">Documentation</a>&nbsp;&nbsp;&nbsp;
-  <a href="https://github.com/dotagents-org/dotagents-sidebar/releases">Releases</a>
+  <a href="CHANGELOG.md">Changelog</a>
 </p>
 
 <p align="center">

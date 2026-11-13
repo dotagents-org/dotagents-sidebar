@@ -48,4 +48,4 @@ To debug, open the folder in VS Code and press <kbd>F5</kbd> to start an Extensi
 
 ## Releases
 
-A release is a signed tag `vX.Y.Z` with the version in `package.json`, and a GitHub release with the `.vsix` attached, which the extension's update check finds. The README shows PNG pictures: the packager refuses SVGs in a README.
+Every change goes to `main` and into the **Unreleased** section of [`CHANGELOG.md`](../CHANGELOG.md); a build to try is `npm run package` and the `.vsix` installed by hand. A release is cut when there is a reason: a bug that gets in the way every day, or a set of changes worth announcing. It turns **Unreleased** into the version, bumps `package.json`, and publishes a signed tag `vX.Y.Z` with a GitHub release whose notes are that section and the `.vsix` attached, which the extension's update check finds. The README shows PNG pictures: the packager refuses SVGs in a README.
