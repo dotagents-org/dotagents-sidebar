@@ -33,6 +33,27 @@
   let vsCodeKeys = new Set(settings.keys || agentKeys.FALLBACK);
   const forVsCode = (event) => vsCodeKeys.has(agentKeys.eventCombo(event));
 
+  // The dotagents accounts panel, a fixed tab first in the list, when that extension is installed:
+  // its scripts load the first time the tab opens, into #accounts. A webview gets one acquireVsCodeApi, so the
+  // panel gets this page's, its messages marked as the accounts'; the answers come back as they are
+  // (usage, result, down), types this page doesn't use.
+  const accounts = settings.accounts;
+  const accountsPane = document.getElementById("accounts");
+  let showAccounts = false;
+  window.acquireVsCodeApi = () => ({ postMessage: (message) => vscode.postMessage({ type: "accounts", message }) });
+  let accountsLoaded = false;
+  function loadAccounts() {
+    if (accountsLoaded) return;
+    accountsLoaded = true;
+    for (const src of accounts.scripts) {
+      const script = document.createElement("script");
+      script.nonce = accounts.nonce;
+      script.async = false; // in order: the avatars, then the panel
+      script.src = src;
+      document.body.append(script);
+    }
+  }
+
   // One terminal per session. It stays alive while hidden, so switching back is instant
   function open(session) {
     const provider = settings.providers[session.provider];
@@ -168,7 +189,7 @@
     const provider = settings.providers[session.provider];
     const el = document.createElement("div");
     el.className = "item";
-    el.classList.toggle("active", session.id === state.active);
+    el.classList.toggle("active", !showAccounts && session.id === state.active);
     el.classList.toggle("grouped", state.sessions.filter((s) => s.group === session.group).length > 1);
     const name = label(session);
     el.title = name ? `${name} (${provider.name})` : provider.name;
@@ -178,7 +199,13 @@
       sessionId: session.id,
       preventDefaultContextMenuItems: true,
     });
-    el.addEventListener("click", () => vscode.postMessage({ type: "activate", id: session.id }));
+    el.addEventListener("click", () => {
+      if (showAccounts) {
+        showAccounts = false;
+        render();
+      }
+      vscode.postMessage({ type: "activate", id: session.id });
+    });
 
     const icon = document.createElement("span");
     icon.className = "icon";
@@ -197,6 +224,16 @@
   // The active session, like a terminal tab: the agent's mark in the session's color, the agent,
   // the workspace (dimmer) and the session's own name, when it has one other than the agent's
   function title(session) {
+    if (showAccounts) {
+      const icon = document.createElement("span");
+      icon.className = "icon";
+      icon.style.maskImage = `url("${accounts.icon}")`;
+      icon.style.backgroundColor = theme.foreground;
+      const name = document.createElement("span");
+      name.className = "agent";
+      name.textContent = "Accounts";
+      return header.replaceChildren(icon, name);
+    }
     if (!session) return header.replaceChildren();
     const provider = settings.providers[session.provider];
     const part = (cls, text) => {
@@ -227,17 +264,38 @@
     for (const session of state.sessions) {
       if (!terminals.has(session.id)) terminals.set(session.id, open(session));
       const { el } = terminals.get(session.id);
-      el.classList.toggle("hidden", !active || session.group !== active.group);
+      el.classList.toggle("hidden", showAccounts || !active || session.group !== active.group);
       panes.appendChild(el); // the panes follow the order of the list
     }
-    panes.classList.toggle("empty", !state.sessions.length);
-    list.replaceChildren(...state.sessions.map(item));
+    accountsPane?.classList.toggle("hidden", !showAccounts);
+    if (showAccounts) loadAccounts();
+    panes.classList.toggle("empty", !showAccounts && !state.sessions.length);
+    list.replaceChildren(...(accounts ? [accountsItem()] : []), ...state.sessions.map(item));
     title(active);
     layoutAll();
     focus();
   }
 
+  // The accounts tab: the mark, always first, never closed or split
+  function accountsItem() {
+    const el = document.createElement("div");
+    el.className = "item fixed";
+    el.classList.toggle("active", showAccounts);
+    el.title = "Accounts";
+    el.addEventListener("click", () => {
+      showAccounts = true;
+      render();
+    });
+    const icon = document.createElement("span");
+    icon.className = "icon";
+    icon.style.maskImage = `url("${accounts.icon}")`;
+    icon.style.backgroundColor = theme.foreground;
+    el.append(icon);
+    return el;
+  }
+
   function focus() {
+    if (showAccounts) return;
     const terminal = terminals.get(state.active);
     if (terminal && !terminal.el.contains(document.activeElement)) terminal.term.focus();
   }
@@ -261,9 +319,12 @@
     const msg = event.data;
     if (msg.type === "init") {
       state = msg.state;
+      showAccounts = !!accounts && !state.sessions.length; // with no session yet, the accounts
       render();
       for (const [id, screen] of Object.entries(msg.screens)) terminals.get(id)?.term.write(screen);
     } else if (msg.type === "state") {
+      // Another session made active (a click, a new one) leaves the accounts tab
+      if (msg.state.active !== state.active) showAccounts = false;
       state = msg.state;
       render();
     } else if (msg.type === "output") terminals.get(msg.id)?.term.write(msg.data);

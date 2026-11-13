@@ -8,6 +8,9 @@ const host = require("./host");
 const { PROVIDERS, command, conversationArgs, env, findCodexSessions, newer } = require("./providers");
 const sessions = require("./sessions");
 const keys = require("./media/keys.js");
+
+// The dotagents accounts extension, whose panel becomes a fixed tab when it is installed
+const ACCOUNTS = "gabrieldulolmarques.dotagents-accounts";
 const SKIP_SHELL = require("./skip-shell.json");
 
 // One host per workspace and protocol (host.js), not per version of the extension: an update
@@ -99,6 +102,26 @@ class SidebarView {
     this.disposed = false;
     this.keys = undefined; // the keys VS Code keeps, once worked out
     this.log = vscode.window.createOutputChannel("dotagents-sidebar");
+    this.accounts = undefined; // the dotagents accounts extension's API, when it is installed
+  }
+
+  // With the dotagents accounts extension installed, its panel is a fixed tab, the first in the
+  // list. That extension keeps talking to its server; this view only draws the panel (its files,
+  // in this page) and passes the messages both ways.
+  async connectAccounts() {
+    const ext = vscode.extensions.getExtension(ACCOUNTS);
+    const api = ext ? await ext.activate().catch(() => undefined) : undefined;
+    if (api === this.accounts?.api) return;
+    this.accounts?.subscription.dispose();
+    this.accounts = api?.panelRoot ? { api, subscription: api.onDidChange((message) => this.post(message)) } : undefined;
+    this.reload();
+  }
+
+  async onAccounts(m) {
+    const api = this.accounts?.api;
+    if (!api) return;
+    if (m.type === "ready") this.post(api.message());
+    else if (m.type === "action") this.post({ type: "result", id: m.id, result: await api.act(m.action, m.body) });
   }
 
   // The keys that go to VS Code while a session has focus (media/keys.js): the terminal's rule,
@@ -137,19 +160,20 @@ class SidebarView {
 
   resolveWebviewView(view) {
     this.view = view;
-    const media = vscode.Uri.joinPath(this.context.extensionUri, "media");
-    const modules = vscode.Uri.joinPath(this.context.extensionUri, "node_modules");
-    view.webview.options = { enableScripts: true, localResourceRoots: [media, modules] };
-    view.webview.html = this.html(view.webview);
+    this.reload();
     view.webview.onDidReceiveMessage((msg) => this.onMessage(msg));
     view.onDidDispose(() => {
       if (this.view === view) this.view = undefined;
     });
   }
 
-  // Rebuild the page with the new settings; the running agents are kept and replayed
+  // Build the page, or rebuild it with the new settings; the running agents are kept and replayed
   reload() {
-    if (this.view) this.view.webview.html = this.html(this.view.webview);
+    if (!this.view) return;
+    const media = vscode.Uri.joinPath(this.context.extensionUri, "media");
+    const modules = vscode.Uri.joinPath(this.context.extensionUri, "node_modules");
+    this.view.webview.options = { enableScripts: true, localResourceRoots: [media, modules, ...(this.accounts ? [this.accounts.api.panelRoot] : [])] };
+    this.view.webview.html = this.html(this.view.webview);
   }
 
   update(state) {
@@ -297,6 +321,9 @@ class SidebarView {
         break;
       case "open":
         if (/^https?:\/\//i.test(msg.uri)) vscode.env.openExternal(vscode.Uri.parse(msg.uri));
+        break;
+      case "accounts":
+        if (msg.message && typeof msg.message === "object") this.onAccounts(msg.message);
         break;
     }
   }
@@ -482,19 +509,24 @@ class SidebarView {
         { name: p.name, scrollback: !!p.scrollback, newline: p.newline, icon: String(uri("media", `${p.id}-dark.svg`)) },
       ])
     );
-    const settings = JSON.stringify({ ...terminalSettings(), providers, workspace: workspaceName(), keys: this.keys }).replace(/</g, "\\u003c");
+    const panel = (name) => String(webview.asWebviewUri(vscode.Uri.joinPath(this.accounts.api.panelRoot, name)));
+    // The panel's scripts load only when its tab first opens (media/view.js), so nothing of it runs
+    // while the agents are in use
+    const accounts = this.accounts ? { icon: String(uri("media", "accounts.svg")), scripts: [panel("avatar.js"), panel("panel.js")], nonce } : null;
+    const settings = JSON.stringify({ ...terminalSettings(), providers, workspace: workspaceName(), keys: this.keys, accounts }).replace(/</g, "\\u003c");
     return `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; font-src ${webview.cspSource}; img-src ${webview.cspSource};">
 <link rel="stylesheet" href="${uri("node_modules", "@xterm", "xterm", "css", "xterm.css")}">
+${accounts ? `<link rel="stylesheet" href="${panel("panel.css")}">` : ""}
 <link rel="stylesheet" href="${uri("media", "view.css")}">
 </head>
 <body>
 <div id="main">
 <div id="header"></div>
-<div id="panes"></div>
+<div id="panes">${accounts ? `<div id="accounts" class="pane accounts hidden"><main id="panel" class="panel" aria-live="polite"></main></div>` : ""}</div>
 </div>
 <div id="list"></div>
 <script nonce="${nonce}">window.DOTAGENTS_SIDEBAR_SETTINGS = ${settings};</script>
@@ -568,15 +600,18 @@ async function checkForUpdate(context) {
   }
 }
 
-function activate(context) {
+async function activate(context) {
   checkForUpdate(context).catch(() => {}); // offline or rate limited: try again tomorrow
 
   const view = new SidebarView(context);
   view.workOutKeys().catch((err) => view.log.appendLine(`Could not work out the shortcut keys: ${err.message}`));
+  // Before the view is drawn, so the page is built once, with the accounts tab or without it
+  await view.connectAccounts().catch((err) => view.log.appendLine(`Could not reach the dotagents accounts extension: ${err.message}`));
   // A command run from a session's context menu gets that session; from the title bar, the active one
   const onSession = (name, run) => vscode.commands.registerCommand(`dotagentsSidebar.${name}`, (arg) => run(arg?.sessionId));
   context.subscriptions.push(
     view,
+    vscode.extensions.onDidChange(() => view.connectAccounts()),
     vscode.window.registerWebviewViewProvider("dotagentsSidebar.view", view, {
       webviewOptions: { retainContextWhenHidden: true },
     }),

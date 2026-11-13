@@ -132,13 +132,25 @@ body {
   background: var(--vscode-list-inactiveSelectionBackground);
 }
 
+/* The accounts tab, fixed above the sessions */
+.item.fixed {
+  border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border));
+}
+
+/* The accounts panel, scrolling in its pane */
+.pane.accounts {
+  padding: 0;
+  overflow-y: auto;
+}
+
 /* Sessions that show together */
 .item.grouped {
   border-left-color: var(--vscode-tree-indentGuidesStroke, currentColor);
 }
 
-/* The agent's mark, painted with the session's color */
-.icon {
+/* The agent's mark, painted with the session's color (not the accounts panel's icon buttons) */
+#list .icon,
+#header .icon {
   flex: none;
   width: 16px;
   height: 16px;
