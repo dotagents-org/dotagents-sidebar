@@ -221,8 +221,9 @@
     return session.name !== provider.name ? session.name : session.title || "";
   }
 
-  // The active session, like a terminal tab: the agent's mark in the session's color, the agent,
-  // the workspace (dimmer) and the session's own name, when it has one other than the agent's.
+  // The active session, like a terminal tab: the agent's mark in the session's color, the workspace
+  // (dimmer) and the session's own name, when it has one other than the agent's. The agent's name is
+  // the view's title.
   // The accounts tab has no title: the panel starts with its own seal.
   function title(session) {
     header.classList.toggle("hidden", showAccounts);
@@ -238,7 +239,7 @@
     const icon = part("icon", "");
     icon.style.maskImage = `url("${provider.icon}")`;
     icon.style.backgroundColor = theme[session.color] || theme.foreground;
-    const parts = [icon, part("agent", provider.name)];
+    const parts = [icon];
     if (settings.workspace) parts.push(part("workspace", settings.workspace));
     const name = label(session);
     if (name) parts.push(part("slash", "/"), part("session", name));
@@ -265,8 +266,19 @@
     panes.classList.toggle("empty", !showAccounts && !state.sessions.length);
     list.replaceChildren(...(accounts ? [accountsItem()] : []), ...state.sessions.map(item));
     title(active);
+    viewTitle(active);
     layoutAll();
     focus();
+  }
+
+  // The view's title follows the tab: "Accounts" on the accounts tab, the active session's agent on
+  // a session, "Sidebar" (the manifest's name) with neither
+  let shownTitle = null; // unknown until the first draw, so a reloaded page sets it again
+  function viewTitle(session) {
+    const text = showAccounts ? "Accounts" : session ? settings.providers[session.provider].name : "Sidebar";
+    if (text === shownTitle) return;
+    shownTitle = text;
+    vscode.postMessage({ type: "view", title: text });
   }
 
   // The accounts tab: the mark, always first, never closed or split
