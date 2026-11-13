@@ -15,7 +15,7 @@
   <a href="#how-it-works">How it works</a>
 </p>
 
-The agents' official extensions put them in a chat panel or a terminal tab. This one gives them a view of their own in the secondary sidebar, laid out like VS Code's terminal panel: the agent's terminal UI on the left, the list of sessions on the right. It is part of the [dotagents](https://github.com/dotagents-org/dotagents) family, and works without it.
+The agents' official extensions put them in a chat panel or a terminal tab. This one gives them a view of their own in the secondary sidebar, laid out like VS Code's terminal panel: the agent's terminal UI on the left, the list of sessions on the right. It is part of the [dotagents](https://github.com/dotagents-org/dotagents-core) family, and works without it.
 
 > This is an unofficial community project. It is not affiliated with or endorsed by Anthropic, OpenAI or the OpenCode team.
 
