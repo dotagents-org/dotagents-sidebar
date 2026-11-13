@@ -322,6 +322,9 @@ class SidebarView {
       case "open":
         if (/^https?:\/\//i.test(msg.uri)) vscode.env.openExternal(vscode.Uri.parse(msg.uri));
         break;
+      case "view":
+        if (this.view && typeof msg.title === "string") this.view.title = msg.title.slice(0, 100);
+        break;
       case "accounts":
         if (msg.message && typeof msg.message === "object") this.onAccounts(msg.message);
         break;
