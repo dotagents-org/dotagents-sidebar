@@ -6,7 +6,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Added
 
-- **File links.** File paths in a session are links, as in the integrated terminal: Ctrl+click opens the file at its line and column (`src/a.ts:41:7`, `(41,7)`, `", line 12"`), or a folder in the Explorer. Only paths that exist are links, tried from the sessions' folder and each workspace folder; a path with spaces needs double quotes. Links an agent marks itself (OSC 8) open too: web pages in the browser, `file://` in the editor.
+- **File links.** File paths in a session are links, underlined under the mouse: a click opens the file at its line and column (`src/a.ts:41:7`, `(41,7)`, `", line 12"`), or a folder in the Explorer. Only paths that exist are links, tried from the sessions' folder and each workspace folder; a path with spaces needs double quotes. Links an agent marks itself (OSC 8) open too: web pages in the browser, `file://` in the editor.
 
 ## 0.1.2 - 2026-11-13
 

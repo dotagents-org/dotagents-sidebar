@@ -87,11 +87,9 @@
                 text: text.slice(f.start, f.end),
                 // Underlined under the mouse, with a pointer, as in the integrated terminal
                 decorations: { pointerCursor: true, underline: true },
-                // Ctrl+click (Cmd+click on a Mac), as in the integrated terminal
-                activate: (event) => {
-                  if (!event.ctrlKey && !event.metaKey) return;
-                  vscode.postMessage({ type: "openFile", file: files[f.path], line: f.line, column: f.column });
-                },
+                // A click opens it, as web links and the links an agent marks do here (xterm calls
+                // this only when the press and the release are both on the link, so a drag selects)
+                activate: () => vscode.postMessage({ type: "openFile", file: files[f.path], line: f.line, column: f.column }),
               };
             })
             .filter((link) => link.range.start.y <= y && link.range.end.y >= y);
