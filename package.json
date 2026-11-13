@@ -91,16 +91,6 @@
         "title": "dotagents-sidebar: Change Session Color..."
       },
       {
-        "command": "dotagentsSidebar.new.claude",
-        "title": "Claude Code",
-        "category": "dotagents-sidebar: New Session"
-      },
-      {
-        "command": "dotagentsSidebar.split.claude",
-        "title": "Claude Code",
-        "category": "dotagents-sidebar: Split Session"
-      },
-      {
         "command": "dotagentsSidebar.switchAccount",
         "title": "dotagents-sidebar: Switch Claude Account"
       }
@@ -111,11 +101,6 @@
           "command": "dotagentsSidebar.new",
           "when": "view == dotagentsSidebar.view",
           "group": "navigation@1"
-        },
-        {
-          "submenu": "dotagentsSidebar.newMenu",
-          "when": "view == dotagentsSidebar.view",
-          "group": "navigation@2"
         },
         {
           "command": "dotagentsSidebar.split",
@@ -154,26 +139,6 @@
           "when": "webviewId == 'dotagentsSidebar.view' && webviewSection == 'session'",
           "group": "2_run@2"
         }
-      ],
-      "dotagentsSidebar.newMenu": [
-        {
-          "command": "dotagentsSidebar.new.claude",
-          "group": "1_agents@2"
-        },
-        {
-          "command": "dotagentsSidebar.split",
-          "group": "2_split@1"
-        },
-        {
-          "submenu": "dotagentsSidebar.splitMenu",
-          "group": "2_split@2"
-        }
-      ],
-      "dotagentsSidebar.splitMenu": [
-        {
-          "command": "dotagentsSidebar.split.claude",
-          "group": "1_agents@2"
-        }
       ]
     },
     "terminal": {
@@ -211,17 +176,6 @@
         }
       }
     },
-    "submenus": [
-      {
-        "id": "dotagentsSidebar.newMenu",
-        "label": "New Session With...",
-        "icon": "$(chevron-down)"
-      },
-      {
-        "id": "dotagentsSidebar.splitMenu",
-        "label": "Split Session With"
-      }
-    ],
     "icons": {
       "dotagents-accounts": {
         "description": "The dotagents accounts mark",

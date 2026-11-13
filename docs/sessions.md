@@ -4,7 +4,7 @@ Each session is an agent running in its own terminal. The list on the right show
 
 ## Sessions and splits
 
-- **New session:** `+` opens one with the agent used last; the `⌄` next to it picks the agent, or splits with it.
+- **New session:** `+` opens one with Claude Code.
 - **Split:** opens a session next to the active one. A split shows side by side in a wide view and stacked in a tall one.
 - **Close:** stops the agent and closes the session. **Restart** starts a new process in the same conversation.
 
@@ -44,8 +44,7 @@ A *Claude Code* entry in the terminal panel's `⌄` menu opens it in a regular t
 
 | Command | Where | What it does |
 |---|---|---|
-| `dotagents-sidebar: New Session` | `+` | A session with the agent used last |
-| `dotagents-sidebar: New Session With...` | `⌄` | A session with the agent you pick, or a split with it |
+| `dotagents-sidebar: New Session` | `+` | A Claude Code session |
 | `dotagents-sidebar: Split Session` | title bar | A session next to the active one |
 | `dotagents-sidebar: Restart Session` | title bar, session menu | A new process in the same conversation |
 | `dotagents-sidebar: Close Session` | title bar, session menu | Stops the agent and closes the session |

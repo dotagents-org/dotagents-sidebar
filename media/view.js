@@ -1,6 +1,7 @@
 (function () {
   const vscode = acquireVsCodeApi();
   const settings = window.DOTAGENTS_SIDEBAR_SETTINGS;
+  const agent = settings.agent;
   const css = getComputedStyle(document.documentElement);
   const color = (name, fallback) => css.getPropertyValue(`--vscode-${name}`).trim() || fallback;
 
@@ -122,7 +123,6 @@
 
   // One terminal per session. It stays alive while hidden, so switching back is instant
   function open(session) {
-    const provider = settings.providers[session.provider];
     const el = document.createElement("div");
     el.className = "pane";
     panes.appendChild(el);
@@ -138,8 +138,8 @@
       customGlyphs: true, // box drawing and block characters drawn to fill the cell, as in VS Code
       theme,
       allowProposedApi: true,
-      // Full-screen agents get none, which also means no scrollbar gutter
-      scrollback: provider.scrollback ? settings.scrollback : 0,
+      // Claude Code writes its conversation to the normal screen, so the history lives in scrollback
+      scrollback: settings.scrollback,
     });
     const fit = new FitAddon.FitAddon();
     term.loadAddon(fit);
@@ -187,9 +187,9 @@
       // image and the text never comes
       if (event.ctrlKey && key === "v") return false;
       // Shift+Enter inserts a newline, sent as the sequence the agent reads as one
-      if (provider.newline && event.shiftKey && !event.ctrlKey && !event.altKey && event.key === "Enter") {
+      if (agent.newline && event.shiftKey && !event.ctrlKey && !event.altKey && event.key === "Enter") {
         event.preventDefault();
-        vscode.postMessage({ type: "input", id: session.id, data: provider.newline });
+        vscode.postMessage({ type: "input", id: session.id, data: agent.newline });
         return false;
       }
       return true;
@@ -215,7 +215,7 @@
     let lastTitle;
     term.onTitleChange((raw) => {
       const clean = raw.replace(/^[^\p{L}\p{N}]+/u, "").trim();
-      const title = clean === provider.name || clean === settings.workspace ? "" : clean;
+      const title = clean === agent.name || clean === settings.workspace ? "" : clean;
       if (title === lastTitle) return; // a spinner changes only the mark
       lastTitle = title;
       vscode.postMessage({ type: "title", id: session.id, title });
@@ -283,13 +283,12 @@
   }
 
   function item(session) {
-    const provider = settings.providers[session.provider];
     const el = document.createElement("div");
     el.className = "item";
     el.classList.toggle("active", !showAccounts && session.id === state.active);
     el.classList.toggle("grouped", state.sessions.filter((s) => s.group === session.group).length > 1);
     const name = label(session);
-    el.title = name ? `${name} (${provider.name})` : provider.name;
+    el.title = name ? `${name} (${agent.name})` : agent.name;
     // The session's commands, in VS Code's own context menu
     el.dataset.vscodeContext = JSON.stringify({
       webviewSection: "session",
@@ -306,7 +305,7 @@
 
     const icon = document.createElement("span");
     icon.className = "icon";
-    icon.style.maskImage = `url("${provider.icon}")`;
+    icon.style.maskImage = `url("${agent.icon}")`;
     icon.style.backgroundColor = theme[session.color] || theme.foreground;
     el.append(icon);
     return el;
@@ -314,8 +313,7 @@
 
   // The session's name: the one given in the list, else the conversation's title from the agent
   function label(session) {
-    const provider = settings.providers[session.provider];
-    return session.name !== provider.name ? session.name : session.title || "";
+    return session.name !== agent.name ? session.name : session.title || "";
   }
 
   // The active session, like a terminal tab: the agent's mark in the session's color, the workspace
@@ -326,7 +324,6 @@
     header.classList.toggle("hidden", showAccounts);
     if (showAccounts) return header.replaceChildren();
     if (!session) return header.replaceChildren();
-    const provider = settings.providers[session.provider];
     const part = (cls, text) => {
       const el = document.createElement("span");
       el.className = cls;
@@ -334,7 +331,7 @@
       return el;
     };
     const icon = part("icon", "");
-    icon.style.maskImage = `url("${provider.icon}")`;
+    icon.style.maskImage = `url("${agent.icon}")`;
     icon.style.backgroundColor = theme[session.color] || theme.foreground;
     const parts = [icon];
     if (settings.workspace) parts.push(part("workspace", settings.workspace));
@@ -372,7 +369,7 @@
   // a session, "Sidebar" (the manifest's name) with neither
   let shownTitle = null; // unknown until the first draw, so a reloaded page sets it again
   function viewTitle(session) {
-    const text = showAccounts ? "Accounts" : session ? settings.providers[session.provider].name : "Sidebar";
+    const text = showAccounts ? "Accounts" : session ? agent.name : "Sidebar";
     if (text === shownTitle) return;
     shownTitle = text;
     vscode.postMessage({ type: "view", title: text });

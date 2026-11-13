@@ -23,4 +23,4 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Removed
 
-- **OpenCode and Codex.** Their support, switched off since 0.1.0, is gone from the code: the sidebar runs Claude Code only.
+- **OpenCode and Codex.** Their support, switched off since 0.1.0, is gone from the code: the sidebar runs Claude Code only. With one agent, the `⌄` menu next to `+` (New Session With..., Split Session With) is gone too: `+` and the split button open Claude Code.

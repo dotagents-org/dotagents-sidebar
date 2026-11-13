@@ -5,7 +5,7 @@ const path = require("path");
 const vscode = require("vscode");
 const { spawn } = require("child_process");
 const host = require("./host");
-const { PROVIDERS, command, conversationArgs, env, newer } = require("./providers");
+const { AGENT, newConversation, command, conversationArgs, env, newer } = require("./agent");
 const sessions = require("./sessions");
 const keys = require("./media/keys.js");
 
@@ -107,7 +107,7 @@ class SidebarView {
   constructor(context) {
     this.context = context;
     this.view = undefined;
-    this.state = sessions.restore(context.workspaceState.get("sessions"), PROVIDERS.map((p) => p.id));
+    this.state = sessions.restore(context.workspaceState.get("sessions"));
     // Session id -> what the extension knows of its agent; the process and the screen live in the host
     this.terminals = new Map();
     this.snapshots = []; // the replies the host still owes, in order
@@ -198,8 +198,7 @@ class SidebarView {
   terminal(id) {
     let terminal = this.terminals.get(id);
     if (!terminal) {
-      const provider = PROVIDERS.find((p) => p.id === this.session(id).provider);
-      terminal = { provider, started: false, exited: false, resume: false, startedAt: 0, size: { cols: 80, rows: 24 } };
+      terminal = { started: false, exited: false, resume: false, startedAt: 0, size: { cols: 80, rows: 24 } };
       this.terminals.set(id, terminal);
     }
     return terminal;
@@ -369,7 +368,7 @@ class SidebarView {
   // window reload, this is where the agents that kept running show up again
   async replay() {
     if (!this.state.sessions.length) {
-      this.state = this.added(sessions.add);
+      this.state = sessions.add(this.state, AGENT.name);
       this.context.workspaceState.update("sessions", this.state);
     }
     const running = await this.snapshot();
@@ -389,15 +388,14 @@ class SidebarView {
 
   start(id, fresh = false) {
     const terminal = this.terminal(id);
-    const { provider } = terminal;
     // Open the session's conversation again; the first time, a new one with an id of our own
     let conversation = fresh ? undefined : this.session(id).conversation;
     const resume = !!conversation;
-    if (!conversation && provider.newConversation) conversation = provider.newConversation();
+    if (!conversation) conversation = newConversation();
     const startedAt = Date.now();
     this.update(sessions.remember(this.state, id, { conversation, startedAt }));
     Object.assign(terminal, { started: true, exited: false, resume, startedAt });
-    const { file, args } = command(provider, process.platform, conversationArgs(provider, conversation, resume));
+    const { file, args } = command(process.platform, conversationArgs(conversation, resume));
     this.post({ type: "clear", id });
     this.send({
       type: "create",
@@ -405,10 +403,10 @@ class SidebarView {
       file,
       args,
       cwd: cwd(),
-      env: env(provider, process.env),
+      env: env(process.env),
       cols: terminal.size.cols,
       rows: terminal.size.rows,
-      scrollback: provider.scrollback ? terminalSettings().scrollback : 0,
+      scrollback: terminalSettings().scrollback,
     });
   }
 
@@ -420,25 +418,16 @@ class SidebarView {
     // A conversation that can't be resumed (never saved, or deleted): start a new one
     if (terminal.resume && Date.now() - terminal.startedAt < 5000) return this.start(id, true);
     terminal.exited = true;
-    const { provider } = terminal;
     // 127 is bash's "command not found"
     const reason =
       exitCode === 127
-        ? `${provider.command} was not found on the PATH set up by ~/.bashrc. ${provider.install}`
-        : `${provider.name} exited with code ${exitCode}`;
+        ? `${AGENT.command} was not found on the PATH set up by ~/.bashrc. ${AGENT.install}`
+        : `${AGENT.name} exited with code ${exitCode}`;
     this.send({ type: "note", id, data: `\r\n\x1b[2m[${reason}. Press Enter to start it again.]\x1b[0m\r\n` });
   }
 
-  // The state after `action` (add or split) opened a session of the agent used last
-  added(action, providerId) {
-    const known = (id) => PROVIDERS.find((p) => p.id === id);
-    const provider = known(providerId) || known(this.context.globalState.get("lastProvider")) || PROVIDERS[0];
-    this.context.globalState.update("lastProvider", provider.id);
-    return action(this.state, provider.id, provider.name);
-  }
-
-  open(action, providerId) {
-    this.update(this.added(action, providerId));
+  open(action) {
+    this.update(action(this.state, AGENT.name));
     vscode.commands.executeCommand("dotagentsSidebar.view.focus");
   }
 
@@ -516,17 +505,12 @@ class SidebarView {
   html(webview) {
     const uri = (...p) => webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, ...p));
     const nonce = crypto.randomBytes(16).toString("base64");
-    const providers = Object.fromEntries(
-      PROVIDERS.map((p) => [
-        p.id,
-        { name: p.name, scrollback: !!p.scrollback, newline: p.newline, icon: String(uri("media", `${p.id}-dark.svg`)) },
-      ])
-    );
+    const agent = { name: AGENT.name, newline: AGENT.newline, icon: String(uri("media", "claude-dark.svg")) };
     const panel = (name) => String(webview.asWebviewUri(vscode.Uri.joinPath(this.accounts.api.panelRoot, name)));
     // The panel's scripts load only when its tab first opens (media/view.js), so nothing of it runs
     // while the agents are in use
     const accounts = this.accounts ? { icon: String(uri("media", "accounts.svg")), scripts: [panel("avatar.js"), panel("panel.js")], nonce } : null;
-    const settings = JSON.stringify({ ...terminalSettings(), providers, workspace: workspaceName(), keys: this.keys, accounts }).replace(/</g, "\\u003c");
+    const settings = JSON.stringify({ ...terminalSettings(), agent, workspace: workspaceName(), keys: this.keys, accounts }).replace(/</g, "\\u003c");
     return `<!doctype html>
 <html>
 <head>
@@ -555,15 +539,15 @@ ${accounts ? `<link rel="stylesheet" href="${panel("panel.css")}">` : ""}
   }
 }
 
-function terminalOptions(context, provider) {
-  const { file, args } = command(provider, process.platform);
+function terminalOptions(context) {
+  const { file, args } = command(process.platform);
   return {
-    name: provider.name,
+    name: AGENT.name,
     shellPath: file,
     shellArgs: args,
     iconPath: {
-      light: vscode.Uri.joinPath(context.extensionUri, "media", `${provider.id}-light.svg`),
-      dark: vscode.Uri.joinPath(context.extensionUri, "media", `${provider.id}-dark.svg`),
+      light: vscode.Uri.joinPath(context.extensionUri, "media", "claude-light.svg"),
+      dark: vscode.Uri.joinPath(context.extensionUri, "media", "claude-dark.svg"),
     },
   };
 }
@@ -641,20 +625,13 @@ async function activate(context) {
     vscode.window.onDidChangeActiveColorTheme(() => view.reload()),
     vscode.commands.registerCommand("dotagentsSidebar.new", () => view.open(sessions.add)),
     vscode.commands.registerCommand("dotagentsSidebar.split", () => view.open(sessions.split)),
-    // The + menu, like the terminal panel's: a session with a chosen agent, opened or split
-    ...PROVIDERS.flatMap((provider) => [
-      vscode.commands.registerCommand(`dotagentsSidebar.new.${provider.id}`, () => view.open(sessions.add, provider.id)),
-      vscode.commands.registerCommand(`dotagentsSidebar.split.${provider.id}`, () => view.open(sessions.split, provider.id)),
-    ]),
     onSession("close", (id) => view.close(id)),
     onSession("restart", (id) => view.restart(id)),
     onSession("rename", (id) => view.rename(id)),
     onSession("recolor", (id) => view.recolor(id)),
-    ...PROVIDERS.map((provider) =>
-      vscode.window.registerTerminalProfileProvider(`dotagentsSidebar.profile.${provider.id}`, {
-        provideTerminalProfile: () => new vscode.TerminalProfile(terminalOptions(context, provider)),
-      })
-    )
+    vscode.window.registerTerminalProfileProvider("dotagentsSidebar.profile.claude", {
+      provideTerminalProfile: () => new vscode.TerminalProfile(terminalOptions(context)),
+    })
   );
 }
 

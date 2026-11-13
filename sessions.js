@@ -10,24 +10,24 @@ const EMPTY = { sessions: [], active: null, next: 1 };
 const COLORS = ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"];
 const ROTATION = ["blue", "green", "yellow", "magenta", "cyan", "red"];
 
-function create(state, provider, name, group) {
+function create(state, name, group) {
   const id = `s${state.next}`;
   const uses = (c) => state.sessions.filter((s) => s.color === c).length;
   const color = ROTATION.reduce((best, c) => (uses(c) < uses(best) ? c : best));
-  const session = { id, provider, name, color, group: group || id };
+  const session = { id, name, color, group: group || id };
   return { session, next: state.next + 1 };
 }
 
-function add(state, provider, name) {
-  const { session, next } = create(state, provider, name);
+function add(state, name) {
+  const { session, next } = create(state, name);
   return { sessions: [...state.sessions, session], active: session.id, next };
 }
 
 // The new session joins the active one's group, right after it
-function split(state, provider, name) {
+function split(state, name) {
   const at = state.sessions.findIndex((s) => s.id === state.active);
-  if (at < 0) return add(state, provider, name);
-  const { session, next } = create(state, provider, name, state.sessions[at].group);
+  if (at < 0) return add(state, name);
+  const { session, next } = create(state, name, state.sessions[at].group);
   const sessions = [...state.sessions.slice(0, at + 1), session, ...state.sessions.slice(at + 1)];
   return { sessions, active: session.id, next };
 }
@@ -68,10 +68,10 @@ function visible(state) {
   return active ? state.sessions.filter((s) => s.group === active.group) : [];
 }
 
-// A state read back from storage: only sessions of agents that still exist
-function restore(saved, providers) {
+// A state read back from storage
+function restore(saved) {
   if (!saved || !Array.isArray(saved.sessions)) return EMPTY;
-  const sessions = saved.sessions.filter((s) => providers.includes(s.provider));
+  const sessions = saved.sessions;
   const active = sessions.some((s) => s.id === saved.active) ? saved.active : (sessions[0] || { id: null }).id;
   return { sessions, active, next: saved.next };
 }

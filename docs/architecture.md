@@ -20,7 +20,7 @@ The host is named by workspace and protocol (`PROTOCOL` in `host.js`), not by th
 |---|---|
 | `extension.js` | The view provider, the sessions, the commands, the connection to the host, the updates |
 | `host.js` | The detached process that owns the agents and their screen copies |
-| `providers.js` | The agent, Claude Code: command, environment, conversation flags, newline key |
+| `agent.js` | The agent, Claude Code: command, environment, conversation flags, newline key |
 | `sessions.js` | The session list: add, split, close, rename, colors, restore |
 | `accounts.js` | The Claude accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
 | `media/view.js`, `media/view.css` | The webview: a terminal per session, the list, the title strip |
@@ -45,7 +45,7 @@ npm test # node:test, test/*.test.mjs
 npm run package # writes dotagents-sidebar.vsix
 ```
 
-To debug, open the folder in VS Code and press <kbd>F5</kbd> to start an Extension Development Host. The tests cover what the extension decides without VS Code (sessions, providers, keys, the accounts' status bar and the switch list, the manifest against the code); the rest is checked by hand in VS Code. CI runs the tests and packages the `.vsix` on every push.
+To debug, open the folder in VS Code and press <kbd>F5</kbd> to start an Extension Development Host. The tests cover what the extension decides without VS Code (sessions, the agent, keys, the accounts' status bar and the switch list, the manifest against the code); the rest is checked by hand in VS Code. CI runs the tests and packages the `.vsix` on every push.
 
 ## Releases
 
