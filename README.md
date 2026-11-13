@@ -31,6 +31,7 @@ The agents' official extensions put them in a chat panel or a terminal tab. This
 - **Session colors.** Right-click a session for *Rename*, *Change Color* (the terminal panel's eight colors), *Restart* and *Close*.
 - **Newlines.** Shift+Enter inserts a newline in Claude Code and Codex.
 - **Terminal profiles.** *OpenCode*, *Claude Code* and *Codex* entries in the terminal panel's `⌄` menu open an agent in a regular terminal.
+- **Your Claude accounts, with dotagents.** With the dotagents accounts extension installed, the list starts with a fixed *Accounts* tab: the dotagents panel (every account's usage, its state and the switch), the same as in that extension's view. It never closes or splits, and without that extension it isn't there.
 - **Remote ready.** It runs where the workspace runs, so it works in WSL, SSH and dev containers as well as locally.
 
 ## Requirements
