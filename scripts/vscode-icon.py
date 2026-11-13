@@ -1,6 +1,6 @@
-# Writes surfaces/vscode/media/icons.woff: the accounts mark (the face with the presence dot cut
+# Writes media/icons.woff: the accounts mark (the face with the presence dot cut
 # into its corner), in line, as one glyph of an icon font, so the status bar can show it as
-# $(dotagents-accounts). The status bar takes icons only from fonts. Same shape as media/icon.svg.
+# $(dotagents-accounts). The status bar takes icons only from fonts. Same shape as media/accounts.svg.
 #   uv run --with fonttools --with skia-pathops python scripts/vscode-icon.py
 import pathlib
 import pathops
@@ -33,7 +33,7 @@ def op(a, b, kind):
     return pathops.op(a, b, kind)
 
 
-# In the 24-unit box of media/icon.svg, y down.
+# In the 24-unit box of media/accounts.svg, y down.
 ring = op(rrect(1.7, 1.7, 22.3, 22.3, 6.8), rrect(3.3, 3.3, 20.7, 20.7, 5.2), pathops.PathOp.DIFFERENCE)
 ring = op(ring, circle(19, 19, 5), pathops.PathOp.DIFFERENCE)
 shape = ring
@@ -85,6 +85,6 @@ fb.setupNameTable({"familyName": "dotagents icons", "styleName": "Regular"})
 fb.setupOS2(sTypoAscender=875, sTypoDescender=-125, usWinAscent=875, usWinDescent=125)
 fb.setupPost()
 fb.font.flavor = "woff"
-out = pathlib.Path(__file__).resolve().parent.parent / "surfaces" / "vscode" / "media" / "icons.woff"
+out = pathlib.Path(__file__).resolve().parent.parent / "media" / "icons.woff"
 fb.save(str(out))
 print(out, out.stat().st_size, "bytes")
