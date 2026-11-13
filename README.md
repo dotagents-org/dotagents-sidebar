@@ -34,7 +34,7 @@ The agents' official extensions put them in a chat panel or a terminal tab. This
 - **Session colors.** Right-click a session for *Rename*, *Change Color* (the terminal panel's eight colors), *Restart* and *Close*.
 - **Newlines.** Shift+Enter inserts a newline in Claude Code and Codex.
 - **Terminal profiles.** A *Claude Code* entry in the terminal panel's `⌄` menu opens it in a regular terminal.
-- **Your Claude accounts, with dotagents.** With the dotagents accounts extension installed, the list starts with a fixed *Accounts* tab: the dotagents panel (every account's usage, its state and the switch), the same as in that extension's view. It never closes or splits, and without that extension it isn't there.
+- **Your Claude accounts, with dotagents.** On a machine with [dotagents](https://github.com/dotagents-org/dotagents-core) and its profiles, the list starts with a fixed *Accounts* tab: every account's usage, its state as an avatar, and a switch that puts it on both sides of the machine. The status bar shows the current account and its usage as in the statusLine; a click switches. The data comes from `dotagents start`, which the view starts in the background when none answers.
 - **Remote ready.** It runs where the workspace runs, so it works in WSL, SSH and dev containers as well as locally.
 
 ## Requirements

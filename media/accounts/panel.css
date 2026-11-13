@@ -1,0 +1,84 @@
+/* The accounts tab's panel: every account's usage, the account in each side's slot, and the
+   switch and Desktop buttons. */
+
+/* The identity's roles, light by default and dark with VS Code's dark themes, all on .panel so
+   the page that hosts it keeps its own styles. */
+.panel { --card: transparent; --text: #171717; --muted: #4d4d4d; --track: #c9c9c9; --border: #e3e3e3; --ok: #107d32; --warn: #a25204; --high: #d50322; --on-text: var(--vscode-sideBar-background, #ffffff); }
+body.vscode-dark .panel, body.vscode-high-contrast .panel { --text: #ededed; --muted: #a0a0a0; --track: #454545; --border: #2b2b2b; --ok: #01ca54; --warn: #fe9911; --high: #fe6367; --on-text: var(--vscode-sideBar-background, #181818); }
+.panel, .panel * { box-sizing: border-box; }
+.panel { max-width: 1400px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; color: var(--text); font: 12px/1.45 "Geist Mono", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace; }
+/* The brand and the cards, centered, in a block as wide as the cards side by side (up to 420px
+   each, --n of them) could be: one column in a narrow side bar, several in a window, every card
+   as tall as the tallest. */
+.sheet { width: min(100%, calc(var(--n) * 420px + (var(--n) - 1) * 12px)); margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); grid-auto-rows: 1fr; gap: 12px; }
+.panel { padding: 8px 4px; }
+
+/* The top: the seal, ` dotagents ` in reverse video as in the CLI, and how many profiles. */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.seal { background: var(--text); color: var(--on-text); font-weight: 600; white-space: pre; }
+.muted { color: var(--muted); }
+.small { font-size: 11px; }
+
+.card { border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--card); min-width: 0; container-type: inline-size; }
+.who { display: flex; align-items: center; gap: 12px; }
+.who .names { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.name { font-weight: 600; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status.high { color: var(--high); }
+
+/* The avatar: a canvas avatar.js paints, live. */
+.av { flex-shrink: 0; }
+
+/* A window as a line of `dotagents usage`: the label, the bar in text, the percentage in bold, the
+   reset; the projection on the line under it, under the bar. */
+.window { display: grid; grid-template-columns: var(--label, 2ch) max-content 4ch 1fr; align-items: baseline; column-gap: 1ch; }
+.window .label { color: var(--muted); }
+.bar { white-space: pre; }
+.bar .trk { color: var(--track); }
+.pct { text-align: right; font-weight: 600; }
+.reset { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.window .note { grid-column: 2 / -1; color: var(--muted); }
+.window .note.warn { color: var(--warn); }
+.ok { color: var(--ok); } .warn { color: var(--warn); } .high { color: var(--high); }
+
+.panel button { font: inherit; font-size: 11px; cursor: pointer; border: 0; background: transparent; color: var(--muted); white-space: nowrap; }
+.panel button:hover:not(:disabled) { color: var(--text); }
+.panel button:disabled { opacity: 0.5; cursor: default; }
+/* An icon button: the Desktop's in the card's corner, the refresh in the foot. */
+.panel button.icon { padding: 4px; line-height: 0; border-radius: 6px; }
+.panel button.icon svg { width: 15px; height: 15px; }
+/* The name, and the Desktop's button at the end of its line. */
+.who .line { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+/* Where the account is, and its switch, on both sides. */
+.sides { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; font-size: 11px; }
+.sides .switch { font-size: 12px; font-weight: 600; color: var(--text); padding: 2px 0; }
+.sides .switch::before { content: "[ "; } .sides .switch::after { content: " ]"; }
+.sides .switch:disabled { opacity: 1; color: var(--muted); font-weight: 400; }
+.panel button:focus-visible { outline: 2px solid var(--warn); outline-offset: 2px; }
+
+/* The foot: where on the left, the age and the refresh on the right, inset like a card's content
+   (its padding and border), so the refresh sits right under the switches. */
+.foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2px 8px; padding: 0 13px; font-size: 11px; color: var(--muted); }
+.foot button.icon { margin-right: -4px; }
+.foot .line { display: flex; align-items: center; gap: 4px; }
+/* An action under way: the button clicked pulses; the refresh turns. */
+.busy { animation: pulse 1.2s ease-in-out infinite; }
+.panel button.icon.busy { animation: none; }
+.panel button.icon.busy svg { animation: turn 1s linear infinite; }
+@keyframes pulse { 50% { opacity: 0.4; } }
+@keyframes turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .busy, button.icon.busy svg { animation: none; } }
+.message { margin: 0; text-align: center; font-size: 11px; color: var(--muted); }
+.message.high { color: var(--high); }
+
+/* A card too narrow for a window's whole line (a side bar): the reset on the line under the bar. */
+@container (max-width: 380px) {
+  .window .reset { grid-column: 2 / -1; }
+}
+
+/* A card narrower than its rows (the side bar dragged very thin): the avatar above the name, and the switch under
+   where the account is, so nothing spills past the card's border. */
+@container (max-width: 240px) {
+  .who { flex-direction: column; align-items: stretch; gap: 6px; }
+  .sides { flex-direction: column; align-items: flex-start; }
+}

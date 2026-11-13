@@ -9,8 +9,7 @@ const { PROVIDERS, command, conversationArgs, env, findCodexSessions, newer } = 
 const sessions = require("./sessions");
 const keys = require("./media/keys.js");
 
-// The dotagents accounts extension, whose panel becomes a fixed tab when it is installed
-const ACCOUNTS = "gabrieldulolmarques.dotagents-accounts";
+const { startAccounts } = require("./accounts");
 const SKIP_SHELL = require("./skip-shell.json");
 
 // One host per workspace and protocol (host.js), not per version of the extension: an update
@@ -102,19 +101,15 @@ class SidebarView {
     this.disposed = false;
     this.keys = undefined; // the keys VS Code keeps, once worked out
     this.log = vscode.window.createOutputChannel("dotagents-sidebar");
-    this.accounts = undefined; // the dotagents accounts extension's API, when it is installed
+    this.accounts = undefined; // the Claude accounts (accounts.js), when dotagents is set up here
   }
 
-  // With the dotagents accounts extension installed, its panel is a fixed tab, the first in the
-  // list. That extension keeps talking to its server; this view only draws the panel (its files,
-  // in this page) and passes the messages both ways.
-  async connectAccounts() {
-    const ext = vscode.extensions.getExtension(ACCOUNTS);
-    const api = ext ? await ext.activate().catch(() => undefined) : undefined;
-    if (api === this.accounts?.api) return;
-    this.accounts?.subscription.dispose();
-    this.accounts = api?.panelRoot ? { api, subscription: api.onDidChange((message) => this.post(message)) } : undefined;
-    this.reload();
+  // With dotagents set up on this side, the accounts are a fixed tab, the first in the list:
+  // accounts.js talks to the server, this view draws the panel and passes the messages both ways.
+  connectAccounts() {
+    const api = startAccounts(vscode, this.context);
+    this.accounts = api ? { api, subscription: api.onDidChange((message) => this.post(message)) } : undefined;
+    if (this.accounts) this.context.subscriptions.push(this.accounts.subscription);
   }
 
   async onAccounts(m) {
@@ -609,12 +604,15 @@ async function activate(context) {
   const view = new SidebarView(context);
   view.workOutKeys().catch((err) => view.log.appendLine(`Could not work out the shortcut keys: ${err.message}`));
   // Before the view is drawn, so the page is built once, with the accounts tab or without it
-  await view.connectAccounts().catch((err) => view.log.appendLine(`Could not reach the dotagents accounts extension: ${err.message}`));
+  try {
+    view.connectAccounts();
+  } catch (err) {
+    view.log.appendLine(`Could not set up the Claude accounts: ${err.message}`);
+  }
   // A command run from a session's context menu gets that session; from the title bar, the active one
   const onSession = (name, run) => vscode.commands.registerCommand(`dotagentsSidebar.${name}`, (arg) => run(arg?.sessionId));
   context.subscriptions.push(
     view,
-    vscode.extensions.onDidChange(() => view.connectAccounts()),
     vscode.window.registerWebviewViewProvider("dotagentsSidebar.view", view, {
       webviewOptions: { retainContextWhenHidden: true },
     }),
