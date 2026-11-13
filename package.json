@@ -2,7 +2,7 @@
   "name": "dotagents-sidebar",
   "displayName": "dotagents-sidebar",
   "description": "Claude Code in VS Code's secondary sidebar: several sessions, splits, and agents that keep working across window reloads, with your Claude accounts as the first tab.",
-  "version": "0.8.0",
+  "version": "0.1.0",
   "publisher": "gabrieldulolmarques",
   "license": "MIT",
   "author": "Gabriel R. Marques",

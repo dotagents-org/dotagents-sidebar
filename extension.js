@@ -215,7 +215,7 @@ class SidebarView {
     } catch {
       // not running yet
     }
-    // A host started before the socket was named by protocol (0.7.0) was named by version
+    // A host started before the socket was named by protocol (an earlier version) was named by version
     const legacy = host.socketPath(hostKey().replace(/^p\d+/, this.context.extension.packageJSON.version));
     try {
       return await host.connect(
