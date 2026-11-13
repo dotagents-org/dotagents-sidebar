@@ -356,7 +356,7 @@ class SidebarView {
         // Which of a hovered line's paths exist: { path: the file it is }
         const paths = Array.isArray(msg.paths) ? msg.paths.filter((p) => typeof p === "string" && p.length <= 1024).slice(0, 10) : [];
         Promise.all(paths.map((p) => existingPath(p).then((found) => [p, found?.file]))).then((pairs) => {
-          this.post({ type: "links", id: msg.id, files: Object.fromEntries(pairs.filter(([, file]) => file)) });
+          this.post({ type: "links", request: msg.request, files: Object.fromEntries(pairs.filter(([, file]) => file)) });
         });
         break;
       }

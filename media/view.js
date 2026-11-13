@@ -39,10 +39,11 @@
   let nextLinkRequest = 0;
   function existing(sessionId, paths) {
     return new Promise((resolve) => {
-      const id = ++nextLinkRequest;
-      linkRequests.set(id, resolve);
-      vscode.postMessage({ type: "links", id, session: sessionId, paths });
-      setTimeout(() => linkRequests.delete(id) && resolve({}), 3000);
+      // "request", not "id": the extension reads an id as a session's
+      const request = ++nextLinkRequest;
+      linkRequests.set(request, resolve);
+      vscode.postMessage({ type: "links", request, session: sessionId, paths });
+      setTimeout(() => linkRequests.delete(request) && resolve({}), 3000);
     });
   }
   // The text of the line at y and the lines wrapped onto it, with where each character sits on the
@@ -84,6 +85,7 @@
               return {
                 range: { start: { x: from.x, y: from.y }, end: { x: to.x + to.width - 1, y: to.y } },
                 text: text.slice(f.start, f.end),
+                // Underlined under the mouse, with a pointer, as in the integrated terminal
                 decorations: { pointerCursor: true, underline: true },
                 // Ctrl+click (Cmd+click on a Mac), as in the integrated terminal
                 activate: (event) => {
@@ -430,9 +432,9 @@
       state = msg.state;
       render();
     } else if (msg.type === "output") terminals.get(msg.id)?.term.write(msg.data);
-    else if (msg.type === "links" && linkRequests.has(msg.id)) {
-      linkRequests.get(msg.id)(msg.files || {});
-      linkRequests.delete(msg.id);
+    else if (msg.type === "links" && linkRequests.has(msg.request)) {
+      linkRequests.get(msg.request)(msg.files || {});
+      linkRequests.delete(msg.request);
     }
     else if (msg.type === "clear") terminals.get(msg.id)?.term.reset();
     else if (msg.type === "keys") vsCodeKeys = new Set(msg.keys);
