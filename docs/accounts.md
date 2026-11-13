@@ -25,7 +25,7 @@ The current account (the one in the slot, the worse of the two sides) as the sta
 
 ## Where the data comes from
 
-From `dotagents start`, on the side of the window: a local API on 127.0.0.1 that answers only with the token it leaves in `start.json`, in the same state folder. The view asks it every 10 seconds. When none answers, the view starts one in the background (at most once a minute); a `start.json` left behind by a server that stopped, after a WSL shutdown for example, doesn't count. One server serves every window on that side.
+From `dotagents start`, on the side of the window: a local API on 127.0.0.1 that answers only with the token it leaves in `start.json`, in the same state folder. The view asks it every 10 seconds. When none answers, the view starts one in the background (at most once a minute), on its own: on Windows through a hidden `Start-Process`, so no console window holds it and closing VS Code doesn't stop it; a `start.json` left behind by a server that stopped, after a WSL shutdown for example, doesn't count. One server serves every window on that side.
 
 Every answer carries `apiVersion`. The view knows version 1; with another, it says which side to update: `dotagents update` when dotagents is older, this extension when dotagents is newer. The API is described in dotagents' [commands](https://github.com/dotagents-org/dotagents-core/blob/main/docs/commands.md#dotagents-start).
 

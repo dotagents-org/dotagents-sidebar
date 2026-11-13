@@ -82,3 +82,12 @@ test("the switch lists every account with its usage and where it is, the current
   assert.equal(items[1].detail, "in the slot on Windows");
   assert.equal(items[1].profile, "work");
 });
+
+test("dotagents start runs on its own: directly on Linux and macOS, through a hidden Start-Process on Windows", () => {
+  assert.deepEqual(accounts.startCommand("linux"), ["dotagents", ["start"]]);
+  assert.deepEqual(accounts.startCommand("darwin"), ["dotagents", ["start"]]);
+  const [file, args] = accounts.startCommand("win32");
+  assert.equal(file, "powershell.exe");
+  assert.ok(args.includes("Hidden"));
+  assert.match(args.at(-1), /^Start-Process -WindowStyle Hidden -FilePath dotagents\.cmd -ArgumentList start$/);
+});

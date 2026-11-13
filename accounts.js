@@ -125,6 +125,14 @@ function pickItems(data) {
   });
 }
 
+// How to start `dotagents start` on its own. On Windows, `dotagents` is a .cmd, and one started
+// from here would be tied to a console window: closing it, or VS Code, stops the server. So a
+// hidden PowerShell hands it to Start-Process, which runs it hidden and on its own.
+function startCommand(platform) {
+  if (platform !== "win32") return ["dotagents", ["start"]];
+  return ["powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", "Start-Process -WindowStyle Hidden -FilePath dotagents.cmd -ArgumentList start"]];
+}
+
 const POLL_MS = 10_000;
 const STARTING = "Starting the dotagents server...";
 
@@ -158,7 +166,8 @@ function startAccounts(vscode, context) {
     } catch (err) {
       if (Date.now() - startedAt > 60_000) {
         startedAt = Date.now();
-        const child = spawn("dotagents", ["start"], { detached: true, stdio: "ignore", shell: process.platform === "win32", windowsHide: true });
+        const [file, args] = startCommand(process.platform);
+        const child = spawn(file, args, { detached: true, stdio: "ignore", windowsHide: true });
         child.on("error", () => {});
         child.unref();
       }
@@ -251,4 +260,4 @@ function startAccounts(vscode, context) {
   };
 }
 
-module.exports = { API_VERSION, stateDir, hasAccounts, readServer, refusal, usageText, statusFor, toneColor, pickItems, startAccounts };
+module.exports = { API_VERSION, startCommand, stateDir, hasAccounts, readServer, refusal, usageText, statusFor, toneColor, pickItems, startAccounts };
