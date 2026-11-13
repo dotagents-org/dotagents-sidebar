@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<p align="center"><b>OpenCode, Claude Code and Codex in VS Code's secondary sidebar.<br>Several sessions side by side, and agents that keep working while the window reloads.</b></p>
+<p align="center"><b>Claude Code in VS Code's secondary sidebar.<br>Several sessions side by side, and agents that keep working while the window reloads.</b></p>
 
 <p align="center">
   <a href="#features">Features</a>&nbsp;&nbsp;&nbsp;
@@ -19,6 +19,9 @@ The agents' official extensions put them in a chat panel or a terminal tab. This
 
 > This is an unofficial community project. It is not affiliated with or endorsed by Anthropic, OpenAI or the OpenCode team.
 
+> [!NOTE]
+> OpenCode and Codex are switched off for now: the view offers Claude Code only. Their support is still in the code (`off: true` in `providers.js`).
+
 ## Features
 
 - **Sessions like terminals.** Each session is an agent running in its own terminal. `+` opens one with the agent you used last, and the `⌄` next to it picks the agent. The list on the right shows each session as the agent's mark in the session's color; a click switches to it, and the others keep running.
@@ -30,7 +33,7 @@ The agents' official extensions put them in a chat panel or a terminal tab. This
 - **Your terminal's look.** The view uses `terminal.integrated.fontFamily`, `fontSize`, `lineHeight`, `letterSpacing`, `fontWeight`, `fontWeightBold`, `minimumContrastRatio` and `scrollback`, and the theme's terminal colors. Changes apply without restarting the agents. OpenCode runs with its `system` theme, so it takes the same colors.
 - **Session colors.** Right-click a session for *Rename*, *Change Color* (the terminal panel's eight colors), *Restart* and *Close*.
 - **Newlines.** Shift+Enter inserts a newline in Claude Code and Codex.
-- **Terminal profiles.** *OpenCode*, *Claude Code* and *Codex* entries in the terminal panel's `⌄` menu open an agent in a regular terminal.
+- **Terminal profiles.** A *Claude Code* entry in the terminal panel's `⌄` menu opens it in a regular terminal.
 - **Your Claude accounts, with dotagents.** With the dotagents accounts extension installed, the list starts with a fixed *Accounts* tab: the dotagents panel (every account's usage, its state and the switch), the same as in that extension's view. It never closes or splits, and without that extension it isn't there.
 - **Remote ready.** It runs where the workspace runs, so it works in WSL, SSH and dev containers as well as locally.
 

@@ -1,7 +1,7 @@
 {
   "name": "dotagents-sidebar",
   "displayName": "dotagents-sidebar",
-  "description": "OpenCode, Claude Code and Codex in VS Code's secondary sidebar: several sessions, splits, and agents that keep working across window reloads.",
+  "description": "Claude Code in VS Code's secondary sidebar: several sessions, splits, and agents that keep working across window reloads, with your Claude accounts as the first tab.",
   "version": "0.7.1",
   "publisher": "gabrieldulolmarques",
   "license": "MIT",
@@ -15,9 +15,7 @@
   },
   "homepage": "https://github.com/dotagents-org/dotagents-sidebar#readme",
   "keywords": [
-    "opencode",
     "claude-code",
-    "codex",
     "terminal",
     "sidebar",
     "ai",
@@ -39,9 +37,7 @@
   ],
   "main": "./extension.js",
   "activationEvents": [
-    "onTerminalProfile:dotagentsSidebar.profile.opencode",
-    "onTerminalProfile:dotagentsSidebar.profile.claude",
-    "onTerminalProfile:dotagentsSidebar.profile.codex"
+    "onTerminalProfile:dotagentsSidebar.profile.claude"
   ],
   "contributes": {
     "viewsContainers": {
@@ -95,33 +91,13 @@
         "title": "dotagents-sidebar: Change Session Color..."
       },
       {
-        "command": "dotagentsSidebar.new.opencode",
-        "title": "OpenCode",
-        "category": "dotagents-sidebar: New Session"
-      },
-      {
         "command": "dotagentsSidebar.new.claude",
         "title": "Claude Code",
         "category": "dotagents-sidebar: New Session"
       },
       {
-        "command": "dotagentsSidebar.new.codex",
-        "title": "Codex",
-        "category": "dotagents-sidebar: New Session"
-      },
-      {
-        "command": "dotagentsSidebar.split.opencode",
-        "title": "OpenCode",
-        "category": "dotagents-sidebar: Split Session"
-      },
-      {
         "command": "dotagentsSidebar.split.claude",
         "title": "Claude Code",
-        "category": "dotagents-sidebar: Split Session"
-      },
-      {
-        "command": "dotagentsSidebar.split.codex",
-        "title": "Codex",
         "category": "dotagents-sidebar: Split Session"
       }
     ],
@@ -177,16 +153,8 @@
       ],
       "dotagentsSidebar.newMenu": [
         {
-          "command": "dotagentsSidebar.new.opencode",
-          "group": "1_agents@1"
-        },
-        {
           "command": "dotagentsSidebar.new.claude",
           "group": "1_agents@2"
-        },
-        {
-          "command": "dotagentsSidebar.new.codex",
-          "group": "1_agents@3"
         },
         {
           "command": "dotagentsSidebar.split",
@@ -199,35 +167,17 @@
       ],
       "dotagentsSidebar.splitMenu": [
         {
-          "command": "dotagentsSidebar.split.opencode",
-          "group": "1_agents@1"
-        },
-        {
           "command": "dotagentsSidebar.split.claude",
           "group": "1_agents@2"
-        },
-        {
-          "command": "dotagentsSidebar.split.codex",
-          "group": "1_agents@3"
         }
       ]
     },
     "terminal": {
       "profiles": [
         {
-          "id": "dotagentsSidebar.profile.opencode",
-          "title": "OpenCode",
-          "icon": "code"
-        },
-        {
           "id": "dotagentsSidebar.profile.claude",
           "title": "Claude Code",
           "icon": "sparkle"
-        },
-        {
-          "id": "dotagentsSidebar.profile.codex",
-          "title": "Codex",
-          "icon": "hubot"
         }
       ]
     },
