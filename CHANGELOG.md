@@ -20,3 +20,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 - **Paste on Windows.** Ctrl+V sent a ^V before the text, which Claude Code on Windows reads as pasting an image, so the text never came. Now only the paste itself reaches the agent, as in the integrated terminal.
 - **Copy and paste like the integrated terminal.** Ctrl+Shift+C copies and Ctrl+Shift+V pastes; a right click copies the selection or pastes, as `terminal.integrated.rightClickBehavior` says (`copyPaste` by default on Windows).
 - **On Windows, `dotagents start` runs on its own.** The view used to start it tied to a console window, so closing that window, or VS Code, stopped the server and the accounts tab went back to *Starting*. It now starts it through a hidden `Start-Process`.
+
+### Removed
+
+- **OpenCode and Codex.** Their support, switched off since 0.1.0, is gone from the code: the sidebar runs Claude Code only.

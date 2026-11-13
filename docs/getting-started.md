@@ -6,8 +6,6 @@
 - [Claude Code](https://claude.com/claude-code) (`claude`) installed where the workspace runs, on the `PATH` that `~/.bashrc` sets up: the view starts it with `bash -ic claude` (on Windows, `powershell.exe -NoLogo -Command claude`).
 - For the accounts tab: [dotagents](https://github.com/dotagents-org/dotagents-core) 0.1.0 or later, with its profiles, on the same side as the window ([Accounts](accounts.md)). Without it, the view has the sessions only.
 
-OpenCode and Codex are switched off for now; their support stays in the code (`off: true` in `providers.js`).
-
 ## Install
 
 The extension is not on the Marketplace. Install the `.vsix` from a release:

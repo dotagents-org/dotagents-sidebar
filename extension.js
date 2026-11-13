@@ -5,7 +5,7 @@ const path = require("path");
 const vscode = require("vscode");
 const { spawn } = require("child_process");
 const host = require("./host");
-const { PROVIDERS, command, conversationArgs, env, findCodexSessions, newer } = require("./providers");
+const { PROVIDERS, command, conversationArgs, env, newer } = require("./providers");
 const sessions = require("./sessions");
 const keys = require("./media/keys.js");
 
@@ -20,30 +20,6 @@ function hostKey() {
   const id = workspace ? workspace.toString() : `window-${vscode.env.sessionId}`;
   const hash = crypto.createHash("sha256").update(id).digest("hex").slice(0, 16);
   return `p${host.PROTOCOL}-${hash}`;
-}
-
-// Codex's saved conversations: the first line of each rollout has its id, folder and start time
-function codexRollouts(since) {
-  const root = path.join(process.env.CODEX_HOME || path.join(os.homedir(), ".codex"), "sessions");
-  const rollouts = [];
-  let files = [];
-  try {
-    files = fs.readdirSync(root, { recursive: true }).filter((f) => /rollout-.*\.jsonl$/.test(f));
-  } catch {
-    return rollouts; // no Codex conversations yet
-  }
-  for (const file of files) {
-    const full = path.join(root, file);
-    try {
-      if (fs.statSync(full).mtimeMs < since) continue;
-      const first = fs.readFileSync(full, "utf8").split("\n", 1)[0];
-      const { payload } = JSON.parse(first);
-      rollouts.push({ id: payload.id, cwd: payload.cwd, started: Date.parse(payload.timestamp) });
-    } catch {
-      // a rollout being written, or of another format: skip it
-    }
-  }
-  return rollouts;
 }
 
 // The workspace's name without what VS Code adds in a remote window (" [WSL: Ubuntu]")
@@ -411,22 +387,10 @@ class SidebarView {
     this.post({ type: "init", state: this.state, screens });
   }
 
-  // Codex picks its own conversation ids: find the ones of the sessions that don't know theirs
-  findCodexConversations() {
-    const pending = this.state.sessions.filter((s) => s.provider === "codex" && s.startedAt && !s.conversation);
-    if (!pending.length) return;
-    const since = Math.min(...pending.map((s) => s.startedAt));
-    const found = findCodexSessions(pending, codexRollouts(since), cwd());
-    let state = this.state;
-    for (const [id, conversation] of Object.entries(found)) state = sessions.remember(state, id, { conversation });
-    if (state !== this.state) this.update(state);
-  }
-
   start(id, fresh = false) {
     const terminal = this.terminal(id);
     const { provider } = terminal;
     // Open the session's conversation again; the first time, a new one with an id of our own
-    if (provider.id === "codex") this.findCodexConversations();
     let conversation = fresh ? undefined : this.session(id).conversation;
     const resume = !!conversation;
     if (!conversation && provider.newConversation) conversation = provider.newConversation();

@@ -23,7 +23,7 @@
 </p>
 
 > [!NOTE]
-> **An unofficial community project**, not affiliated with or endorsed by Anthropic. It offers Claude Code only for now: OpenCode and Codex are switched off, and their support stays in the code.
+> **An unofficial community project**, not affiliated with or endorsed by Anthropic. It runs Claude Code only.
 
 Claude Code's official extension puts it in a chat panel or a terminal tab. This one gives it a view of its own in the secondary sidebar, laid out like VS Code's terminal panel: the agent's terminal UI on the left, the list of sessions on the right, and the agents keep working while the window reloads.
 
@@ -102,7 +102,7 @@ Issues and pull requests are welcome. There is no build step: `npm install`, `np
 ## Credits
 
 - [xterm.js](https://github.com/xtermjs/xterm.js) and [node-pty](https://github.com/microsoft/node-pty) (MIT).
-- The agents' marks in the session list come from their projects: Claude Code (Anthropic), [OpenCode](https://github.com/anomalyco/opencode) (MIT) and Codex (OpenAI). Their names and marks belong to their owners.
+- The Claude Code mark in the session list is Anthropic's, and belongs to it.
 - The shortcut rules follow VS Code's integrated terminal ([MIT](https://github.com/microsoft/vscode/blob/main/LICENSE.txt)).
 - The type is [Geist Mono](https://vercel.com/font) (OFL), as in dotagents.
 

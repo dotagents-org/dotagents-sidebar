@@ -10,7 +10,7 @@ Each session is an agent running in its own terminal. The list on the right show
 
 ## Back to the conversation
 
-Each session remembers its agent's conversation. When its agent starts again (after a crash, a restart, the next day), it opens that conversation: `--resume` for Claude Code (`--session` for OpenCode, `resume` for Codex, when they are on).
+Each session remembers its agent's conversation. When its agent starts again (after a crash, a restart, the next day), it opens that conversation: `claude --resume`.
 
 ## The title
 

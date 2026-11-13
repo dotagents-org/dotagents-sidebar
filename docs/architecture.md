@@ -20,7 +20,7 @@ The host is named by workspace and protocol (`PROTOCOL` in `host.js`), not by th
 |---|---|
 | `extension.js` | The view provider, the sessions, the commands, the connection to the host, the updates |
 | `host.js` | The detached process that owns the agents and their screen copies |
-| `providers.js` | The agents: command, environment, conversation flags, newline key, which are on |
+| `providers.js` | The agent, Claude Code: command, environment, conversation flags, newline key |
 | `sessions.js` | The session list: add, split, close, rename, colors, restore |
 | `accounts.js` | The Claude accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
 | `media/view.js`, `media/view.css` | The webview: a terminal per session, the list, the title strip |

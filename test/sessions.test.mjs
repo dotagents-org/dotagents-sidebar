@@ -32,7 +32,7 @@ test("recolor with no color resets the session to the default", () => {
 const names = (sessions) => sessions.map((s) => s.id);
 
 test("add opens a session in a group of its own and shows it", () => {
-  const one = add(EMPTY, "opencode", "OpenCode");
+  const one = add(EMPTY, "a", "A");
   const two = add(one, "claude", "Claude Code");
   assert.deepEqual(names(two.sessions), ["s1", "s2"]);
   assert.equal(two.active, "s2");
@@ -43,7 +43,7 @@ test("add opens a session in a group of its own and shows it", () => {
 });
 
 test("split opens a session next to the active one, in its group", () => {
-  let state = add(add(EMPTY, "opencode", "OpenCode"), "codex", "Codex");
+  let state = add(add(EMPTY, "a", "A"), "a", "A");
   state = split(activate(state, "s1"), "claude", "Claude Code");
   assert.deepEqual(names(state.sessions), ["s1", "s3", "s2"]);
   assert.equal(state.active, "s3");
@@ -52,7 +52,7 @@ test("split opens a session next to the active one, in its group", () => {
 });
 
 test("split with nothing open is the same as add", () => {
-  assert.deepEqual(split(EMPTY, "codex", "Codex"), add(EMPTY, "codex", "Codex"));
+  assert.deepEqual(split(EMPTY, "a", "A"), add(EMPTY, "a", "A"));
 });
 
 test("close shows the neighbor: the next session, or the previous at the end", () => {
@@ -80,20 +80,20 @@ test("activate ignores a session that is not there", () => {
 });
 
 test("restore keeps a saved state and drops what it cannot run", () => {
-  const saved = add(add(EMPTY, "opencode", "OpenCode"), "gone", "Gone");
-  const state = restore(saved, ["opencode"]);
+  const saved = add(add(EMPTY, "a", "A"), "gone", "Gone");
+  const state = restore(saved, ["a"]);
   assert.deepEqual(names(state.sessions), ["s1"]);
   assert.equal(state.active, "s1");
   assert.equal(state.next, 3);
-  assert.deepEqual(restore(undefined, ["opencode"]), EMPTY);
-  assert.deepEqual(restore({ sessions: "x" }, ["opencode"]), EMPTY);
+  assert.deepEqual(restore(undefined, ["a"]), EMPTY);
+  assert.deepEqual(restore({ sessions: "x" }, ["a"]), EMPTY);
 });
 
 test("remember keeps facts about one session's agent, and they survive a restore", () => {
   const { remember } = createRequire(import.meta.url)("../sessions.js");
-  const state = remember(add(add(EMPTY, "claude", "Claude Code"), "codex", "Codex"), "s1", { conversation: "abc", startedAt: 5 });
+  const state = remember(add(add(EMPTY, "claude", "Claude Code"), "gone", "Gone"), "s1", { conversation: "abc", startedAt: 5 });
   assert.equal(state.sessions[0].conversation, "abc");
   assert.equal(state.sessions[0].startedAt, 5);
   assert.equal(state.sessions[1].conversation, undefined);
-  assert.equal(restore(state, ["claude", "codex"]).sessions[0].conversation, "abc");
+  assert.equal(restore(state, ["claude", "gone"]).sessions[0].conversation, "abc");
 });
