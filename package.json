@@ -99,6 +99,10 @@
         "command": "dotagentsSidebar.split.claude",
         "title": "Claude Code",
         "category": "dotagents-sidebar: Split Session"
+      },
+      {
+        "command": "dotagentsSidebar.switchAccount",
+        "title": "dotagents-sidebar: Switch Claude Account"
       }
     ],
     "menus": {
@@ -217,7 +221,16 @@
         "id": "dotagentsSidebar.splitMenu",
         "label": "Split Session With"
       }
-    ]
+    ],
+    "icons": {
+      "dotagents-accounts": {
+        "description": "The dotagents accounts mark",
+        "default": {
+          "fontPath": "media/icons.woff",
+          "fontCharacter": "\\E001"
+        }
+      }
+    }
   },
   "dependencies": {
     "@xterm/addon-fit": "0.11.0",

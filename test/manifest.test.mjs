@@ -46,7 +46,7 @@ test("the + menu opens or splits a session with each agent, like the terminal pa
 });
 
 test("every declared command is registered by the extension", () => {
-  const source = fs.readFileSync(path.join(root, "extension.js"), "utf8");
+  const source = ["extension.js", "accounts.js"].map((f) => fs.readFileSync(path.join(root, f), "utf8")).join("\n");
   for (const { command } of pkg.contributes.commands) {
     const name = command.replace("dotagentsSidebar.", "");
     const perAgent = /^(new|split)\.(\w+)$/.exec(name);
