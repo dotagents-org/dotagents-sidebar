@@ -20,6 +20,10 @@ The view is named after the active tab: the session's agent, or *Accounts* on th
 
 While a session has focus, the keys VS Code would keep in its integrated terminal go to VS Code: the keybindings of the commands in `terminal.integrated.commandsToSkipShell` and the first key of chords. Copy, paste and keys without Ctrl, Alt or Meta always go to the agent. Shift+Enter inserts a newline in Claude Code. The keys in use are listed in the **dotagents-sidebar** output; `dotagentsSidebar.keysForVsCode` adds or takes back keys.
 
+## Copy and paste
+
+As in the integrated terminal: Ctrl+C copies when there is a selection (otherwise it goes to the agent), Ctrl+Shift+C always copies, Ctrl+V and Ctrl+Shift+V paste. A right click follows `terminal.integrated.rightClickBehavior`: `copyPaste` (Windows' default) copies the selection or, with none, pastes; `paste` always pastes; any other value leaves the click alone.
+
 ## The terminal's look
 
 The view uses `terminal.integrated.fontFamily`, `fontSize`, `lineHeight`, `letterSpacing`, `fontWeight`, `fontWeightBold`, `minimumContrastRatio` and `scrollback`, and the theme's terminal colors. Changes apply without restarting the agents.

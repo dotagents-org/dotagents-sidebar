@@ -98,12 +98,16 @@
       // its shortcut, as the integrated terminal does for terminal.integrated.commandsToSkipShell
       if (forVsCode(event)) return false;
       if (event.type !== "keydown") return true;
-      // Ctrl+C copies when there is a selection; otherwise it goes to the agent
-      if (event.ctrlKey && event.key.toLowerCase() === "c" && term.hasSelection()) {
-        navigator.clipboard.writeText(term.getSelection());
-        term.clearSelection();
+      const key = event.key.toLowerCase();
+      // Ctrl+C copies when there is a selection, otherwise it goes to the agent; Ctrl+Shift+C copies
+      if (event.ctrlKey && key === "c" && (event.shiftKey || term.hasSelection())) {
+        copy();
         return false;
       }
+      // Ctrl+V and Ctrl+Shift+V paste through the browser's paste event, as the integrated terminal
+      // does, without the ^V xterm would send first: on Windows, Claude Code reads it as pasting an
+      // image and the text never comes
+      if (event.ctrlKey && key === "v") return false;
       // Shift+Enter inserts a newline, sent as the sequence the agent reads as one
       if (provider.newline && event.shiftKey && !event.ctrlKey && !event.altKey && event.key === "Enter") {
         event.preventDefault();
@@ -113,6 +117,21 @@
       return true;
     });
     term.onData((data) => vscode.postMessage({ type: "input", id: session.id, data }));
+    // The selection to the clipboard, cleared as the integrated terminal does
+    function copy() {
+      if (!term.hasSelection()) return;
+      navigator.clipboard.writeText(term.getSelection()).catch(() => {});
+      term.clearSelection();
+    }
+    // A right click, as terminal.integrated.rightClickBehavior says
+    el.addEventListener("contextmenu", (event) => {
+      const behavior = settings.rightClickBehavior;
+      if (behavior !== "copyPaste" && behavior !== "paste") return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (behavior === "copyPaste" && term.hasSelection()) return copy();
+      navigator.clipboard.readText().then((text) => text && term.paste(text), () => {});
+    });
     // The agent's window title names its conversation (Claude Code: "✳ fix login"). Without the
     // status mark in front, and only when it says more than the agent's or the workspace's name
     let lastTitle;
