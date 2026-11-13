@@ -26,7 +26,7 @@ As in the integrated terminal: Ctrl+C copies when there is a selection (otherwis
 
 ## File links
 
-As in the integrated terminal, file paths an agent prints are links: Ctrl+click (Cmd+click on a Mac) opens the file in the editor, at the line and column when the path says them (`src/a.ts:41`, `src/a.ts:41:7`, `src/a.ts (41,7)`, `"a.py", line 12`), and a folder in the Explorer. A path is a link only when it exists: as it is when absolute (`~` is home, `file://` too), else from the folder the sessions run in and from each workspace folder. A path with spaces is found only in double quotes. Links an agent marks itself (OSC 8) work too: web pages open in the browser, `file://` in the editor.
+File paths an agent prints are links, underlined under the mouse: a click opens the file in the editor, at the line and column when the path says them (`src/a.ts:41`, `src/a.ts:41:7`, `src/a.ts (41,7)`, `"a.py", line 12`), and a folder in the Explorer. A path is a link only when it exists: as it is when absolute (`~` is home, `file://` too), else from the folder the sessions run in and from each workspace folder. A path with spaces is found only in double quotes. Links an agent marks itself (OSC 8) work too: web pages open in the browser, `file://` in the editor. Every link opens on a click, unlike the integrated terminal's Ctrl+click; dragging from a link still selects. A web page goes through VS Code's trusted domains, which ask before opening a site you haven't trusted; a file opens without asking.
 
 ## The terminal's look
 

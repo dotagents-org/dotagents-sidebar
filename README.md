@@ -37,7 +37,7 @@ With [dotagents](https://github.com/dotagents-org/dotagents-core), it is also wh
 - **Splits.** Side by side in a wide view, stacked in a tall one.
 - **Agents survive a reload.** They run in a small host process of their own, so **Developer: Reload Window** brings the view back with every screen as it was.
 - **Back to the conversation.** A session that starts again (a crash, a restart, the next day) opens its conversation with `--resume`.
-- **Like the integrated terminal.** Your terminal font and colors, VS Code's shortcuts while a session has focus, copy and paste, Ctrl+click on a file path to open it, Shift+Enter for a newline, names and colors per session.
+- **Like the integrated terminal.** Your terminal font and colors, VS Code's shortcuts while a session has focus, copy and paste, a click on a file path to open it, Shift+Enter for a newline, names and colors per session.
 
 **Your Claude accounts, with dotagents**
 
