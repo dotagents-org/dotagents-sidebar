@@ -13,6 +13,18 @@ test("the colors are the terminal panel's, in its order; new sessions take turns
   assert.deepEqual(state.sessions.map((s) => s.color), [...ROTATION, ROTATION[0]]);
 });
 
+test("a new session takes a color no open session has, or the least used one", () => {
+  let state = EMPTY;
+  for (let i = 0; i < 3; i++) state = add(state, "a", "A"); // blue, green, yellow
+  state = add(close(state, "s2"), "a", "A");
+  assert.deepEqual(state.sessions.map((s) => s.color), [ROTATION[0], ROTATION[2], ROTATION[1]]);
+  state = recolor(state, "s1", ROTATION[3]);
+  assert.equal(add(state, "a", "A").sessions.at(-1).color, ROTATION[0]);
+  for (let i = 0; i < ROTATION.length; i++) state = add(state, "a", "A");
+  const counts = ROTATION.map((c) => state.sessions.filter((s) => s.color === c).length);
+  assert.ok(Math.max(...counts) - Math.min(...counts) <= 1);
+});
+
 test("recolor with no color resets the session to the default", () => {
   assert.equal(recolor(add(EMPTY, "a", "A"), "s1", null).sessions[0].color, null);
 });

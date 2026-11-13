@@ -4,14 +4,17 @@
 const EMPTY = { sessions: [], active: null, next: 1 };
 
 // The colors a session can take: the terminal panel's (the theme's ANSI colors but the bright
-// ones, getStandardColors in VS Code), in its order. New sessions take turns among those that
-// stand out on dark and light themes alike, so they are easy to tell apart
+// ones, getStandardColors in VS Code), in its order. A new session takes, among those that stand
+// out on dark and light themes alike, the one the open sessions use least, so they are easy to
+// tell apart
 const COLORS = ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"];
 const ROTATION = ["blue", "green", "yellow", "magenta", "cyan", "red"];
 
 function create(state, provider, name, group) {
   const id = `s${state.next}`;
-  const session = { id, provider, name, color: ROTATION[(state.next - 1) % ROTATION.length], group: group || id };
+  const uses = (c) => state.sessions.filter((s) => s.color === c).length;
+  const color = ROTATION.reduce((best, c) => (uses(c) < uses(best) ? c : best));
+  const session = { id, provider, name, color, group: group || id };
   return { session, next: state.next + 1 };
 }
 

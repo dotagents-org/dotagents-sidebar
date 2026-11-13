@@ -11,6 +11,10 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 - **Your Claude accounts, with [dotagents](https://github.com/dotagents-org/dotagents-core):** on a machine where dotagents has profiles, the list starts with a fixed *Accounts* tab: every account's usage, its state as an avatar, and a switch that puts it on both sides of the machine. The status bar shows the current account and its usage as in the statusLine; a click switches. The data comes from `dotagents start` (dotagents-core 0.1.0 or later), which the view starts in the background when none answers.
 - **Claude Code only, for now:** OpenCode and Codex are switched off; their support stays in the code.
 
+### Changed
+
+- **Session colors.** A new session takes a color no open session has, or the least used one, instead of the next in a fixed rotation that could repeat an open session's color after others closed.
+
 ### Fixed
 
 - **Paste on Windows.** Ctrl+V sent a ^V before the text, which Claude Code on Windows reads as pasting an image, so the text never came. Now only the paste itself reaches the agent, as in the integrated terminal.
