@@ -57,6 +57,11 @@ body {
   text-overflow: ellipsis;
 }
 
+/* No title over the accounts tab */
+#header.hidden {
+  display: none;
+}
+
 /* The title over the panes; the session list runs the full height beside them */
 #main {
   flex: 1;

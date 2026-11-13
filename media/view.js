@@ -222,18 +222,11 @@
   }
 
   // The active session, like a terminal tab: the agent's mark in the session's color, the agent,
-  // the workspace (dimmer) and the session's own name, when it has one other than the agent's
+  // the workspace (dimmer) and the session's own name, when it has one other than the agent's.
+  // The accounts tab has no title: the panel starts with its own seal.
   function title(session) {
-    if (showAccounts) {
-      const icon = document.createElement("span");
-      icon.className = "icon";
-      icon.style.maskImage = `url("${accounts.icon}")`;
-      icon.style.backgroundColor = theme.foreground;
-      const name = document.createElement("span");
-      name.className = "agent";
-      name.textContent = "Accounts";
-      return header.replaceChildren(icon, name);
-    }
+    header.classList.toggle("hidden", showAccounts);
+    if (showAccounts) return header.replaceChildren();
     if (!session) return header.replaceChildren();
     const provider = settings.providers[session.provider];
     const part = (cls, text) => {
