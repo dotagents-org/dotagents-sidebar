@@ -37,6 +37,26 @@ The agents' official extensions put them in a chat panel or a terminal tab. This
 - **Your Claude accounts, with dotagents.** On a machine with [dotagents](https://github.com/dotagents-org/dotagents-core) and its profiles, the list starts with a fixed *Accounts* tab: every account's usage, its state as an avatar, and a switch that puts it on both sides of the machine. The status bar shows the current account and its usage as in the statusLine; a click switches. The data comes from `dotagents start`, which the view starts in the background when none answers.
 - **Remote ready.** It runs where the workspace runs, so it works in WSL, SSH and dev containers as well as locally.
 
+### The accounts
+
+Each Claude account has an avatar, in its color and shape; dotagents' own is the `..` face. A session at work makes it hop.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/avatars-dark.png">
+    <img alt="The avatars at work: dotagents, turing and lovelace" src="assets/readme/avatars-light.png" width="400">
+  </picture>
+</p>
+
+Its eyes and the dot in the corner say how it is:
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/states-dark.png">
+    <img alt="The avatars' states: ok, working, waiting on you, warn, at the limit, sign in again, asleep" src="assets/readme/states-light.png" width="760">
+  </picture>
+</p>
+
 ## Requirements
 
 - VS Code **1.106** or newer (the first version with the secondary sidebar view container).
@@ -111,6 +131,11 @@ To debug, open the folder in VS Code and press <kbd>F5</kbd> to start an Extensi
 | `media/keys.js` | Which keys go to VS Code, worked out from the keybindings |
 | `media/view.js`, `media/view.css` | The webview: a terminal per session, the list, the title strip |
 | `skip-shell.json` | VS Code's default commands that skip the shell, copied from its source |
+| `accounts.js` | The Claude accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
+| `media/accounts/` | The accounts tab: the panel (`panel.js`, `panel.css`) and the avatars, drawn live (`avatar.js`) |
+| `scripts/avatars/generate.mjs` | The avatars as still pictures and strips, for documents (`assets/avatars/`); the same rules as `avatar.js` |
+| `scripts/readme/generate.mjs` | The README's pictures of the avatars (`assets/readme/`) |
+| `scripts/vscode-icon.py` | The status bar's mark, a glyph of `media/icons.woff` |
 | `scripts/lockup.py` | Makes the README lockup (SVG, then the PNGs the README shows) from the mark and Geist Mono |
 
 ## Credits
