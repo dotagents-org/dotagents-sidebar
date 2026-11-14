@@ -1,3 +1,9 @@
+/* The strip over the panes (the title) and the accounts tab beside it end on the same line: both are
+   this tall, border included */
+:root {
+  --strip: 29px;
+}
+
 html,
 body {
   height: 100%;
@@ -35,7 +41,8 @@ body {
   align-items: center;
   justify-content: safe center;
   gap: 8px;
-  height: 26px;
+  box-sizing: border-box;
+  height: var(--strip);
   padding: 0 8px;
   overflow: hidden;
   white-space: nowrap;
@@ -153,6 +160,8 @@ body {
 
 /* The accounts tab, fixed above the sessions */
 .item.fixed {
+  box-sizing: border-box;
+  height: var(--strip);
   border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border));
 }
 
