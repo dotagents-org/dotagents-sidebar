@@ -34,7 +34,7 @@ With [dotagents](https://github.com/dotagents-org/dotagents-core), it is also wh
 **Sessions**
 
 - **Sessions like terminals.** Each session is an agent in its own terminal; `+` opens one, and the list switches between them while the others keep running.
-- **Splits.** Side by side.
+- **Splits.** Side by side, joined in the list as the terminal panel's tabs are.
 - **Agents survive a reload.** They run in a small host process of their own, so **Developer: Reload Window** brings the view back with every screen as it was.
 - **Back to the conversation.** A session that starts again (a crash, a restart, the next day) opens its conversation with `--resume`.
 - **Like the integrated terminal.** Your terminal font and colors, VS Code's shortcuts while a session has focus, copy and paste, a click on a file path to open it, Shift+Enter for a newline, names and colors per session.

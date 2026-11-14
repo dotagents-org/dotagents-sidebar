@@ -290,6 +290,123 @@
     settle = setTimeout(layoutAll, 100);
   }
 
+  // Dragging in the list. Pointer events rather than the browser's drag and drop, so it works the
+  // same in every webview, scrolls the list near its edges and is cancelled by Escape. What a drop
+  // does is media/drag.js, as the terminal panel's tabs do it: a session's whole group goes next
+  // to the group of the row under the pointer (inside its own group, the session is reordered),
+  // and below the last row it goes to the end. With Shift the session joins the group of the row
+  // instead, or, below the last row, leaves its group. A line (or a box, for joining) shows where it
+  // would land
+  const DRAG_FROM = 5; // px the pointer travels before a press is a drag, not a click
+  let drag = null; // { id, x, y, last, active, shift, ghost, message, timer }
+  const unmark = () => {
+    for (const el of list.querySelectorAll(".drop-before, .drop-after, .drop-into, .dragging")) {
+      el.classList.remove("drop-before", "drop-after", "drop-into", "dragging");
+    }
+  };
+  function track(event, shift) {
+    drag.shift = shift;
+    drag.last = event;
+    drag.ghost.style.transform = `translate(${event.clientX - 22}px, ${event.clientY - 14}px)`;
+    unmark();
+    let found = null; // what a drop here does
+    let target = null;
+    const box = list.getBoundingClientRect();
+    if (event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom) {
+      const row = document.elementFromPoint(event.clientX, event.clientY)?.closest(".item");
+      if (!row) found = agentDrag.planEnd(state.sessions, drag.id, shift); // below the last session: the end
+      else if (row.dataset.session) {
+        target = row.dataset.session; // (the accounts tab takes nothing)
+        found = agentDrag.plan(state.sessions, drag.id, target, shift);
+      }
+    }
+    // Joining and leaving a split take the session alone; a drop moves its group, or just it inside its own group
+    const moving = shift ? [drag.id] : agentDrag.moving(state.sessions, drag.id, target);
+    for (const id of moving) list.querySelector(`.item[data-session="${id}"]`)?.classList.add("dragging");
+    drag.message = found ? found.message : null;
+    if (found) list.querySelector(`.item[data-session="${found.mark.id}"]`)?.classList.add(`drop-${found.mark.where}`);
+  }
+  function finish() {
+    window.removeEventListener("pointermove", onDragMove);
+    window.removeEventListener("pointerup", onDragEnd);
+    window.removeEventListener("pointercancel", onDragCancel);
+    window.removeEventListener("keydown", onDragKey, true);
+    window.removeEventListener("keyup", onDragKey, true);
+    clearInterval(drag.timer);
+    drag.ghost?.remove();
+    document.body.classList.remove("moving");
+    unmark();
+    drag = null;
+  }
+  // The click that ends a drag is not a click on a session
+  function swallowClick() {
+    const stop = (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+    };
+    window.addEventListener("click", stop, { capture: true, once: true });
+    setTimeout(() => window.removeEventListener("click", stop, true), 0);
+  }
+  function onDragMove(event) {
+    if (!drag || event.pointerId !== drag.pointer) return;
+    if (!drag.active) {
+      if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < DRAG_FROM) return;
+      drag.active = true;
+      // The pointer keeps reporting when it leaves the view, so the release is never missed
+      try {
+        list.setPointerCapture(event.pointerId);
+      } catch {}
+      drag.ghost = list.querySelector(`.item[data-session="${drag.id}"]`).cloneNode(true);
+      drag.ghost.classList.add("ghost");
+      document.body.append(drag.ghost);
+      document.body.classList.add("moving");
+      // The list scrolls while the pointer is near its top or bottom edge
+      drag.timer = setInterval(() => {
+        const box = list.getBoundingClientRect();
+        const y = drag.last.clientY;
+        if (y < box.top + 24) list.scrollTop -= 10;
+        else if (y > box.bottom - 24) list.scrollTop += 10;
+        else return;
+        track(drag.last, drag.shift);
+      }, 30);
+    }
+    track(event, event.shiftKey);
+  }
+  function onDragEnd(event) {
+    if (!drag || event.pointerId !== drag.pointer) return;
+    const { active, message } = drag;
+    finish();
+    if (!active) return;
+    swallowClick();
+    if (message) vscode.postMessage(message);
+  }
+  function onDragCancel() {
+    if (!drag) return;
+    const { active } = drag;
+    finish();
+    if (active) swallowClick();
+  }
+  // Escape gives the drag up (the terminal doesn't get it); Shift going down or up switches between
+  // moving and joining
+  function onDragKey(event) {
+    if (!drag?.active) return;
+    if (event.key === "Escape" && event.type === "keydown") {
+      event.preventDefault();
+      event.stopPropagation();
+      onDragCancel();
+    } else if (event.key === "Shift") track(drag.last, event.type === "keydown");
+  }
+  list.addEventListener("pointerdown", (event) => {
+    const row = event.target.closest(".item[data-session]");
+    if (event.button !== 0 || !row || drag) return;
+    drag = { id: row.dataset.session, pointer: event.pointerId, x: event.clientX, y: event.clientY, last: event, active: false, shift: false };
+    window.addEventListener("pointermove", onDragMove);
+    window.addEventListener("pointerup", onDragEnd);
+    window.addEventListener("pointercancel", onDragCancel);
+    window.addEventListener("keydown", onDragKey, true);
+    window.addEventListener("keyup", onDragKey, true);
+  });
+
   function item(session) {
     const el = document.createElement("div");
     el.className = "item";

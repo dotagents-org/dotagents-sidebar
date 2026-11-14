@@ -6,7 +6,7 @@ Each session is an agent running in its own terminal. The list on the right show
 
 - **New session:** the first button (the face with a `+`) opens one with Claude Code.
 - **New terminal:** the terminal button next to it opens a session with your shell (`$SHELL`, or PowerShell on Windows) in the workspace folder. Its title shows the folder the shell is in as a path (`~/work/app/src` from home and the whole path elsewhere, or `C:\Users\me\work` on Windows; cut on the left when long), which bash and PowerShell report at every prompt (other shells keep the starting folder). Exiting it cleanly closes the session; a shell that fails can be started again with Enter. It has no conversation to resume, and Restart starts a new shell.
-- **Split:** opens a session next to the active one. A split always shows side by side.
+- **Split:** opens a session next to the active one. A split always shows side by side, and its sessions are joined in the list by a line with a corner at each end, as the terminal panel's tabs are.
 - **Close:** stops the agent and closes the session. **Restart** starts a new process in the same conversation.
 
 ## Back to the conversation
