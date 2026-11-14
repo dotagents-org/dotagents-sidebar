@@ -62,30 +62,42 @@
       {
         "command": "dotagentsSidebar.new",
         "title": "dotagents-sidebar: New Session",
-        "icon": "$(add)"
+        "icon": {
+          "light": "media/new-agent-light.svg",
+          "dark": "media/new-agent-dark.svg"
+        }
       },
       {
         "command": "dotagentsSidebar.newTerminal",
         "title": "dotagents-sidebar: New Terminal",
-        "icon": "$(terminal)"
+        "icon": {
+          "light": "media/terminal-light.svg",
+          "dark": "media/terminal-dark.svg"
+        }
       },
       {
         "command": "dotagentsSidebar.split",
         "title": "dotagents-sidebar: Split Session",
-        "icon": "$(split-horizontal)"
+        "icon": {
+          "light": "media/split-light.svg",
+          "dark": "media/split-dark.svg"
+        }
       },
       {
         "command": "dotagentsSidebar.close",
         "title": "dotagents-sidebar: Close Session",
         "icon": {
-          "light": "media/trash-light.svg",
-          "dark": "media/trash-dark.svg"
+          "light": "media/close-light.svg",
+          "dark": "media/close-dark.svg"
         }
       },
       {
         "command": "dotagentsSidebar.restart",
         "title": "dotagents-sidebar: Restart Session",
-        "icon": "$(debug-restart)"
+        "icon": {
+          "light": "media/restart-light.svg",
+          "dark": "media/restart-dark.svg"
+        }
       },
       {
         "command": "dotagentsSidebar.rename",

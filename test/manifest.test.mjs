@@ -36,3 +36,10 @@ test("every declared command is registered by the extension", () => {
     assert.ok(source.includes(`"${command}"`) || source.includes(`onSession("${name}"`), command);
   }
 });
+
+test("every icon file a command names exists", () => {
+  for (const { command, icon } of pkg.contributes.commands) {
+    if (!icon || typeof icon === "string") continue;
+    for (const file of Object.values(icon)) assert.ok(fs.existsSync(path.join(root, file)), `${command}: ${file}`);
+  }
+});
