@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { test } from "node:test";
 
 // Plain CommonJS, loaded as VS Code loads it
-const { AGENT, newConversation, command, conversationArgs, env, newer } = createRequire(import.meta.url)("../agent.js");
+const { AGENT, terminalCommand, newConversation, command, conversationArgs, env, newer } = createRequire(import.meta.url)("../agent.js");
 
 test("the agent is Claude Code, with what the view needs", () => {
   for (const key of ["name", "command", "install", "newline"]) assert.equal(typeof AGENT[key], "string", key);
@@ -46,4 +46,10 @@ test("a conversation opens with an id the view chooses, and resumes with it", ()
 
 test("an id that could reach the shell as code is never passed", () => {
   for (const bad of ["x; rm -rf ~", "$(id)", "a b", "`id`", ""]) assert.deepEqual(conversationArgs(bad, true), []);
+});
+
+test("a terminal runs the user's own shell, interactive, or PowerShell on Windows", () => {
+  assert.deepEqual(terminalCommand("linux", { SHELL: "/bin/zsh" }), { file: "/bin/zsh", args: ["-i"] });
+  assert.deepEqual(terminalCommand("linux", {}), { file: "bash", args: ["-i"] });
+  assert.deepEqual(terminalCommand("win32", { SHELL: "/bin/zsh" }), { file: "powershell.exe", args: ["-NoLogo"] });
 });

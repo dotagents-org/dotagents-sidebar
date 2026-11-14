@@ -6,6 +6,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Added
 
+- **Terminal.** A terminal button next to `+` opens a session with your shell in the workspace folder, with its own icon in the list.
 - **File links.** File paths in a session are links, underlined under the mouse: a click opens the file at its line and column (`src/a.ts:41:7`, `(41,7)`, `", line 12"`), or a folder in the Explorer. Only paths that exist are links, tried from the sessions' folder and each workspace folder; a path with spaces needs double quotes. Links an agent marks itself (OSC 8) open too: web pages in the browser, `file://` in the editor.
 - **Sessions:** several Claude Code sessions side by side, with splits like the terminal panel, a session list, and agents that keep running across window reloads (a detached host process).
 - **Your Claude accounts, with [dotagents](https://github.com/dotagents-org/dotagents-core):** on a machine where dotagents has profiles, the list starts with a fixed *Accounts* tab: every account's usage, its state as an avatar, and a switch that puts it on both sides of the machine. The status bar shows the current account and its usage as in the statusLine; a click switches. The data comes from `dotagents start` (dotagents-core 0.1.0 or later), which the view starts in the background when none answers.

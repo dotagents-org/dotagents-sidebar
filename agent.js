@@ -30,6 +30,14 @@ function command(platform, args = []) {
   return { file: "bash", args: ["-ic", line] };
 }
 
+// The user's shell, run as a terminal session: a login-less interactive one, like the integrated terminal's default
+const TERMINAL = { name: "Terminal" };
+
+function terminalCommand(platform, processEnv = {}) {
+  if (platform === "win32") return { file: "powershell.exe", args: ["-NoLogo"] };
+  return { file: processEnv.SHELL || "bash", args: ["-i"] };
+}
+
 // Like the integrated terminal, don't hand VS Code's own process variables to the agent:
 // ELECTRON_RUN_AS_NODE, for one, breaks any Electron app started from inside it
 function env(processEnv) {
@@ -47,4 +55,4 @@ function newer(a, b) {
   return false;
 }
 
-module.exports = { AGENT, newConversation, command, conversationArgs, env, newer };
+module.exports = { AGENT, TERMINAL, terminalCommand, newConversation, command, conversationArgs, env, newer };

@@ -98,3 +98,10 @@ test("remember keeps facts about one session's agent, and they survive a restore
   assert.equal(state.sessions[1].conversation, undefined);
   assert.equal(restore(state).sessions[0].conversation, "abc");
 });
+
+test("a terminal session is marked as one; an agent session has no kind", () => {
+  const state = add(add(EMPTY, "Claude Code"), "Terminal", "terminal");
+  assert.equal(state.sessions[0].kind, undefined);
+  assert.equal(state.sessions[1].kind, "terminal");
+  assert.equal(state.active, "s2");
+});

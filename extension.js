@@ -5,7 +5,7 @@ const path = require("path");
 const vscode = require("vscode");
 const { spawn } = require("child_process");
 const host = require("./host");
-const { AGENT, newConversation, command, conversationArgs, env, newer } = require("./agent");
+const { AGENT, TERMINAL, terminalCommand, newConversation, command, conversationArgs, env, newer } = require("./agent");
 const sessions = require("./sessions");
 const keys = require("./media/keys.js");
 
@@ -388,6 +388,7 @@ class SidebarView {
 
   start(id, fresh = false) {
     const terminal = this.terminal(id);
+    if (this.session(id).kind === "terminal") return this.startTerminal(id, terminal);
     // Open the session's conversation again; the first time, a new one with an id of our own
     let conversation = fresh ? undefined : this.session(id).conversation;
     const resume = !!conversation;
@@ -410,9 +411,33 @@ class SidebarView {
     });
   }
 
+  startTerminal(id, terminal) {
+    Object.assign(terminal, { started: true, exited: false, resume: false, startedAt: Date.now() });
+    const { file, args } = terminalCommand(process.platform, process.env);
+    this.post({ type: "clear", id });
+    this.send({
+      type: "create",
+      id,
+      file,
+      args,
+      cwd: cwd(),
+      env: env(process.env),
+      cols: terminal.size.cols,
+      rows: terminal.size.rows,
+      scrollback: terminalSettings().scrollback,
+    });
+  }
+
   exited(id, exitCode) {
     const terminal = this.terminals.get(id);
     if (!terminal || !this.session(id)) return;
+    if (this.session(id).kind === "terminal") {
+      // Like the integrated terminal: a terminal that exits cleanly closes its session
+      if (exitCode === 0) return this.close(id);
+      terminal.exited = true;
+      this.send({ type: "note", id, data: `\r\n\x1b[2m[${TERMINAL.name} exited with code ${exitCode}. Press Enter to start it again.]\x1b[0m\r\n` });
+      return;
+    }
     // Leaving the agent closes its session, like a shell closes its terminal
     if (exitCode === 0) return this.close(id);
     // A conversation that can't be resumed (never saved, or deleted): start a new one
@@ -426,8 +451,8 @@ class SidebarView {
     this.send({ type: "note", id, data: `\r\n\x1b[2m[${reason}. Press Enter to start it again.]\x1b[0m\r\n` });
   }
 
-  open(action) {
-    this.update(action(this.state, AGENT.name));
+  open(action, kind) {
+    this.update(kind === "terminal" ? action(this.state, TERMINAL.name, "terminal") : action(this.state, AGENT.name));
     vscode.commands.executeCommand("dotagentsSidebar.view.focus");
   }
 
@@ -505,7 +530,7 @@ class SidebarView {
   html(webview) {
     const uri = (...p) => webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, ...p));
     const nonce = crypto.randomBytes(16).toString("base64");
-    const agent = { name: AGENT.name, newline: AGENT.newline, icon: String(uri("media", "claude-dark.svg")) };
+    const agent = { name: AGENT.name, newline: AGENT.newline, icon: String(uri("media", "claude-dark.svg")), terminal: { name: TERMINAL.name, icon: String(uri("media", "terminal.svg")) } };
     const panel = (name) => String(webview.asWebviewUri(vscode.Uri.joinPath(this.accounts.api.panelRoot, name)));
     // The panel's scripts load only when its tab first opens (media/view.js), so nothing of it runs
     // while the agents are in use
@@ -624,6 +649,7 @@ async function activate(context) {
     // The view reads the theme's colors when it loads
     vscode.window.onDidChangeActiveColorTheme(() => view.reload()),
     vscode.commands.registerCommand("dotagentsSidebar.new", () => view.open(sessions.add)),
+    vscode.commands.registerCommand("dotagentsSidebar.newTerminal", () => view.open(sessions.add, "terminal")),
     vscode.commands.registerCommand("dotagentsSidebar.split", () => view.open(sessions.split)),
     onSession("close", (id) => view.close(id)),
     onSession("restart", (id) => view.restart(id)),

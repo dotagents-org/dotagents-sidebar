@@ -187,7 +187,7 @@
       // image and the text never comes
       if (event.ctrlKey && key === "v") return false;
       // Shift+Enter inserts a newline, sent as the sequence the agent reads as one
-      if (agent.newline && event.shiftKey && !event.ctrlKey && !event.altKey && event.key === "Enter") {
+      if (session.kind !== "terminal" && agent.newline && event.shiftKey && !event.ctrlKey && !event.altKey && event.key === "Enter") {
         event.preventDefault();
         vscode.postMessage({ type: "input", id: session.id, data: agent.newline });
         return false;
@@ -215,7 +215,7 @@
     let lastTitle;
     term.onTitleChange((raw) => {
       const clean = raw.replace(/^[^\p{L}\p{N}]+/u, "").trim();
-      const title = clean === agent.name || clean === settings.workspace ? "" : clean;
+      const title = session.kind === "terminal" || clean === agent.name || clean === settings.workspace ? "" : clean;
       if (title === lastTitle) return; // a spinner changes only the mark
       lastTitle = title;
       vscode.postMessage({ type: "title", id: session.id, title });
@@ -288,7 +288,7 @@
     el.classList.toggle("active", !showAccounts && session.id === state.active);
     el.classList.toggle("grouped", state.sessions.filter((s) => s.group === session.group).length > 1);
     const name = label(session);
-    el.title = name ? `${name} (${agent.name})` : agent.name;
+    el.title = name ? `${name} (${kind(session).name})` : kind(session).name;
     // The session's commands, in VS Code's own context menu
     el.dataset.vscodeContext = JSON.stringify({
       webviewSection: "session",
@@ -305,10 +305,15 @@
 
     const icon = document.createElement("span");
     icon.className = "icon";
-    icon.style.maskImage = `url("${agent.icon}")`;
+    icon.style.maskImage = `url("${kind(session).icon}")`;
     icon.style.backgroundColor = theme[session.color] || theme.foreground;
     el.append(icon);
     return el;
+  }
+
+  // What a session runs: the agent, or a terminal
+  function kind(session) {
+    return session.kind === "terminal" ? agent.terminal : agent;
   }
 
   // The session's name: the one given in the list, else the conversation's title from the agent
@@ -331,7 +336,7 @@
       return el;
     };
     const icon = part("icon", "");
-    icon.style.maskImage = `url("${agent.icon}")`;
+    icon.style.maskImage = `url("${kind(session).icon}")`;
     icon.style.backgroundColor = theme[session.color] || theme.foreground;
     const parts = [icon];
     if (settings.workspace) parts.push(part("workspace", settings.workspace));
@@ -369,7 +374,7 @@
   // a session, "Sidebar" (the manifest's name) with neither
   let shownTitle = null; // unknown until the first draw, so a reloaded page sets it again
   function viewTitle(session) {
-    const text = showAccounts ? "Accounts" : session ? agent.name : "Sidebar";
+    const text = showAccounts ? "Accounts" : session ? kind(session).name : "Sidebar";
     if (text === shownTitle) return;
     shownTitle = text;
     vscode.postMessage({ type: "view", title: text });

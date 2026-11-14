@@ -10,16 +10,17 @@ const EMPTY = { sessions: [], active: null, next: 1 };
 const COLORS = ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"];
 const ROTATION = ["blue", "green", "yellow", "magenta", "cyan", "red"];
 
-function create(state, name, group) {
+// A terminal session has kind "terminal"; an agent session has none
+function create(state, name, group, kind) {
   const id = `s${state.next}`;
   const uses = (c) => state.sessions.filter((s) => s.color === c).length;
   const color = ROTATION.reduce((best, c) => (uses(c) < uses(best) ? c : best));
-  const session = { id, name, color, group: group || id };
+  const session = { id, name, color, group: group || id, ...(kind ? { kind } : {}) };
   return { session, next: state.next + 1 };
 }
 
-function add(state, name) {
-  const { session, next } = create(state, name);
+function add(state, name, kind) {
+  const { session, next } = create(state, name, undefined, kind);
   return { sessions: [...state.sessions, session], active: session.id, next };
 }
 
