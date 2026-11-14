@@ -318,6 +318,19 @@ class SidebarView {
       case "activate":
         this.update(sessions.activate(this.state, msg.id));
         break;
+      // What dragging in the list does (media/drag.js says which)
+      case "drop": // a session dropped on another
+        if (typeof msg.id === "string" && typeof msg.target === "string") this.update(sessions.drop(this.state, msg.id, msg.target));
+        break;
+      case "dropEnd": // a session dropped below the last one
+        if (typeof msg.id === "string") this.update(sessions.dropEnd(this.state, msg.id));
+        break;
+      case "unsplit": // a session dropped below the last one with Shift, out of its split
+        if (typeof msg.id === "string") this.update(sessions.unsplit(this.state, msg.id));
+        break;
+      case "join": // a session into another's group
+        if (typeof msg.id === "string" && typeof msg.target === "string") this.update(sessions.join(this.state, msg.id, msg.target));
+        break;
       case "palette":
         this.palette = msg.colors;
         break;
@@ -567,6 +580,7 @@ ${accounts ? `<link rel="stylesheet" href="${panel("panel.css")}">` : ""}
 <script nonce="${nonce}" src="${uri("media", "keys.js")}"></script>
 <script nonce="${nonce}" src="${uri("media", "links.js")}"></script>
 <script nonce="${nonce}" src="${uri("media", "cwd.js")}"></script>
+<script nonce="${nonce}" src="${uri("media", "drag.js")}"></script>
 <script nonce="${nonce}" src="${uri("media", "view.js")}"></script>
 </body>
 </html>`;

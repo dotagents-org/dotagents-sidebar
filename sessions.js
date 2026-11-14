@@ -1,6 +1,8 @@
 // The sessions of the view: which agents are open, how they are grouped and which one shows.
 // Every action takes a state and returns the new one; the state is what gets saved and drawn
 
+const drag = require("./media/drag.js");
+
 const EMPTY = { sessions: [], active: null, next: 1 };
 
 // The colors a session can take: the terminal panel's (the theme's ANSI colors but the bright
@@ -54,6 +56,38 @@ function remember(state, id, fields) {
   return change(state, id, fields);
 }
 
+// Dropping a session on another, or below the last one, as the terminal panel's tabs do it
+// (media/drag.js): its group moves next to the other's group, or inside its own group the
+// session is reordered. The session that was moved becomes the active one, as there
+function drop(state, id, targetId) {
+  const sessions = drag.dropOrder(state.sessions, id, targetId);
+  return sessions === state.sessions ? state : { ...state, sessions, active: id };
+}
+
+function dropEnd(state, id) {
+  const sessions = drag.endOrder(state.sessions, id);
+  return sessions === state.sessions ? state : { ...state, sessions, active: id };
+}
+
+// A session joins another's group (a split), right after it, and becomes the active one
+function join(state, id, targetId) {
+  const session = state.sessions.find((s) => s.id === id);
+  const target = state.sessions.find((s) => s.id === targetId);
+  if (!session || !target || id === targetId || session.group === target.group) return state;
+  const rest = state.sessions.filter((s) => s.id !== id);
+  const at = rest.findIndex((s) => s.id === targetId) + 1;
+  return { ...state, sessions: [...rest.slice(0, at), { ...session, group: target.group }, ...rest.slice(at)], active: id };
+}
+
+// A session leaves its split and becomes a group of its own, at the end of the list, as in the
+// terminal panel (Unsplit Terminal), and becomes the active one
+function unsplit(state, id) {
+  const session = state.sessions.find((s) => s.id === id);
+  if (!session || state.sessions.filter((s) => s.group === session.group).length < 2) return state;
+  const rest = state.sessions.filter((s) => s.id !== id);
+  return { ...state, sessions: [...rest, { ...session, group: `g${state.next}` }], next: state.next + 1, active: id };
+}
+
 function rename(state, id, name) {
   const trimmed = String(name).trim();
   return trimmed ? change(state, id, { name: trimmed }) : state;
@@ -76,9 +110,12 @@ function visible(state) {
 // A state read back from storage
 function restore(saved) {
   if (!saved || !Array.isArray(saved.sessions)) return EMPTY;
-  const sessions = saved.sessions;
+  // The sessions of a group are neighbors; a state saved by a build that let one move away is put right
+  const groups = new Map();
+  for (const s of saved.sessions) groups.set(s.group, [...(groups.get(s.group) || []), s]);
+  const sessions = [...groups.values()].flat();
   const active = sessions.some((s) => s.id === saved.active) ? saved.active : (sessions[0] || { id: null }).id;
   return { sessions, active, next: saved.next };
 }
 
-module.exports = { EMPTY, COLORS, ROTATION, add, split, close, remember, rename, recolor, activate, visible, restore };
+module.exports = { EMPTY, COLORS, ROTATION, add, split, close, remember, drop, dropEnd, join, unsplit, rename, recolor, activate, visible, restore };

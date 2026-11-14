@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { test } from "node:test";
 
-const { EMPTY, COLORS, ROTATION, add, split, close, rename, recolor, activate, visible, restore } = createRequire(import.meta.url)("../sessions.js");
+const { EMPTY, COLORS, ROTATION, add, split, close, drop, dropEnd, join, unsplit, rename, recolor, activate, visible, restore } = createRequire(import.meta.url)("../sessions.js");
 
 test("the colors are the terminal panel's, in its order; new sessions take turns among the bright ones", () => {
   assert.deepEqual(COLORS, ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]);
@@ -114,6 +114,65 @@ function five() {
 }
 const ids = (s) => s.sessions.map((x) => x.id);
 
+test("dropping a session on another moves its whole group next to the other's group, as the terminal tabs do", () => {
+  const state = five(); // s1 [s2 s5] s3 s4: s2 and s5 are a split
+  assert.deepEqual(ids(state), ["s1", "s2", "s5", "s3", "s4"]);
+  // the group was before the target: it goes after the target's group
+  assert.deepEqual(ids(drop(state, "s2", "s3")), ["s1", "s3", "s2", "s5", "s4"]);
+  assert.deepEqual(ids(drop(state, "s5", "s4")), ["s1", "s3", "s4", "s2", "s5"]); // dragging a member moves the group
+  // the group was after: it goes before the target's group
+  assert.deepEqual(ids(drop(state, "s4", "s2")), ["s1", "s4", "s2", "s5", "s3"]);
+  assert.deepEqual(ids(drop(state, "s3", "s1")), ["s3", "s1", "s2", "s5", "s4"]);
+  // onto a member of another group means that whole group
+  assert.deepEqual(ids(drop(state, "s1", "s5")), ["s2", "s5", "s1", "s3", "s4"]);
+  const moved = drop(state, "s2", "s4");
+  assert.equal(moved.active, "s2"); // the session that was moved is the one in view
+  assert.equal(moved.next, state.next);
+  assert.deepEqual(names(visible(activate(moved, "s5"))), ["s2", "s5"]); // the split is intact
+});
+
+test("dropping on a member of its own group reorders inside the group", () => {
+  let state = EMPTY;
+  for (let i = 0; i < 2; i++) state = add(state, "A"); // s1 s2
+  state = split(activate(state, "s1"), "A"); // s1 s3 | s2
+  state = split(activate(state, "s3"), "A"); // s1 s3 s4 | s2
+  assert.deepEqual(ids(state), ["s1", "s3", "s4", "s2"]);
+  assert.deepEqual(ids(drop(state, "s1", "s4")), ["s3", "s4", "s1", "s2"]); // dragged down: after the target
+  assert.deepEqual(ids(drop(state, "s4", "s1")), ["s4", "s1", "s3", "s2"]); // dragged up: before it
+  assert.equal(drop(state, "s1", "s1"), state);
+});
+
+test("drop and dropEnd change nothing when the list would stay as it is, or a session is not there", () => {
+  const state = five();
+  assert.equal(drop(state, "s9", "s1"), state);
+  assert.equal(drop(state, "s1", "s9"), state);
+  assert.equal(drop(state, "s2", "s2"), state);
+  assert.equal(dropEnd(state, "s4"), state); // already last
+  assert.deepEqual(ids(dropEnd(state, "s1")), ["s2", "s5", "s3", "s4", "s1"]);
+  assert.deepEqual(ids(dropEnd(state, "s5")), ["s1", "s3", "s4", "s2", "s5"]); // the whole group
+});
+
+test("unsplit gives a session a group of its own, at the end of the list", () => {
+  const state = five();
+  const alone = unsplit(state, "s2"); // s1 s5 s3 s4 s2
+  assert.deepEqual(ids(alone), ["s1", "s5", "s3", "s4", "s2"]);
+  const group = (s, id) => s.sessions.find((x) => x.id === id).group;
+  assert.notEqual(group(alone, "s2"), group(alone, "s5"));
+  assert.equal(new Set(alone.sessions.map((s) => s.group)).size, 5); // no group name is used twice
+  assert.deepEqual(names(visible(activate(alone, "s5"))), ["s5"]);
+  assert.equal(unsplit(state, "s1"), state); // not in a split: nothing to leave
+  assert.equal(unsplit(state, "s9"), state);
+  assert.equal(alone.next, state.next + 1);
+  assert.equal(alone.active, "s2"); // in view, alone
+});
+
+test("a drop that changes nothing leaves the active session where it was", () => {
+  const state = activate(five(), "s3");
+  assert.equal(drop(state, "s2", "s2"), state);
+  assert.equal(dropEnd(state, "s4"), state);
+  assert.equal(dropEnd(state, "s1").active, "s1");
+});
+
 test("a split is a session of the kind asked for, beside the active one", () => {
   let state = add(EMPTY, "Terminal", "terminal"); // s1, a terminal
   state = split(state, "Terminal", "terminal");
@@ -133,4 +192,32 @@ test("closing the active session keeps the focus in its split", () => {
   assert.equal(close(activate(state, "s4"), "s4").active, "s3"); // alone and last: the one before
   assert.equal(close(activate(state, "s3"), "s3").active, "s4");
   assert.equal(close(activate(state, "s3"), "s5").active, "s3"); // another session closed: unchanged
+});
+
+test("restore puts the sessions of a group back together", () => {
+  const saved = { sessions: [{ id: "s1", group: "a" }, { id: "s2", group: "b" }, { id: "s3", group: "a" }], active: "s1", next: 4 };
+  assert.deepEqual(ids(restore(saved)), ["s1", "s3", "s2"]);
+});
+
+test("join puts a session in another's group, right after it, and leaves its old group", () => {
+  const state = five();
+  const joined = join(state, "s4", "s2"); // s1 s2 s4 s5 s3
+  assert.deepEqual(ids(joined), ["s1", "s2", "s4", "s5", "s3"]);
+  const group = (s, id) => s.sessions.find((x) => x.id === id).group;
+  assert.equal(group(joined, "s4"), group(state, "s2"));
+  assert.equal(group(joined, "s5"), group(state, "s2")); // the others keep theirs
+  assert.deepEqual(names(visible(activate(joined, "s2"))), ["s2", "s4", "s5"]); // they show together
+  assert.equal(joined.active, "s4"); // and it is the one in view, with its new split
+  // leaving a split takes one session out of it; the rest stay together
+  const left = join(state, "s5", "s1");
+  assert.deepEqual(ids(left), ["s1", "s5", "s2", "s3", "s4"]);
+  assert.deepEqual(names(visible(activate(left, "s2"))), ["s2"]);
+});
+
+test("join changes nothing for itself, a session that is not there, or one already in that group", () => {
+  const state = five();
+  assert.equal(join(state, "s2", "s2"), state);
+  assert.equal(join(state, "s9", "s1"), state);
+  assert.equal(join(state, "s1", "s9"), state);
+  assert.equal(join(state, "s5", "s2"), state);
 });

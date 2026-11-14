@@ -412,7 +412,13 @@
     el.className = "item";
     el.dataset.session = session.id;
     el.classList.toggle("active", !showAccounts && session.id === state.active);
-    el.classList.toggle("grouped", state.sessions.filter((s) => s.group === session.group).length > 1);
+    // Sessions that show together are joined by a line, as the terminal panel's tabs join a split:
+    // a corner on the first, a branch on those between, a corner on the last. It follows the run of
+    // neighbors in the list, so a session moved away from its group stands alone
+    const at = state.sessions.findIndex((s) => s.id === session.id);
+    const joinedBefore = state.sessions[at - 1]?.group === session.group;
+    const joinedAfter = state.sessions[at + 1]?.group === session.group;
+    if (joinedBefore || joinedAfter) el.classList.add("grouped", !joinedBefore ? "group-first" : !joinedAfter ? "group-last" : "group-middle");
     const name = label(session);
     el.title = name ? `${name} (${kind(session).name})` : kind(session).name;
     // The session's commands, in VS Code's own context menu
