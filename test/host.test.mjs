@@ -89,6 +89,9 @@ test("the host runs the agent, relays input and output, and survives its client"
   b.send({ type: "snapshot" });
   const snap = await b.next("snapshot");
   assert.equal(snap.sessions.s1.running, true);
+  // The size the screen was drawn at, for a pane that can't be fitted yet to take before the screen
+  assert.equal(snap.sessions.s1.cols, 100);
+  assert.equal(snap.sessions.s1.rows, 30);
   assert.match(snap.sessions.s1.screen, /hello/);
   assert.match(snap.sessions.s1.screen, /while away/);
   b.channel.close();

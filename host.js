@@ -176,7 +176,9 @@ async function createHost({ pty, socketPath, grace = GRACE, onExit = () => {} })
     const taken = [...sessions].map(
       ([id, s]) =>
         new Promise((resolve) =>
-          s.screen.write("", () => resolve([id, { screen: s.serializer.serialize(), running: !!s.proc, exitCode: s.exitCode }]))
+          s.screen.write("", () =>
+            resolve([id, { screen: s.serializer.serialize(), cols: s.screen.cols, rows: s.screen.rows, running: !!s.proc, exitCode: s.exitCode }])
+          )
         )
     );
     Promise.all(taken).then((list) => {

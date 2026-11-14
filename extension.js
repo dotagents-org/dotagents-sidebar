@@ -378,6 +378,7 @@ class SidebarView {
     }
     const running = await this.snapshot();
     const screens = {};
+    const sizes = {}; // what size each screen was drawn at (a host from before this field has none)
     for (const [id, s] of Object.entries(running)) {
       if (!this.session(id)) {
         this.send({ type: "kill", id }); // its session was closed while the host was out of reach
@@ -387,8 +388,9 @@ class SidebarView {
       terminal.started = true;
       terminal.exited = !s.running;
       screens[id] = s.screen;
+      if (s.cols && s.rows) sizes[id] = { cols: s.cols, rows: s.rows };
     }
-    this.post({ type: "init", state: this.state, screens });
+    this.post({ type: "init", state: this.state, screens, sizes });
   }
 
   start(id, fresh = false) {

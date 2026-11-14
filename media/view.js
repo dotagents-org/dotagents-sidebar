@@ -448,7 +448,20 @@
       state = msg.state;
       showAccounts = !!accounts && !state.sessions.length; // with no session yet, the accounts
       render();
-      for (const [id, screen] of Object.entries(msg.screens)) terminals.get(id)?.term.write(screen);
+      for (const [id, screen] of Object.entries(msg.screens)) {
+        const terminal = terminals.get(id);
+        if (!terminal) continue;
+        // A hidden pane can't be fitted, so its terminal is still 80x24: the screen, drawn at the
+        // host's size, would wrap wrong and stay that way when the pane shows. Give it that size
+        // first; a host from before it said so (it outlives an update) gets the size of a pane that
+        // is showing, which is what the panes had before the reload unless a split changed it
+        if (terminal.el.clientWidth === 0) {
+          const showing = [...terminals.values()].find((t) => t.el.clientWidth > 0);
+          const size = msg.sizes?.[id] || (showing && { cols: showing.term.cols, rows: showing.term.rows });
+          if (size) terminal.term.resize(size.cols, size.rows);
+        }
+        terminal.term.write(screen);
+      }
     } else if (msg.type === "state") {
       // Another session made active (a click, a new one) leaves the accounts tab
       if (msg.state.active !== state.active) showAccounts = false;
