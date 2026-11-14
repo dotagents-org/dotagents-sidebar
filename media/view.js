@@ -348,7 +348,7 @@
     const icon = part("icon", "");
     icon.style.maskImage = `url("${kind(session).icon}")`;
     icon.style.backgroundColor = theme[session.color] || theme.foreground;
-    const parts = [icon];
+    const parts = []; // what follows the icon, joined without a gap
     if (session.kind === "terminal" && session.cwd) {
       // A terminal's title is the folder it is in, from the workspace; a long one is cut on the left,
       // so the folder you are in always shows
@@ -366,7 +366,9 @@
     } else if (settings.workspace) parts.push(part("workspace", settings.workspace));
     const name = label(session);
     if (name) parts.push(part("slash", "/"), part("session", name));
-    header.replaceChildren(...parts);
+    const text = part("name", "");
+    text.append(...parts);
+    header.replaceChildren(icon, text);
   }
 
   // Draw the state: a terminal per session, the active group's panes, the list

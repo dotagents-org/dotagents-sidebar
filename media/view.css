@@ -59,6 +59,13 @@ body {
   opacity: 0.7;
 }
 
+/* The text after the icon: the workspace (or the folder), a slash and the session's name, with no gap */
+#header .name {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+}
+
 /* A terminal's path, cut on the left (the ellipsis shows there) when it doesn't fit */
 #header .path {
   min-width: 0;
