@@ -195,9 +195,41 @@ body {
   overflow-y: auto;
 }
 
-/* Sessions that show together */
-.item.grouped {
-  border-left-color: var(--vscode-tree-indentGuidesStroke, currentColor);
+/* Sessions that show together, joined as the terminal panel's tabs join a split: a line down the
+   left, a corner on the first (starts at the middle of its row), a branch on each one between
+   and a corner on the last (ends at the middle of its row). 2 px thick, as the marks' strokes;
+   the branch is centered on the middle of the row, and the corners end on its edges */
+.item.grouped::before,
+.item.grouped::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  background: var(--vscode-descriptionForeground);
+}
+
+.item.grouped::before {
+  width: 2px;
+}
+
+.item.group-first::before {
+  top: calc(50% - 1px);
+  bottom: 0;
+}
+
+.item.group-middle::before {
+  top: 0;
+  bottom: 0;
+}
+
+.item.group-last::before {
+  top: 0;
+  bottom: calc(50% - 1px);
+}
+
+.item.grouped::after {
+  top: calc(50% - 1px);
+  width: 7px;
+  height: 2px;
 }
 
 /* The agent's mark, painted with the session's color (not the accounts panel's icon buttons) */

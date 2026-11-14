@@ -25,10 +25,10 @@ function add(state, name, kind) {
 }
 
 // The new session joins the active one's group, right after it
-function split(state, name) {
+function split(state, name, kind) {
   const at = state.sessions.findIndex((s) => s.id === state.active);
-  if (at < 0) return add(state, name);
-  const { session, next } = create(state, name, state.sessions[at].group);
+  if (at < 0) return add(state, name, kind);
+  const { session, next } = create(state, name, state.sessions[at].group, kind);
   const sessions = [...state.sessions.slice(0, at + 1), session, ...state.sessions.slice(at + 1)];
   return { sessions, active: session.id, next };
 }
@@ -37,8 +37,12 @@ function close(state, id) {
   const at = state.sessions.findIndex((s) => s.id === id);
   if (at < 0) return state;
   const sessions = state.sessions.filter((s) => s.id !== id);
-  const active = state.active !== id ? state.active : (sessions[at] || sessions[at - 1] || { id: null }).id;
-  return { ...state, sessions, active };
+  if (state.active !== id) return { ...state, sessions };
+  // The focus stays in the split when there is one (the session before, else the one after), else
+  // goes to the next session, or the one before when it was the last
+  const group = state.sessions[at].group;
+  const mate = [sessions[at - 1], sessions[at]].find((s) => s && s.group === group);
+  return { ...state, sessions, active: (mate || sessions[at] || sessions[at - 1] || { id: null }).id };
 }
 
 function change(state, id, fields) {

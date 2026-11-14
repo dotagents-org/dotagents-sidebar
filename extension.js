@@ -659,7 +659,8 @@ async function activate(context) {
     vscode.window.onDidChangeActiveColorTheme(() => view.reload()),
     vscode.commands.registerCommand("dotagentsSidebar.new", () => view.open(sessions.add)),
     vscode.commands.registerCommand("dotagentsSidebar.newTerminal", () => view.open(sessions.add, "terminal")),
-    vscode.commands.registerCommand("dotagentsSidebar.split", () => view.open(sessions.split)),
+    // A split is a session of the same kind as the active one: a terminal beside a terminal
+    vscode.commands.registerCommand("dotagentsSidebar.split", () => view.open(sessions.split, view.session(view.state.active)?.kind)),
     onSession("close", (id) => view.close(id)),
     onSession("restart", (id) => view.restart(id)),
     onSession("rename", (id) => view.rename(id)),

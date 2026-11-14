@@ -105,3 +105,32 @@ test("a terminal session is marked as one; an agent session has no kind", () => 
   assert.equal(state.sessions[1].kind, "terminal");
   assert.equal(state.active, "s2");
 });
+
+// s1 s2 s5 s3 s4, where s2 and s5 are a split
+function five() {
+  let state = EMPTY;
+  for (let i = 0; i < 4; i++) state = add(state, "A");
+  return split(activate(state, "s2"), "A");
+}
+const ids = (s) => s.sessions.map((x) => x.id);
+
+test("a split is a session of the kind asked for, beside the active one", () => {
+  let state = add(EMPTY, "Terminal", "terminal"); // s1, a terminal
+  state = split(state, "Terminal", "terminal");
+  assert.deepEqual(state.sessions.map((s) => s.kind), ["terminal", "terminal"]);
+  assert.equal(state.sessions[1].group, state.sessions[0].group);
+  assert.equal(split(EMPTY, "Terminal", "terminal").sessions[0].kind, "terminal"); // nothing active: a new one
+  assert.equal(split(add(EMPTY, "A"), "A").sessions[1].kind, undefined); // an agent beside an agent
+});
+
+test("closing the active session keeps the focus in its split", () => {
+  const state = five(); // s1 [s2 s5] s3 s4
+  assert.equal(close(activate(state, "s5"), "s5").active, "s2"); // the last of the split: its mate, not s3
+  assert.equal(close(activate(state, "s2"), "s2").active, "s5"); // the first: the next mate
+  let three = split(activate(state, "s5"), "A"); // s1 [s2 s5 s6] s3 s4
+  assert.equal(close(activate(three, "s5"), "s5").active, "s2"); // the one before, when there is one
+  assert.equal(close(activate(state, "s1"), "s1").active, "s2"); // alone: the next, as before
+  assert.equal(close(activate(state, "s4"), "s4").active, "s3"); // alone and last: the one before
+  assert.equal(close(activate(state, "s3"), "s3").active, "s4");
+  assert.equal(close(activate(state, "s3"), "s5").active, "s3"); // another session closed: unchanged
+});

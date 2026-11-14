@@ -410,6 +410,7 @@
   function item(session) {
     const el = document.createElement("div");
     el.className = "item";
+    el.dataset.session = session.id;
     el.classList.toggle("active", !showAccounts && session.id === state.active);
     el.classList.toggle("grouped", state.sessions.filter((s) => s.group === session.group).length > 1);
     const name = label(session);
