@@ -1,6 +1,7 @@
 // The agent the view runs, Claude Code, and what is decided about it without VS Code
 
 const crypto = require("crypto");
+const path = require("path");
 
 const AGENT = {
   name: "Claude Code",
@@ -33,9 +34,16 @@ function command(platform, args = []) {
 // The user's shell, run as a terminal session: a login-less interactive one, like the integrated terminal's default
 const TERMINAL = { name: "Terminal" };
 
-function terminalCommand(platform, processEnv = {}) {
-  if (platform === "win32") return { file: "powershell.exe", args: ["-NoLogo"] };
-  return { file: processEnv.SHELL || "bash", args: ["-i"] };
+// Bash and PowerShell also report the folder they are in at each prompt (media/cwd.js reads it)
+const POWERSHELL_CWD =
+  "$global:__dotagentsPrompt = $function:prompt; function global:prompt { " +
+  "if ($PWD.Provider.Name -eq 'FileSystem') { [Console]::Write([char]27 + ']9;9;' + $PWD.ProviderPath + [char]7) }; & $global:__dotagentsPrompt }";
+
+function terminalCommand(platform, processEnv = {}, root = __dirname) {
+  if (platform === "win32") return { file: "powershell.exe", args: ["-NoLogo", "-NoExit", "-Command", POWERSHELL_CWD] };
+  const file = processEnv.SHELL || "bash";
+  if (path.basename(file) === "bash") return { file, args: ["--rcfile", path.join(root, "shell", "bash-cwd.sh"), "-i"] };
+  return { file, args: ["-i"] };
 }
 
 // Like the integrated terminal, don't hand VS Code's own process variables to the agent:

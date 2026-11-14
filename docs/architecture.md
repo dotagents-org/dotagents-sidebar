@@ -25,6 +25,8 @@ The host is named by workspace and protocol (`PROTOCOL` in `host.js`), not by th
 | `accounts.js` | The Claude accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
 | `media/view.js`, `media/view.css` | The webview: a terminal per session, the list, the title strip |
 | `media/keys.js` | Which keys go to VS Code, worked out from the keybindings |
+| `shell/bash-cwd.sh` | Run by a terminal session's bash after `~/.bashrc`: reports the current folder (OSC 7) at each prompt |
+| `media/cwd.js` | The folder a terminal reports (OSC 7, OSC 9;9) and the path its title shows |
 | `media/links.js` | The file paths in a terminal line, as candidates for links; the extension says which exist and opens them |
 | `media/accounts/` | The accounts tab: the panel (`panel.js`, `panel.css`) and the avatars, drawn live (`avatar.js`) |
 | `skip-shell.json` | VS Code's default commands that skip the shell, copied from its source |

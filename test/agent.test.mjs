@@ -48,8 +48,12 @@ test("an id that could reach the shell as code is never passed", () => {
   for (const bad of ["x; rm -rf ~", "$(id)", "a b", "`id`", ""]) assert.deepEqual(conversationArgs(bad, true), []);
 });
 
-test("a terminal runs the user's own shell, interactive, or PowerShell on Windows", () => {
+test("a terminal runs the user's own shell, interactive; bash and PowerShell report their folder", () => {
+  assert.deepEqual(terminalCommand("linux", { SHELL: "/bin/bash" }, "/ext"), { file: "/bin/bash", args: ["--rcfile", "/ext/shell/bash-cwd.sh", "-i"] });
+  assert.deepEqual(terminalCommand("linux", {}, "/ext"), { file: "bash", args: ["--rcfile", "/ext/shell/bash-cwd.sh", "-i"] });
   assert.deepEqual(terminalCommand("linux", { SHELL: "/bin/zsh" }), { file: "/bin/zsh", args: ["-i"] });
-  assert.deepEqual(terminalCommand("linux", {}), { file: "bash", args: ["-i"] });
-  assert.deepEqual(terminalCommand("win32", { SHELL: "/bin/zsh" }), { file: "powershell.exe", args: ["-NoLogo"] });
+  const win = terminalCommand("win32", { SHELL: "/bin/zsh" });
+  assert.equal(win.file, "powershell.exe");
+  assert.deepEqual(win.args.slice(0, 3), ["-NoLogo", "-NoExit", "-Command"]);
+  assert.match(win.args[3], /\]9;9;/);
 });

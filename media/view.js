@@ -220,6 +220,16 @@
       lastTitle = title;
       vscode.postMessage({ type: "title", id: session.id, title });
     });
+    // A terminal's shell says which folder it is in (OSC 7, or OSC 9;9 on Windows); the title shows it
+    if (session.kind === "terminal") {
+      for (const ident of [7, 9]) {
+        term.parser.registerOscHandler(ident, (data) => {
+          const path = agentCwd.fromOsc(ident, data);
+          if (path) vscode.postMessage({ type: "cwd", id: session.id, cwd: path });
+          return !!path;
+        });
+      }
+    }
     // Typing in a pane of a split makes its session the active one
     el.addEventListener("focusin", () => {
       if (state.active !== session.id) vscode.postMessage({ type: "activate", id: session.id });
@@ -318,7 +328,7 @@
 
   // The session's name: the one given in the list, else the conversation's title from the agent
   function label(session) {
-    return session.name !== agent.name ? session.name : session.title || "";
+    return session.name !== kind(session).name ? session.name : session.title || "";
   }
 
   // The active session, like a terminal tab: the agent's mark in the session's color, the workspace
@@ -339,7 +349,20 @@
     icon.style.maskImage = `url("${kind(session).icon}")`;
     icon.style.backgroundColor = theme[session.color] || theme.foreground;
     const parts = [icon];
-    if (settings.workspace) parts.push(part("workspace", settings.workspace));
+    if (session.kind === "terminal" && session.cwd) {
+      // A terminal's title is the folder it is in, from the workspace; a long one is cut on the left,
+      // so the folder you are in always shows
+      const path = part("path", "");
+      path.title = session.cwd;
+      const inner = document.createElement("span");
+      const folders = agentCwd.segments(session.cwd, { root: settings.root, rootName: settings.workspace, home: settings.home });
+      folders.forEach((folder, i) => {
+        if (i) inner.append(part("slash", "/"));
+        inner.append(part(i === folders.length - 1 ? "here" : "workspace", folder));
+      });
+      path.append(inner);
+      parts.push(path);
+    } else if (settings.workspace) parts.push(part("workspace", settings.workspace));
     const name = label(session);
     if (name) parts.push(part("slash", "/"), part("session", name));
     header.replaceChildren(...parts);

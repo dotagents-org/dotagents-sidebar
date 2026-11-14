@@ -324,6 +324,11 @@ class SidebarView {
       case "title":
         if (this.session(msg.id).title !== msg.title) this.update(sessions.remember(this.state, msg.id, { title: String(msg.title).slice(0, 200) }));
         break;
+      case "cwd": // the folder a terminal session's shell reported
+        if (this.session(msg.id).kind === "terminal" && typeof msg.cwd === "string" && msg.cwd.length <= 1024 && this.session(msg.id).cwd !== msg.cwd) {
+          this.update(sessions.remember(this.state, msg.id, { cwd: msg.cwd }));
+        }
+        break;
       case "close":
         this.close(msg.id);
         break;
@@ -413,6 +418,7 @@ class SidebarView {
 
   startTerminal(id, terminal) {
     Object.assign(terminal, { started: true, exited: false, resume: false, startedAt: Date.now() });
+    this.update(sessions.remember(this.state, id, { cwd: cwd() })); // until the shell says where it is
     const { file, args } = terminalCommand(process.platform, process.env);
     this.post({ type: "clear", id });
     this.send({
@@ -535,7 +541,7 @@ class SidebarView {
     // The panel's scripts load only when its tab first opens (media/view.js), so nothing of it runs
     // while the agents are in use
     const accounts = this.accounts ? { icon: String(uri("media", "accounts.svg")), scripts: [panel("avatar.js"), panel("panel.js")], nonce } : null;
-    const settings = JSON.stringify({ ...terminalSettings(), agent, workspace: workspaceName(), keys: this.keys, accounts }).replace(/</g, "\\u003c");
+    const settings = JSON.stringify({ ...terminalSettings(), agent, workspace: workspaceName(), root: cwd(), home: os.homedir(), keys: this.keys, accounts }).replace(/</g, "\\u003c");
     return `<!doctype html>
 <html>
 <head>
@@ -558,6 +564,7 @@ ${accounts ? `<link rel="stylesheet" href="${panel("panel.css")}">` : ""}
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-web-links", "lib", "addon-web-links.js")}"></script>
 <script nonce="${nonce}" src="${uri("media", "keys.js")}"></script>
 <script nonce="${nonce}" src="${uri("media", "links.js")}"></script>
+<script nonce="${nonce}" src="${uri("media", "cwd.js")}"></script>
 <script nonce="${nonce}" src="${uri("media", "view.js")}"></script>
 </body>
 </html>`;
