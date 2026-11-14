@@ -98,16 +98,12 @@ body {
   flex-direction: column;
 }
 
-/* The active group's panes: stacked in a tall view, side by side (.row) in a wide one */
+/* The active group's panes, side by side */
 #panes {
   flex: 1;
   min-width: 0;
   min-height: 0;
   display: flex;
-  flex-direction: column;
-}
-
-#panes.row {
   flex-direction: row;
 }
 
@@ -131,11 +127,6 @@ body {
 }
 
 .pane:not(.hidden) ~ .pane:not(.hidden) {
-  border-top: 1px solid var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border));
-}
-
-#panes.row .pane:not(.hidden) ~ .pane:not(.hidden) {
-  border-top: none;
   border-left: 1px solid var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border));
 }
 

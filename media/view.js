@@ -277,8 +277,6 @@
 
   function layoutAll() {
     clearTimeout(settle);
-    // A split goes side by side in a wide view and stacks in a tall one
-    panes.classList.toggle("row", panes.clientWidth >= panes.clientHeight);
     for (const [id, terminal] of terminals) layout(id, terminal);
   }
 

@@ -16,6 +16,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Changed
 
+- **Splits are side by side.** A split no longer stacks its sessions in a tall view: they always sit next to each other, as the split button's icon shows.
 - **Same size everywhere.** The session list and the title strip draw the marks at 16 px, the size VS Code gives its own title bar buttons and the view's icon at the top, and every mark uses the whole square, so they look the same size. The list's rows are taller (28 px, were 22) to keep them easy to click.
 - **Aligned dividers.** The title strip and the accounts tab beside it are the same height, so the line under them is one line instead of two a couple of pixels apart.
 - **Title strip.** The workspace (or a terminal's folder), the slash and the session's name sit together, with no gaps around the slash.
