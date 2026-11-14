@@ -543,7 +543,7 @@ class SidebarView {
     // The panel's scripts load only when its tab first opens (media/view.js), so nothing of it runs
     // while the agents are in use
     const accounts = this.accounts ? { icon: String(uri("media", "accounts.svg")), scripts: [panel("avatar.js"), panel("panel.js")], nonce } : null;
-    const settings = JSON.stringify({ ...terminalSettings(), agent, workspace: workspaceName(), root: cwd(), home: os.homedir(), keys: this.keys, accounts }).replace(/</g, "\\u003c");
+    const settings = JSON.stringify({ ...terminalSettings(), agent, workspace: workspaceName(), home: os.homedir(), keys: this.keys, accounts }).replace(/</g, "\\u003c");
     return `<!doctype html>
 <html>
 <head>

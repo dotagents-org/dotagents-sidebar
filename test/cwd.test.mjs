@@ -5,7 +5,7 @@ import path from "node:path";
 import { test } from "node:test";
 
 // The same file the view loads as a script
-const { fromOsc, segments } = createRequire(import.meta.url)("../media/cwd.js");
+const { fromOsc, segments, separator } = createRequire(import.meta.url)("../media/cwd.js");
 const { terminalCommand } = createRequire(import.meta.url)("../agent.js");
 
 test("OSC 7 carries a file URL; OSC 9;9 the path, quoted or not", () => {
@@ -19,27 +19,36 @@ test("OSC 7 carries a file URL; OSC 9;9 the path, quoted or not", () => {
   assert.equal(fromOsc(0, "x"), null);
 });
 
-test("the title's path starts at the workspace, then home, else the whole path", () => {
-  const where = { root: "/home/me/work", rootName: "work", home: "/home/me" };
-  assert.deepEqual(segments("/home/me/work", where), ["work"]);
-  assert.deepEqual(segments("/home/me/work/", where), ["work"]);
-  assert.deepEqual(segments("/home/me/work/app/src", where), ["work", "app", "src"]);
-  assert.deepEqual(segments("/home/me/worker", where), ["~", "worker"]); // a sibling that starts the same
+test("the title's path starts at home, else it is the whole path", () => {
+  const where = { home: "/home/me" };
+  // the workspace's own folder is a path too, not just its name
+  assert.deepEqual(segments("/home/me/work", where), ["~", "work"]);
+  assert.deepEqual(segments("/home/me/work/", where), ["~", "work"]);
+  assert.deepEqual(segments("/home/me/work/app/src", where), ["~", "work", "app", "src"]);
+  assert.deepEqual(segments("/home/me/worker", where), ["~", "worker"]);
+  assert.deepEqual(segments("/home/mel/work", where), ["/home", "mel", "work"]); // a sibling that starts the same
   assert.deepEqual(segments("/home/me", where), ["~"]);
-  assert.deepEqual(segments("/home/me/Downloads/x", where), ["~", "Downloads", "x"]);
   assert.deepEqual(segments("/etc/nginx", where), ["/etc", "nginx"]);
   assert.deepEqual(segments("/", where), ["/"]);
-  // no workspace folder: the root is home, and nothing is named after it
-  assert.deepEqual(segments("/home/me/a", { root: "/home/me", rootName: "", home: "/home/me" }), ["~", "a"]);
   assert.deepEqual(segments("/home/me/a"), ["home", "me", "a"].map((s, i) => (i ? s : "/" + s)));
 });
 
-test("on Windows the path may use backslashes and any case in the drive", () => {
-  const where = { root: "C:\\Users\\me\\work", rootName: "work", home: "C:\\Users\\me" };
-  assert.deepEqual(segments("C:\\Users\\me\\work\\app", where), ["work", "app"]);
-  assert.deepEqual(segments("c:\\users\\me\\work\\app", where), ["work", "app"]);
-  assert.deepEqual(segments("C:\\Users\\me", where), ["~"]);
-  assert.deepEqual(segments("D:\\data\\x", where), ["D:", "data", "x"]);
+test("on Windows the title is the path as Windows shows it: a drive, backslashes, no ~", () => {
+  const where = { home: "C:\\Users\\me" };
+  assert.deepEqual(segments("C:\\Users\\me\\work\\app", where), ["C:", "Users", "me", "work", "app"]);
+  assert.deepEqual(segments("C:/Users/me/work", where), ["C:", "Users", "me", "work"]); // from an OSC 7
+  assert.deepEqual(segments("C:\\Users\\me", where), ["C:", "Users", "me"]);
+  assert.deepEqual(segments("D:\\data\\x\\", where), ["D:", "data", "x"]);
+  assert.deepEqual(segments("C:\\", where), ["C:\\"]); // a drive's root keeps its backslash
+  assert.deepEqual(segments("\\\\wsl.localhost\\Ubuntu\\home\\me", where), ["\\\\wsl.localhost", "Ubuntu", "home", "me"]);
+});
+
+test("the parts are joined as the platform joins them", () => {
+  assert.equal(separator("C:\\Users\\me"), "\\");
+  assert.equal(separator("C:/Users/me"), "\\");
+  assert.equal(separator("\\\\wsl.localhost\\Ubuntu"), "\\");
+  assert.equal(separator("/home/me"), "/");
+  assert.equal(separator("/mnt/c/Users/me"), "/"); // a Windows folder seen from Linux is a Linux path
 });
 
 test("bash, started as the terminal session starts it, reports the folder at each prompt", { skip: process.platform === "win32" }, () => {

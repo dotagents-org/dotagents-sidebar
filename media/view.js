@@ -355,9 +355,10 @@
       const path = part("path", "");
       path.title = session.cwd;
       const inner = document.createElement("span");
-      const folders = agentCwd.segments(session.cwd, { root: settings.root, rootName: settings.workspace, home: settings.home });
+      const folders = agentCwd.segments(session.cwd, { home: settings.home });
+      const sep = agentCwd.separator(session.cwd);
       folders.forEach((folder, i) => {
-        if (i) inner.append(part("slash", "/"));
+        if (i) inner.append(part("slash", sep));
         inner.append(part(i === folders.length - 1 ? "here" : "workspace", folder));
       });
       path.append(inner);

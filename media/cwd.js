@@ -25,28 +25,30 @@
     return path && path.length <= 1024 ? path : null;
   }
 
-  // What the title shows, as the parts of a path: from the workspace (named rootName) when the
-  // folder is inside it, from ~ when it is in the home folder, else the whole path
-  function segments(path, { root, rootName, home } = {}) {
-    const clean = (p) => String(p).replace(/\\/g, "/").replace(/(.)\/+$/, "$1");
-    const p = clean(path);
-    // A Windows drive is case-insensitive
-    const inside = (base) => {
-      if (!base) return null;
-      const b = clean(base);
-      const fold = /^[A-Za-z]:/.test(b) ? (x) => x.toLowerCase() : (x) => x;
-      if (fold(p) === fold(b)) return "";
-      return fold(p).startsWith(fold(b) + "/") ? p.slice(b.length + 1) : null;
-    };
+  // A Windows path has a drive (C:\x, or C:/x from an OSC 7) or is a share (\\host\x)
+  const isWindows = (path) => /^[A-Za-z]:|^\\\\/.test(String(path));
+
+  // What separates the parts of the path in the title: the platform's own
+  const separator = (path) => (isWindows(path) ? "\\" : "/");
+
+  // What the title shows, as the parts of a path. A Windows path is shown as Windows shows it
+  // (C:\Users\me\work); on Linux, from ~ when the folder is in the home folder, else the whole path
+  function segments(path, { home } = {}) {
+    const raw = String(path);
+    const p = raw.replace(/\\/g, "/").replace(/(.)\/+$/, "$1");
     const parts = (rest) => rest.split("/").filter(Boolean);
-    let rest = rootName ? inside(root) : null;
-    if (rest !== null) return [rootName, ...parts(rest)];
-    rest = inside(home);
-    if (rest !== null) return ["~", ...parts(rest)];
+    if (isWindows(raw)) {
+      const all = parts(p);
+      if (raw.startsWith("\\\\")) return ["\\\\" + all[0], ...all.slice(1)];
+      return all.length === 1 ? [all[0] + "\\"] : all; // a drive's root keeps its backslash: C:\
+    }
+    const base = home && String(home).replace(/(.)\/+$/, "$1");
+    if (base && p === base) return ["~"];
+    if (base && p.startsWith(base + "/")) return ["~", ...parts(p.slice(base.length + 1))];
     const all = parts(p);
     if (p.startsWith("/")) return all.length ? ["/" + all[0], ...all.slice(1)] : ["/"];
     return all.length ? all : [p];
   }
 
-  Object.assign(exports, { fromOsc, segments });
+  Object.assign(exports, { fromOsc, segments, separator });
 })(typeof module === "object" ? module.exports : (window.agentCwd = {}));
