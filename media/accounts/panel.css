@@ -12,15 +12,17 @@ body.vscode-dark .panel, body.vscode-high-contrast .panel { --text: #ededed; --m
    as tall as the tallest. */
 .sheet { width: min(100%, calc(var(--n) * 420px + (var(--n) - 1) * 12px)); margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); grid-auto-rows: 1fr; gap: 12px; }
-.panel { padding: 8px 4px; }
+/* The avatar's size sets the header of a card: the name and the gap beside it are fractions of it, so
+   they grow together (panel.js reads it for the canvas). */
+.panel { padding: 8px 4px; --avatar: 56px; }
 
 .muted { color: var(--muted); }
 .small { font-size: 11px; }
 
 .card { border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--card); min-width: 0; container-type: inline-size; }
-.who { display: flex; align-items: center; gap: 12px; }
+.who { display: flex; align-items: center; gap: calc(var(--avatar) / 4); }
 .who .names { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.name { font-weight: 600; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.name { font-weight: 600; font-size: calc(var(--avatar) * 2 / 7); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .status.high { color: var(--high); }
 
 /* The avatar: a canvas avatar.js paints, live. */
@@ -44,8 +46,9 @@ body.vscode-dark .panel, body.vscode-high-contrast .panel { --text: #ededed; --m
 /* An icon button: the Desktop's in the card's corner, the refresh in the strip. */
 .panel button.icon { padding: 4px; line-height: 0; border-radius: 6px; }
 .panel button.icon svg { width: 15px; height: 15px; }
-/* The name, and the Desktop's button at the end of its line. */
+/* The name, and the Desktop's button at the end of its line, its icon a fraction of the avatar too. */
 .who .line { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.who .line button.icon svg { width: calc(var(--avatar) * 3 / 8); height: calc(var(--avatar) * 3 / 8); }
 /* Where the account is, and its switch, on both sides. */
 .sides { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; font-size: 11px; }
 .sides .switch { font-size: 12px; font-weight: 600; color: var(--text); padding: 2px 0; }
