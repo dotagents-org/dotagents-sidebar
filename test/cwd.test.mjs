@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -53,12 +54,14 @@ test("the parts are joined as the platform joins them", () => {
 
 test("bash, started as the terminal session starts it, reports the folder at each prompt", { skip: process.platform === "win32" }, () => {
   const { file, args } = terminalCommand("linux", { SHELL: "/bin/bash" });
+  // The folder as bash reports it: on macOS /tmp is a link to /private/tmp
+  const start = fs.realpathSync("/tmp");
   // A pty, as the host gives it, so bash is interactive and prints its prompt
   const script = `
 import os, pty, sys, time, select
 pid, fd = pty.fork()
 if pid == 0:
-    os.chdir("/tmp")
+    os.chdir("${start}")
     os.execv(sys.argv[1], [sys.argv[1]] + sys.argv[2:])
 out = b""
 def read(t):
@@ -76,7 +79,7 @@ sys.stdout.write(repr(out))
 `;
   const result = spawnSync("python3", ["-I", "-c", script, file, ...args], { encoding: "utf8", env: { ...process.env, HOME: process.env.HOME } });
   const seen = [...result.stdout.matchAll(/\\x1b\]7;file:\/\/[^/]*(\/[^\\]*)\\x07/g)].map((m) => m[1]);
-  assert.deepEqual(seen.slice(0, 1), ["/tmp"], result.stdout);
+  assert.deepEqual(seen.slice(0, 1), [start], result.stdout);
   assert.ok(seen.includes("/usr"), result.stdout);
   assert.ok(path.isAbsolute(args[1]));
 });
