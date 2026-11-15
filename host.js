@@ -116,7 +116,8 @@ function listen(server, socketPath) {
   });
 }
 
-async function createHost({ pty, socketPath, grace = GRACE, onExit = () => {} }) {
+// log(level, source, message): where its events go; host.log when it runs on its own (log.js)
+async function createHost({ pty, socketPath, grace = GRACE, onExit = () => {}, log = () => {} }) {
   const sessions = new Map(); // id -> { proc, screen, serializer, exitCode }
   const clients = new Set(); // { channel, queue }: while a snapshot is taken, its messages wait in queue
   let timer;
@@ -152,6 +153,7 @@ async function createHost({ pty, socketPath, grace = GRACE, onExit = () => {} })
     try {
       proc = pty.spawn(msg.file, msg.args, { name: "xterm-256color", cols: msg.cols, rows: msg.rows, cwd: msg.cwd, env: msg.env });
     } catch (err) {
+      log("error", "spawn", `${msg.file} ${(msg.args || []).join(" ")} in ${msg.cwd}: ${err.stack || err.message}`);
       write(msg.id, `\r\n${err.message.replace(/\n/g, "\r\n")}\r\n`);
       session.exitCode = -1;
       broadcast({ type: "exit", id: msg.id, exitCode: -1 });
@@ -250,15 +252,27 @@ module.exports = { GRACE, PROTOCOL, connect, createHost, loadPty, socketDir, soc
 // Started by the extension: node host.js <socket> <VS Code's appRoot>
 if (require.main === module) {
   const [socket, appRoot] = process.argv.slice(2);
+  // It runs on its own, its output thrown away: what it does and how it ends go to host.log
+  const log = require("./log.js").writer("host");
+  log("info", "host", `started, pid ${process.pid}, node ${process.version} (${process.execPath}), socket ${socket}`);
+  process.on("exit", (code) => log("info", "host", `stopped, pid ${process.pid}, exit ${code}`));
+  process.on("uncaughtException", (err) => {
+    log("error", "host", err);
+    process.exit(1);
+  });
   let pty;
   try {
     pty = loadPty(appRoot);
   } catch (err) {
+    log("error", "node-pty", err);
     pty = {
       spawn() {
         throw err;
       },
     };
   }
-  createHost({ pty, socketPath: socket, onExit: () => process.exit(0) }).catch(() => process.exit(1));
+  createHost({ pty, socketPath: socket, onExit: () => process.exit(0), log }).catch((err) => {
+    log("error", "listen", err);
+    process.exit(1);
+  });
 }

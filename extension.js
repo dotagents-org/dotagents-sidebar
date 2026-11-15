@@ -3,6 +3,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const vscode = require("vscode");
+const { writer } = require("./log.js");
 const { spawn } = require("child_process");
 const host = require("./host");
 const { AGENT, TERMINAL, terminalCommand, newConversation, command, conversationArgs, env, newer } = require("./agent");
@@ -114,7 +115,19 @@ class SidebarView {
     this.hostReady = undefined;
     this.disposed = false;
     this.keys = undefined; // the keys VS Code keeps, once worked out
-    this.log = vscode.window.createOutputChannel("dotagents-sidebar");
+    // The output channel, and sidebar.log for when the window is gone (log.js)
+    const channel = vscode.window.createOutputChannel("dotagents-sidebar");
+    const file = writer("sidebar");
+    this.log = {
+      info: (text) => {
+        channel.appendLine(`${new Date().toISOString()} ${text}`);
+        file("info", "extension", text);
+      },
+      error: (text, err) => {
+        channel.appendLine(`${new Date().toISOString()} ${text}: ${err.message}`);
+        file("error", "extension", `${text}: ${err.stack || err.message}`);
+      },
+    };
     this.accounts = undefined; // the Claude accounts (accounts.js), when dotagents is set up here
   }
 
@@ -163,7 +176,7 @@ class SidebarView {
     const source = Array.isArray(defaults)
       ? `VS Code's default keybindings (${defaults.length})${user.length ? ` and ${user.length} of yours` : ", without yours (not reachable from here)"}`
       : "the built-in list (VS Code's default keybindings could not be read)";
-    this.log.appendLine(`${new Date().toISOString()} ${this.keys.length} keys go to VS Code, from ${source}: ${this.keys.join(" ")}`);
+    this.log.info(`${this.keys.length} keys go to VS Code, from ${source}: ${this.keys.join(" ")}`);
     this.post({ type: "keys", keys: this.keys });
   }
 
@@ -355,7 +368,7 @@ class SidebarView {
       }
       case "openFile":
         if (typeof msg.file === "string" && msg.file.length <= 1024) {
-          openPath(msg.file, Number(msg.line) || undefined, Number(msg.column) || undefined).catch((err) => this.log.appendLine(`Could not open ${msg.file}: ${err.message}`));
+          openPath(msg.file, Number(msg.line) || undefined, Number(msg.column) || undefined).catch((err) => this.log.error(`Could not open ${msg.file}`, err));
         }
         break;
       case "open":
@@ -650,12 +663,12 @@ async function activate(context) {
   checkForUpdate(context).catch(() => {}); // offline or rate limited: try again tomorrow
 
   const view = new SidebarView(context);
-  view.workOutKeys().catch((err) => view.log.appendLine(`Could not work out the shortcut keys: ${err.message}`));
+  view.workOutKeys().catch((err) => view.log.error("Could not work out the shortcut keys", err));
   // Before the view is drawn, so the page is built once, with the accounts tab or without it
   try {
     view.connectAccounts();
   } catch (err) {
-    view.log.appendLine(`Could not set up the Claude accounts: ${err.message}`);
+    view.log.error("Could not set up the Claude accounts", err);
   }
   // A command run from a session's context menu gets that session; from the title bar, the active one
   const onSession = (name, run) => vscode.commands.registerCommand(`dotagentsSidebar.${name}`, (arg) => run(arg?.sessionId));

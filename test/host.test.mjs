@@ -197,3 +197,20 @@ test("the socket folder is the user's alone", { skip: process.platform === "win3
   fs.chmodSync(dir, 0o755);
   assert.throws(() => socketDir({ XDG_RUNTIME_DIR: base }), /not private/);
 });
+
+test("a session whose command can't start is written to the log, with the command and why", async () => {
+  const dir = tmp();
+  const logged = [];
+  const pty = { spawn: () => { throw new Error("spawn nosuchagent ENOENT"); } };
+  const host = await createHost({ pty, socketPath: path.join(dir, "s"), grace: 1000, log: (...entry) => logged.push(entry) });
+  const a = await client(host.socketPath);
+  a.send({ ...create, file: "nosuchagent", args: ["--x"] });
+  assert.deepEqual(await a.next("exit"), { type: "exit", id: "s1", exitCode: -1 });
+  assert.equal(logged.length, 1);
+  const [level, source, message] = logged[0];
+  assert.equal(level, "error");
+  assert.equal(source, "spawn");
+  assert.match(message, /^nosuchagent --x in \/work: Error: spawn nosuchagent ENOENT/);
+  a.channel.close();
+  await host.close();
+});
