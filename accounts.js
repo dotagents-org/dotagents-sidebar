@@ -191,11 +191,13 @@ function startAccounts(vscode, context) {
 
   // The status bar: one item per part of the status, side by side, since an item has one color.
   // Only the first (the mark and the account) has the tooltip and switches on a click.
+  // All parts share one priority: VS Code breaks ties by a hash of the extension id, then by the
+  // order the items were added, so no other extension's item can land between them.
   const items = [];
   function showParts(list, color, tooltip) {
     const dark = [vscode.ColorThemeKind.Dark, vscode.ColorThemeKind.HighContrast].includes(vscode.window.activeColorTheme.kind);
     while (items.length < list.length) {
-      const item = vscode.window.createStatusBarItem(`dotagentsSidebar.account.${items.length}`, vscode.StatusBarAlignment.Right, 100 - items.length / 100);
+      const item = vscode.window.createStatusBarItem(`dotagentsSidebar.account.${items.length}`, vscode.StatusBarAlignment.Right, 100);
       item.name = "Claude account";
       items.push(item);
     }

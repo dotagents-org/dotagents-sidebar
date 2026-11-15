@@ -32,6 +32,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 ### Fixed
 
 - **Sessions after a window reload.** After Developer: Reload Window, only the session in view was drawn right; the others came back with wrapped, misplaced lines when opened. A pane that isn't showing can't be fitted, so its terminal was still 80x24 when the host's screen, drawn at the real size, was written into it. The host now sends each screen's size and the pane takes it before the screen is written; with a host from before that (it outlives an update), the pane takes the size of one that is showing.
+- **Status bar parts kept together.** Another extension's item (a port, a line count) could land between the account and its usage bars, since each part had its own priority. They now share one, so VS Code keeps them side by side, in order.
 - **Paste on Windows.** Ctrl+V sent a ^V before the text, which Claude Code on Windows reads as pasting an image, so the text never came. Now only the paste itself reaches the agent, as in the integrated terminal.
 - **Copy and paste like the integrated terminal.** Ctrl+Shift+C copies and Ctrl+Shift+V pastes; a right click copies the selection or pastes, as `terminal.integrated.rightClickBehavior` says (`copyPaste` by default on Windows).
 - **On Windows, `dotagents start` runs on its own.** The view used to start it tied to a console window, so closing that window, or VS Code, stopped the server and the accounts tab went back to *Starting*. It now starts it through a hidden `Start-Process`.
