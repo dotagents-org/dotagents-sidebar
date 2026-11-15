@@ -3,8 +3,8 @@
 
 /* The identity's roles, light by default and dark with VS Code's dark themes, all on .panel so
    the page that hosts it keeps its own styles. */
-.panel { --card: transparent; --text: #171717; --muted: #4d4d4d; --track: #c9c9c9; --border: #e3e3e3; --ok: #107d32; --warn: #a25204; --high: #d50322; --on-text: var(--vscode-sideBar-background, #ffffff); }
-body.vscode-dark .panel, body.vscode-high-contrast .panel { --text: #ededed; --muted: #a0a0a0; --track: #454545; --border: #2b2b2b; --ok: #01ca54; --warn: #fe9911; --high: #fe6367; --on-text: var(--vscode-sideBar-background, #181818); }
+.panel { --card: transparent; --text: #171717; --muted: #4d4d4d; --track: #c9c9c9; --border: #e3e3e3; --ok: #107d32; --warn: #a25204; --high: #d50322; }
+body.vscode-dark .panel, body.vscode-high-contrast .panel { --text: #ededed; --muted: #a0a0a0; --track: #454545; --border: #2b2b2b; --ok: #01ca54; --warn: #fe9911; --high: #fe6367; }
 .panel, .panel * { box-sizing: border-box; }
 .panel { max-width: 1400px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; color: var(--text); font: 12px/1.45 "Geist Mono", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace; }
 /* The brand and the cards, centered, in a block as wide as the cards side by side (up to 420px
@@ -14,9 +14,6 @@ body.vscode-dark .panel, body.vscode-high-contrast .panel { --text: #ededed; --m
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); grid-auto-rows: 1fr; gap: 12px; }
 .panel { padding: 8px 4px; }
 
-/* The top: the seal, ` dotagents ` in reverse video as in the CLI, and how many profiles. */
-.top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.seal { background: var(--text); color: var(--on-text); font-weight: 600; white-space: pre; }
 .muted { color: var(--muted); }
 .small { font-size: 11px; }
 
@@ -44,7 +41,7 @@ body.vscode-dark .panel, body.vscode-high-contrast .panel { --text: #ededed; --m
 .panel button { font: inherit; font-size: 11px; cursor: pointer; border: 0; background: transparent; color: var(--muted); white-space: nowrap; }
 .panel button:hover:not(:disabled) { color: var(--text); }
 .panel button:disabled { opacity: 0.5; cursor: default; }
-/* An icon button: the Desktop's in the card's corner, the refresh in the foot. */
+/* An icon button: the Desktop's in the card's corner, the refresh in the strip. */
 .panel button.icon { padding: 4px; line-height: 0; border-radius: 6px; }
 .panel button.icon svg { width: 15px; height: 15px; }
 /* The name, and the Desktop's button at the end of its line. */
@@ -56,11 +53,12 @@ body.vscode-dark .panel, body.vscode-high-contrast .panel { --text: #ededed; --m
 .sides .switch:disabled { opacity: 1; color: var(--muted); font-weight: 400; }
 .panel button:focus-visible { outline: 2px solid var(--warn); outline-offset: 2px; }
 
-/* The foot: where on the left, the age and the refresh on the right, inset like a card's content
-   (its padding and border), so the refresh sits right under the switches. */
-.foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2px 8px; padding: 0 13px; font-size: 11px; color: var(--muted); }
-.foot button.icon { margin-right: -4px; }
-.foot .line { display: flex; align-items: center; gap: 4px; }
+/* The strip over the cards: the age of the numbers and the refresh on the right, inset like a
+   card's content (its padding and border), so the refresh sits right over the switches; on the
+   left, only when the other side is off. */
+.strip { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2px 8px; padding: 0 13px; font-size: 11px; color: var(--muted); }
+.strip button.icon { margin-right: -4px; }
+.strip .line { display: flex; align-items: center; gap: 4px; margin-left: auto; }
 /* An action under way: the button clicked pulses; the refresh turns. */
 .busy { animation: pulse 1.2s ease-in-out infinite; }
 .panel button.icon.busy { animation: none; }

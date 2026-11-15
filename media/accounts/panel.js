@@ -158,22 +158,21 @@
       return card;
     });
     const age = data.generatedAt ? `updated ${span(now - Date.parse(data.generatedAt))} ago` : "";
-    const where = data.peer && !data.peer.up ? `${data.peer.name} off` : sides.join(" and ");
-    const count = `${data.profiles.length} profile${data.profiles.length === 1 ? "" : "s"}`;
-    // The brand, the cards and the foot in one block as wide as the cards side by side could be,
-    // so the refresh lines up with the cards' switches.
+    // The other side being off is the one thing worth saying on the left: a switch doesn't reach it
+    const off = data.peer && !data.peer.up ? `${data.peer.name} off` : "";
+    // The strip and the cards in one block as wide as the cards side by side could be, so the
+    // refresh lines up with the cards' switches.
     const sheet = el(
       "div",
       { class: "sheet" },
-      el("div", { class: "top" }, el("span", { class: "seal" }, " dotagents "), el("span", { class: "muted" }, count)),
-      el("div", { class: "cards" }, ...cards),
-      failure && el("p", { class: "message high" }, failure),
       el(
         "div",
-        { class: "foot" },
-        el("span", {}, where),
+        { class: "strip" },
+        el("span", { class: "warn" }, off),
         el("span", { class: "line" }, age, el("button", { type: "button", class: `icon${busy("refresh")}`, title: "Ask for fresh numbers now", "aria-label": "Refresh", onclick: run("refresh", {}, "refresh") }, icon(["M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8", "M21 3v5h-5"], true)))
-      )
+      ),
+      el("div", { class: "cards" }, ...cards),
+      failure && el("p", { class: "message high" }, failure)
     );
     sheet.style.setProperty("--n", String(cards.length || 1));
     root.replaceChildren(sheet);
