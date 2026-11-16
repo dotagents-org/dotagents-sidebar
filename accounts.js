@@ -69,8 +69,9 @@ const level = (pct) => (pct >= 90 ? "high" : pct >= 70 ? "warn" : "ok");
 // blue is asleep; a ring (limit, waiting) is the other state of the same color.
 const DOTS = { error: ["circle-filled", "red"], limit: ["target", "red"], waiting: ["target", "amber"], warn: ["circle-filled", "amber"], ok: ["circle-filled", "green"], asleep: ["circle-filled", "blue"] };
 // The provider's mark leads its group in the status bar: the company's, as on the panel's cards.
-const PROVIDERS = { claude: { title: "Claude", icon: "dotagents-claude" }, codex: { title: "ChatGPT", icon: "dotagents-openai" } };
-const providerOf = (p) => (p.provider || "claude") === "codex" ? "codex" : "claude";
+const { PROVIDERS } = require("./providers");
+// A profile's provider id (claude when the field is missing), or "" for one the table doesn't know.
+const providerOf = (p) => { const id = p.provider || "claude"; return PROVIDERS[id] ? id : ""; };
 function parts(profile, state, now = Date.now()) {
   const out = [{ text: `$(${PROVIDERS[providerOf(profile)].icon}) ${profile.name}`, tone: "name" }];
   const dot = DOTS[state];
@@ -106,6 +107,13 @@ function toneColor(tone, account, dark) {
 // ({ WSL: "work" }) and its current account.
 const forProvider = (data, id) => ({ ...data, profiles: data.profiles.filter((p) => providerOf(p) === id), slots: (data.slots && data.slots[id]) || {}, current: data.current && data.current[id] });
 
+// The answer without the profiles of a provider this sidebar doesn't know.
+const known = (data) => ({ ...data, profiles: data.profiles.filter((p) => providerOf(p)) });
+
+// What the panel needs of the table (it runs in a webview and can't require): each provider's account
+// name, tool and mark.
+const panelProviders = Object.fromEntries(Object.entries(PROVIDERS).map(([id, { title, agent, mark }]) => [id, { title, agent, mark }]));
+
 // The providers that have a profile, Claude first.
 const providersOf = (data) => Object.keys(PROVIDERS).filter((id) => data.profiles.some((p) => providerOf(p) === id));
 
@@ -133,7 +141,7 @@ function groupsFor(data, now = Date.now()) {
 
 // The accounts to pick from, both providers' (Claude first), each provider's current one marked.
 function pickItems(data) {
-  return data.profiles.map((p) => {
+  return known(data).profiles.map((p) => {
     const id = providerOf(p);
     const slots = (data.slots && data.slots[id]) || {};
     const sides = Object.keys(slots).filter((s) => slots[s] === p.name);
@@ -197,7 +205,7 @@ function startAccounts(vscode, context) {
     }
   }
 
-  const message = () => (data ? { type: "usage", data } : { type: "down", detail: down });
+  const message = () => (data ? { type: "usage", data: known(data), providers: panelProviders } : { type: "down", detail: down });
 
   async function act(action, body) {
     let result;
@@ -291,4 +299,4 @@ function startAccounts(vscode, context) {
   };
 }
 
-module.exports = { API_VERSION, forProvider, groupsFor, startCommand, stateDir, hasAccounts, readServer, refusal, usageText, statusFor, toneColor, pickItems, startAccounts };
+module.exports = { API_VERSION, forProvider, groupsFor, startCommand, stateDir, hasAccounts, readServer, refusal, usageText, statusFor, toneColor, pickItems, known, panelProviders, startAccounts };
