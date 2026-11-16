@@ -63,19 +63,10 @@
     "commands": [
       {
         "command": "dotagentsSidebar.new",
-        "title": "New Session",
-        "icon": {
-          "light": "media/new-agent-light.svg",
-          "dark": "media/new-agent-dark.svg"
-        },
-        "category": "dotagents-sidebar"
-      },
-      {
-        "command": "dotagentsSidebar.new.claude",
         "title": "New Claude Code Session",
         "icon": {
-          "light": "media/new-agent-light.svg",
-          "dark": "media/new-agent-dark.svg"
+          "light": "media/claude-code-light.svg",
+          "dark": "media/claude-code-dark.svg"
         },
         "category": "dotagents-sidebar"
       },
@@ -153,7 +144,7 @@
           "group": "navigation@1"
         },
         {
-          "submenu": "dotagentsSidebar.newMenu",
+          "command": "dotagentsSidebar.new.codex",
           "when": "view == dotagentsSidebar.view",
           "group": "navigation@2"
         },
@@ -198,20 +189,6 @@
           "command": "dotagentsSidebar.close",
           "when": "webviewId == 'dotagentsSidebar.view' && webviewSection == 'session'",
           "group": "2_run@2"
-        }
-      ],
-      "dotagentsSidebar.newMenu": [
-        {
-          "command": "dotagentsSidebar.new.claude",
-          "group": "1_agents@1"
-        },
-        {
-          "command": "dotagentsSidebar.new.codex",
-          "group": "1_agents@2"
-        },
-        {
-          "command": "dotagentsSidebar.newTerminal",
-          "group": "2_terminal@1"
         }
       ]
     },
@@ -277,17 +254,7 @@
           "fontCharacter": "\\E003"
         }
       }
-    },
-    "submenus": [
-      {
-        "id": "dotagentsSidebar.newMenu",
-        "label": "New Session",
-        "icon": {
-          "light": "media/new-menu-light.svg",
-          "dark": "media/new-menu-dark.svg"
-        }
-      }
-    ]
+    }
   },
   "dependencies": {
     "@xterm/addon-fit": "0.11.0",

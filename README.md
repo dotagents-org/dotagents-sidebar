@@ -33,10 +33,10 @@ With [dotagents](https://github.com/dotagents-org/dotagents-core), it is also wh
 
 **Sessions**
 
-- **Sessions like terminals.** Each session is an agent in its own terminal; `+` opens one, and the list switches between them while the others keep running.
+- **Sessions like terminals.** Each session is an agent in its own terminal; the Claude Code or Codex button opens one, and the list switches between them while the others keep running.
 - **Splits.** Side by side, joined in the list as the terminal panel's tabs are. Drag a session to reorder it (its split goes with it); with Shift, drop it on another to join that split, or below the last one to leave its split.
 - **Agents survive a reload.** They run in a small host process of their own, so **Developer: Reload Window** brings the view back with every screen as it was.
-- **Claude Code and Codex.** `+` opens a session with the last agent you used, and the `⌄` next to it picks Claude Code, Codex or a terminal, as in VS Code's terminal panel; each session shows its agent's mark.
+- **Claude Code and Codex.** the title bar has one button per agent, Claude Code and Codex, each with its mark, and one for a terminal; each session shows its agent's mark.
 - **Back to the conversation.** A session that starts again (a crash, a restart, the next day) opens its conversation with `--resume` (`codex resume` for Codex).
 - **Like the integrated terminal.** Your terminal font and colors, VS Code's shortcuts while a session has focus, copy and paste, a click on a file path to open it, Shift+Enter for a newline, names and colors per session.
 
@@ -78,7 +78,7 @@ You need VS Code 1.106+ and [Claude Code](https://claude.com/claude-code) on the
 
 1. Download `dotagents-sidebar.vsix` from the [latest release](https://github.com/dotagents-org/dotagents-sidebar/releases/latest).
 2. Run **Extensions: Install from VSIX...** (in a remote window, while connected), then **Developer: Reload Window**.
-3. Open the secondary sidebar and pick **dotagents: Sidebar**; `+` starts a session.
+3. Open the secondary sidebar and pick **dotagents: Sidebar**; the Claude Code button starts a session.
 
 For the accounts, set up [dotagents](https://github.com/dotagents-org/dotagents-core#quick-start) on the same side and add your profiles; the tab appears on the next reload. More in [Getting started](docs/getting-started.md).
 

@@ -25,20 +25,17 @@ test("each agent has a terminal profile, its activation event and its icons", ()
   }
 });
 
-test("the + button repeats the last agent, and the menu beside it picks Claude Code, Codex or a terminal", () => {
+test("the title bar opens Claude Code, Codex or a terminal, each from its own button with its mark", () => {
   const commands = pkg.contributes.commands.map((c) => c.command);
   for (const name of ["new", "new.codex", "split", "split.codex"]) assert.ok(commands.includes(`dotagentsSidebar.${name}`), name);
   const buttons = pkg.contributes.menus["view/title"];
-  assert.equal(buttons.find((b) => b.group === "navigation@1").command, "dotagentsSidebar.new");
-  // The ⌄ right after +, as in the terminal panel: a submenu, not one more button per agent.
-  const menu = buttons.find((b) => b.group === "navigation@2");
-  assert.equal(menu.submenu, "dotagentsSidebar.newMenu");
-  const submenu = pkg.contributes.submenus.find((s) => s.id === menu.submenu);
-  for (const theme of ["light", "dark"]) assert.ok(fs.existsSync(path.join(root, submenu.icon[theme])), `the menu's own ${theme} icon`);
-  assert.deepEqual(pkg.contributes.menus[menu.submenu].map((m) => m.command), ["dotagentsSidebar.new.claude", "dotagentsSidebar.new.codex", "dotagentsSidebar.newTerminal"]);
-  assert.equal(buttons.filter((b) => b.command === "dotagentsSidebar.new.codex").length, 0);
+  assert.deepEqual(buttons.slice(0, 3).map((b) => b.command), ["dotagentsSidebar.new", "dotagentsSidebar.new.codex", "dotagentsSidebar.newTerminal"]);
+  const icon = (name) => pkg.contributes.commands.find((c) => c.command === name).icon.dark;
+  assert.equal(icon("dotagentsSidebar.new"), "media/claude-code-dark.svg");
+  assert.equal(icon("dotagentsSidebar.new.codex"), "media/codex-dark.svg");
+  assert.equal(pkg.contributes.submenus, undefined, "no + or ⌄ menu");
   assert.equal(new Set(buttons.map((b) => b.group)).size, buttons.length);
-  // Titles without the prefix, so the menu reads "New Codex Session"; the palette adds the category.
+  // Titles without the prefix; the palette adds the category.
   for (const c of pkg.contributes.commands) assert.equal(c.category, "dotagents-sidebar", c.command);
 });
 
