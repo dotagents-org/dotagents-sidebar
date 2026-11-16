@@ -8,12 +8,13 @@ import { test } from "node:test";
 // Plain CommonJS, loaded as VS Code loads it: what accounts.js decides without VS Code
 const accounts = createRequire(import.meta.url)("../accounts.js");
 
+// One provider, an API 2 answer: what the sidebar showed before Codex.
 const data = {
-  current: { profile: "personal", state: "warn" },
-  slots: { WSL: "personal", Windows: "work" },
+  current: { claude: { profile: "personal", state: "warn" } },
+  slots: { claude: { WSL: "personal", Windows: "work" } },
   profiles: [
-    { name: "personal", state: "ok", avatar: "warn", windows: [{ kind: "session", pct: 79, resetsAt: "2026-11-12T15:17:00Z" }, { kind: "week", pct: 38 }, { kind: "model-week", model: "Opus", pct: 13 }] },
-    { name: "work", state: "ok", avatar: "ok", windows: [{ kind: "session", pct: 0 }, { kind: "week", pct: 11 }] },
+    { name: "personal", provider: "claude", state: "ok", avatar: "warn", windows: [{ kind: "session", pct: 79, resetsAt: "2026-11-12T15:17:00Z" }, { kind: "week", pct: 38 }, { kind: "model-week", model: "Opus", pct: 13 }] },
+    { name: "work", provider: "claude", state: "ok", avatar: "ok", windows: [{ kind: "session", pct: 0 }, { kind: "week", pct: 11 }] },
   ],
 };
 
@@ -37,15 +38,18 @@ test("the accounts show where dotagents has profiles, and the server is found wh
 
 test("an answer in another API version is refused with what to update, and an error is passed on", () => {
   assert.equal(accounts.refusal({ apiVersion: 2, profiles: [] }), "");
+  assert.match(accounts.refusal({ apiVersion: 1, profiles: [] }), /run dotagents update/, "version 1 is from before the providers");
   assert.equal(accounts.refusal({ apiVersion: 2, error: "profiles.json is not valid JSON" }), "dotagents: profiles.json is not valid JSON");
   assert.match(accounts.refusal({ apiVersion: 3 }), /update dotagents-sidebar/);
   assert.match(accounts.refusal({ version: 1, profiles: [] }), /run dotagents update/, "a server from before the API had a version");
 });
 
 test("the status bar shows the current account and its windows as in the statusLine, in parts with a tone each", () => {
-  const status = accounts.statusFor(data, Date.parse("2026-11-12T12:00:00Z"));
+  const groups = accounts.groupsFor(data, Date.parse("2026-11-12T12:00:00Z"));
+  assert.equal(groups.length, 1, "one provider, one group");
+  const status = groups[0];
   assert.deepEqual(status.parts, [
-    { text: "$(dotagents-accounts) personal", tone: "name" },
+    { text: "$(dotagents-claude) personal", tone: "name" },
     { text: "$(circle-filled)", tone: "amber" },
     { text: "5h", tone: "label" },
     { text: "━━━━━━", tone: "warn" },
@@ -61,7 +65,7 @@ test("the status bar shows the current account and its windows as in the statusL
 });
 
 test("the status bar shows the state as the avatars' dot: its color, and a ring for limit and waiting", () => {
-  const dot = (state) => accounts.statusFor({ ...data, current: { profile: "personal", state } }).parts[1];
+  const dot = (state) => accounts.groupsFor({ ...data, current: { claude: { profile: "personal", state } } })[0].parts[1];
   assert.deepEqual(dot("error"), { text: "$(circle-filled)", tone: "red" });
   assert.deepEqual(dot("limit"), { text: "$(target)", tone: "red" });
   assert.deepEqual(dot("waiting"), { text: "$(target)", tone: "amber" });
@@ -79,6 +83,7 @@ test("the status bar's colors are the identity's terminal roles, the account's l
 test("the switch lists every account with its usage and where it is, the current one marked", () => {
   const items = accounts.pickItems(data);
   assert.deepEqual(items.map((i) => i.label), ["$(check) personal", "work"]);
+  assert.equal(items[0].description, "Claude  5h 79%  7d 38%");
   assert.equal(items[1].detail, "in the slot on Windows");
   assert.equal(items[1].profile, "work");
 });
@@ -92,10 +97,58 @@ test("dotagents start runs on its own: directly on Linux and macOS, through a hi
   assert.match(args.at(-1), /^Start-Process -WindowStyle Hidden -FilePath dotagents\.cmd -ArgumentList start$/);
 });
 
-test("the status bar and the pick list get the Claude profiles and Claude's slots of an API 2 answer", () => {
-  const both = { ...data, profiles: [...data.profiles, { name: "codex-work", provider: "codex", color: "#7B61A8", state: "no-data", windows: [] }], slots: { claude: data.slots, codex: { WSL: "codex-work" } } };
-  const claude = accounts.claudeOnly(both);
-  assert.deepEqual(claude.profiles.map((p) => p.name), data.profiles.map((p) => p.name));
-  assert.deepEqual(claude.slots, data.slots);
-  assert.deepEqual(accounts.pickItems(claude).map((i) => i.profile), data.profiles.map((p) => p.name));
+// Two providers, an API 2 answer: Claude's pair and a Codex seat in one slot.
+const both = {
+  ...data,
+  current: { claude: data.current.claude, codex: { profile: "hopper", state: "asleep" } },
+  slots: { claude: data.slots.claude, codex: { WSL: "hopper" } },
+  profiles: [
+    ...data.profiles,
+    { name: "hopper", provider: "codex", plan: "team", color: "#7B61A8", state: "ok", avatar: "ok", windows: [{ kind: "session", pct: 40 }, { kind: "week", pct: 95 }] },
+    { name: "dijkstra", provider: "codex", plan: "team", color: "#B8862B", state: "no-data", avatar: "asleep", windows: [] },
+  ],
+};
+
+test("with a Codex account the status bar has a second group, led by the OpenAI mark and reading the Codex current", () => {
+  const [claude, codex] = accounts.groupsFor(both, Date.parse("2026-11-12T12:00:00Z"));
+  assert.equal(claude.parts[0].text, "$(dotagents-claude) personal");
+  assert.equal(codex.parts[0].text, "$(dotagents-openai) hopper");
+  assert.deepEqual(codex.parts[1], { text: "$(circle-filled)", tone: "blue" }, "the dot is the Codex current's state");
+  assert.equal(codex.color, "#7B61A8");
+  assert.match(codex.tooltip, /\*\*hopper\*\* \(WSL\)  5h 40%  7d 95%/);
+  assert.match(codex.tooltip, /\*\*dijkstra\*\*  no data/);
+  assert.doesNotMatch(codex.tooltip, /personal/, "each group lists its own provider's accounts");
+  assert.doesNotMatch(claude.tooltip, /hopper/);
+});
+
+test("a Codex profile without a Codex current falls back to the first one, and with none there is no Codex group", () => {
+  const { current, ...rest } = both;
+  const [, codex] = accounts.groupsFor({ ...rest, current: { claude: current.claude } });
+  assert.equal(codex.parts[0].text, "$(dotagents-openai) hopper");
+  assert.equal(accounts.groupsFor(data).length, 1);
+});
+
+test("with no Claude profile the first group is the brand, and the Codex one still shows", () => {
+  const onlyCodex = { ...both, profiles: both.profiles.filter((p) => p.provider === "codex"), current: { claude: { profile: "dotagents", state: "asleep" }, codex: both.current.codex } };
+  const [brand, codex] = accounts.groupsFor(onlyCodex);
+  assert.equal(brand.parts[0].text, "$(dotagents-accounts) dotagents");
+  assert.equal(codex.parts[0].text, "$(dotagents-openai) hopper");
+});
+
+test("the switch lists both providers' accounts, Claude first, the provider named and each current one marked", () => {
+  const items = accounts.pickItems(both);
+  assert.deepEqual(items.map((i) => [i.label, i.provider]), [["$(check) personal", "claude"], ["work", "claude"], ["$(check) hopper", "codex"], ["dijkstra", "codex"]]);
+  assert.equal(items[2].description, "OpenAI  5h 40%  7d 95%");
+  assert.equal(items[2].detail, "in the slot on WSL");
+  assert.equal(items[3].description, "OpenAI");
+  assert.equal(items[3].profile, "dijkstra", "the switch posts the profile, whichever the provider");
+});
+
+test("a provider's view takes its profiles, its slots and its current from an API 2 answer", () => {
+  const codex = accounts.forProvider(both, "codex");
+  assert.deepEqual(codex.profiles.map((p) => p.name), ["hopper", "dijkstra"]);
+  assert.deepEqual(codex.slots, { WSL: "hopper" });
+  assert.equal(codex.current.profile, "hopper");
+  assert.deepEqual(accounts.forProvider(both, "claude").slots, data.slots.claude);
+  assert.deepEqual(accounts.forProvider({ ...data, slots: undefined }, "codex").slots, {});
 });

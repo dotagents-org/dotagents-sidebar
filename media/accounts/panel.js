@@ -167,9 +167,16 @@
     // One group per provider, Claude first; a header names each one only when there are two.
     const groups = ["claude", "codex"].map((id) => ({ id, profiles: data.profiles.filter((p) => (p.provider || "claude") === id) })).filter((g) => g.profiles.length);
     const cards = data.profiles.map(cardOf);
+    // A group's header says the plan with its seats ("team  2 seats") when every account of the
+    // group has the same known plan, else the count; two spaces, as in the CLI.
+    const summary = (g) => {
+      const plans = new Set(g.profiles.map((p) => p.plan));
+      const n = g.profiles.length;
+      return plans.size === 1 && g.profiles[0].plan ? `${g.profiles[0].plan}  ${n} seat${n === 1 ? "" : "s"}` : `${n} account${n === 1 ? "" : "s"}`;
+    };
     const blocks = groups.length > 1
       ? groups.flatMap((g) => [
-          el("div", { class: "provider" }, icon([PROVIDERS[g.id].mark || CLAUDE]), el("span", {}, PROVIDERS[g.id].title), el("span", { class: "muted" }, `${g.profiles.length} account${g.profiles.length === 1 ? "" : "s"}`)),
+          el("div", { class: "provider" }, icon([PROVIDERS[g.id].mark || CLAUDE]), el("span", {}, PROVIDERS[g.id].title), el("span", { class: "muted" }, summary(g))),
           el("div", { class: "cards" }, ...g.profiles.map((p) => cards[data.profiles.indexOf(p)])),
         ])
       : [el("div", { class: "cards" }, ...cards)];

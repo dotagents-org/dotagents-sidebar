@@ -1,5 +1,6 @@
-// The Claude accounts of dotagents, when it is installed: the current account and its usage in the
-// status bar, a click to switch, and the panel (every account) as the view's first tab. Everything
+// The accounts of dotagents (Claude and Codex), when it is installed: the current account of each
+// provider and its usage in the status bar, a click to switch, and the panel (every account) as
+// the view's first tab. Everything
 // comes from `dotagents start` on the side the window runs on (in WSL for a WSL window), found
 // through <state>/start.json; with none answering, one is started in the background. The rules
 // (states, projections, the switch) live in dotagents; this file only shows them.
@@ -67,8 +68,11 @@ const level = (pct) => (pct >= 90 ? "high" : pct >= 70 ? "warn" : "ok");
 // The state's dot, as on the avatars: red needs you, amber asks for attention, green is fine,
 // blue is asleep; a ring (limit, waiting) is the other state of the same color.
 const DOTS = { error: ["circle-filled", "red"], limit: ["target", "red"], waiting: ["target", "amber"], warn: ["circle-filled", "amber"], ok: ["circle-filled", "green"], asleep: ["circle-filled", "blue"] };
+// The provider's mark leads its group in the status bar: the company's, as on the panel's cards.
+const PROVIDERS = { claude: { title: "Claude", icon: "dotagents-claude" }, codex: { title: "OpenAI", icon: "dotagents-openai" } };
+const providerOf = (p) => (p.provider || "claude") === "codex" ? "codex" : "claude";
 function parts(profile, state, now = Date.now()) {
-  const out = [{ text: `$(dotagents-accounts) ${profile.name}`, tone: "name" }];
+  const out = [{ text: `$(${PROVIDERS[providerOf(profile)].icon}) ${profile.name}`, tone: "name" }];
   const dot = DOTS[state];
   if (dot) out.push({ text: `$(${dot[0]})`, tone: dot[1] });
   for (const w of profile.windows.filter((w) => w.kind !== "model-week")) {
@@ -98,32 +102,46 @@ function toneColor(tone, account, dark) {
   return `#${mix(1)}${mix(3)}${mix(5)}`;
 }
 
-// The status bar and the pick list show the Claude accounts for now: the API lists every provider's
-// profiles, and the slots per provider (apiVersion 2).
-const claudeOnly = (data) => ({ ...data, profiles: data.profiles.filter((p) => (p.provider || "claude") === "claude"), slots: (data.slots && data.slots.claude) || {} });
+// One provider's part of an API 2 answer, as the functions below take it: its profiles, its slots
+// ({ WSL: "work" }) and its current account.
+const forProvider = (data, id) => ({ ...data, profiles: data.profiles.filter((p) => providerOf(p) === id), slots: (data.slots && data.slots[id]) || {}, current: data.current && data.current[id] });
 
-// The status bar: the current account, its state's dot and its usage, in parts. No background:
-// it would override the parts' colors, and the dot already says what needs you.
-function statusFor(data, now = Date.now()) {
-  const current = data.profiles.find((p) => p.name === data.current?.profile) || data.profiles[0];
+// The providers that have a profile, Claude first.
+const providersOf = (data) => Object.keys(PROVIDERS).filter((id) => data.profiles.some((p) => providerOf(p) === id));
+
+// A provider's group of the status bar: its current account, the state's dot and its usage, in
+// parts. No background: it would override the parts' colors, and the dot already says what needs
+// you. `view` is forProvider's.
+function statusFor(view, now = Date.now()) {
+  const current = view.profiles.find((p) => p.name === view.current?.profile) || view.profiles[0];
   if (!current) return { text: "$(dotagents-accounts) dotagents", parts: [{ text: "$(dotagents-accounts) dotagents", tone: "name" }], tooltip: "No profile yet: dotagents profile add <name>" };
-  const state = data.current?.profile === current.name ? data.current.state : current.avatar;
+  const state = view.current?.profile === current.name ? view.current.state : current.avatar;
   const list = parts(current, state, now);
-  const lines = data.profiles.map((p) => {
-    const sides = Object.keys(data.slots || {}).filter((s) => data.slots[s] === p.name);
+  const lines = view.profiles.map((p) => {
+    const sides = Object.keys(view.slots).filter((s) => view.slots[s] === p.name);
     return `**${p.name}**${sides.length ? ` (${sides.join(", ")})` : ""}  ${usageText(p) || p.state.replace(/-/g, " ")}`;
   });
   return { text: list.map((x) => x.text).join(" "), parts: list, color: current.color, tooltip: lines.join("\n\n") };
 }
 
-// The accounts to pick from, the current one marked.
+// Every group of the status bar, one per provider, Claude first: Claude's even with no profile
+// (the brand and how to add one), Codex's only when there is a Codex profile.
+function groupsFor(data, now = Date.now()) {
+  const ids = ["claude", ...providersOf(data).filter((id) => id !== "claude")];
+  return ids.map((id) => statusFor(forProvider(data, id), now));
+}
+
+// The accounts to pick from, both providers' (Claude first), each provider's current one marked.
 function pickItems(data) {
   return data.profiles.map((p) => {
-    const sides = Object.keys(data.slots || {}).filter((s) => data.slots[s] === p.name);
+    const id = providerOf(p);
+    const slots = (data.slots && data.slots[id]) || {};
+    const sides = Object.keys(slots).filter((s) => slots[s] === p.name);
     return {
-      label: `${p.name === data.current?.profile ? "$(check) " : ""}${p.name}`,
+      label: `${p.name === data.current?.[id]?.profile ? "$(check) " : ""}${p.name}`,
       profile: p.name,
-      description: usageText(p),
+      provider: id,
+      description: [PROVIDERS[id].title, usageText(p)].filter(Boolean).join("  "),
       detail: sides.length ? `in the slot on ${sides.join(" and ")}` : p.avatar === "error" ? "no login here" : "",
     };
   });
@@ -193,29 +211,32 @@ function startAccounts(vscode, context) {
     return result;
   }
 
-  // The status bar: one item per part of the status, side by side, since an item has one color.
-  // Only the first (the mark and the account) has the tooltip and switches on a click.
-  // All parts share one priority: VS Code breaks ties by a hash of the extension id, then by the
-  // order the items were added, so no other extension's item can land between them.
+  // The status bar: one item per part of each provider's group, side by side, since an item has
+  // one color. Only the first of a group (the mark and the account) has the group's tooltip and
+  // switches on a click. All items share one priority: VS Code breaks ties by a hash of the
+  // extension id, then by the order the items were added, so no other extension's item can land
+  // between them. The items live in one list, added in order and only shown or hidden, so the
+  // groups stay together whatever their length.
   const items = [];
-  function showParts(list, color, tooltip) {
+  function showGroups(groups) {
     const dark = [vscode.ColorThemeKind.Dark, vscode.ColorThemeKind.HighContrast].includes(vscode.window.activeColorTheme.kind);
+    const list = groups.flatMap((g) => g.parts.map((part, n) => ({ part, color: g.color, first: n === 0, tooltip: g.tooltip })));
     while (items.length < list.length) {
       const item = vscode.window.createStatusBarItem(`dotagentsSidebar.account.${items.length}`, vscode.StatusBarAlignment.Right, 100);
-      item.name = "Claude account";
+      item.name = "Account";
       items.push(item);
     }
     items.forEach((item, n) => {
-      const part = list[n];
-      if (!part) return item.hide();
-      item.text = part.text;
-      item.color = toneColor(part.tone, color, dark);
-      item.tooltip = n === 0 ? tooltip : undefined;
-      item.command = n === 0 ? "dotagentsSidebar.switchAccount" : undefined;
+      const entry = list[n];
+      if (!entry) return item.hide();
+      item.text = entry.part.text;
+      item.color = toneColor(entry.part.tone, entry.color, dark);
+      item.tooltip = entry.first ? entry.tooltip : undefined;
+      item.command = entry.first ? "dotagentsSidebar.switchAccount" : undefined;
       item.show();
     });
   }
-  const showDown = () => showParts([{ text: "$(dotagents-accounts) dotagents", tone: "label" }], undefined, down);
+  const showDown = () => showGroups([{ parts: [{ text: "$(dotagents-accounts) dotagents", tone: "label" }], tooltip: down }]);
 
   async function refresh() {
     try {
@@ -223,10 +244,13 @@ function startAccounts(vscode, context) {
       const why = refusal(json);
       if (!ok || why) throw new Error(why || "no answer");
       data = json;
-      const status = statusFor(claudeOnly(data));
-      const tip = new vscode.MarkdownString(status.tooltip);
-      tip.appendMarkdown("\n\n---\n\nClick to switch account");
-      showParts(status.parts, status.color, tip);
+      showGroups(
+        groupsFor(data).map((g) => {
+          const tooltip = new vscode.MarkdownString(g.tooltip);
+          tooltip.appendMarkdown("\n\n---\n\nClick to switch account");
+          return { ...g, tooltip };
+        })
+      );
     } catch (err) {
       data = null;
       down = err.message;
@@ -237,11 +261,12 @@ function startAccounts(vscode, context) {
 
   async function switchAccount() {
     if (!data) return vscode.window.showWarningMessage(`dotagents: ${down}`);
-    const pick = await vscode.window.showQuickPick(pickItems(claudeOnly(data)), { placeHolder: "Switch the Claude account, on both sides" });
-    if (!pick || pick.profile === data.current?.profile) return;
+    const pick = await vscode.window.showQuickPick(pickItems(data), { placeHolder: "Switch account, on every side" });
+    if (!pick || pick.profile === data.current?.[pick.provider]?.profile) return;
     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `dotagents: switching to ${pick.profile}` }, async () => {
       const result = await act("switch", { profile: pick.profile });
-      if (result.ok) vscode.window.showInformationMessage(`dotagents: ${result.detail || `now ${pick.profile}`}. Open conversations go on in the new account when you type continue.`);
+      const goOn = pick.provider === "claude" ? ". Open conversations go on in the new account when you type continue." : "";
+      if (result.ok) vscode.window.showInformationMessage(`dotagents: ${result.detail || `now ${pick.profile}`}${goOn}`);
       else vscode.window.showErrorMessage(`dotagents: ${result.detail || "the switch failed"}`);
     });
   }
@@ -266,4 +291,4 @@ function startAccounts(vscode, context) {
   };
 }
 
-module.exports = { API_VERSION, claudeOnly, startCommand, stateDir, hasAccounts, readServer, refusal, usageText, statusFor, toneColor, pickItems, startAccounts };
+module.exports = { API_VERSION, forProvider, groupsFor, startCommand, stateDir, hasAccounts, readServer, refusal, usageText, statusFor, toneColor, pickItems, startAccounts };
