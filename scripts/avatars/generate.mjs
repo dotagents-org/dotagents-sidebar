@@ -45,8 +45,8 @@ const WHO = {
   dijkstra: {
     color: "#B8862B",
     ink: "#151515",
-    body: "M26 36A24 24 0 0 1 74 36V64A24 24 0 0 1 26 64Z",
-    eyes: { y: 44, spacing: 18, scale: 1.1 },
+    body: "M39 20H61A31 31 0 0 1 61 82H39A31 31 0 0 1 39 20Z",
+    eyes: { y: 51, spacing: 24, scale: 1.2 },
   },
 };
 

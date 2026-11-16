@@ -27,8 +27,8 @@
     { body: PEBBLE, eyes: { y: 49, spacing: 24, scale: 1.3 } },
   ];
   const BRAND_DEF = { body: SQUARE, eyes: { y: 48, spacing: 24, scale: 1.3 } };
-  // A pill, upright: a capsule, kept out of SHAPES so the hash of any other name still lands on the same shape.
-  const PILL = { body: "M26 36A24 24 0 0 1 74 36V64A24 24 0 0 1 26 64Z", eyes: { y: 44, spacing: 18, scale: 1.1 } };
+  // A pill, lying down: a capsule as wide as the other bodies, kept out of SHAPES so the hash of any other name still lands on the same shape.
+  const PILL = { body: "M39 20H61A31 31 0 0 1 61 82H39A31 31 0 0 1 39 20Z", eyes: { y: 51, spacing: 24, scale: 1.2 } };
   // The accounts with a shape of their own, kept as they were drawn (the Claude pair, then the
   // Codex pair); any other account gets one from its name, always the same.
   const NAMED = { turing: SHAPES[0], lovelace: SHAPES[1], hopper: SHAPES[2], dijkstra: PILL };
