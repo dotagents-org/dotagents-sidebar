@@ -19,6 +19,8 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Changed
 
+- **Codex discovery.** Rollout reading and pending-session matching live together in a module separate from the agent launch table.
+
 - **Session startup.** Agent and terminal sessions share the host creation message and dimmed notice formatting.
 
 - **Shared account labels and marks.** The status bar, switch list and accounts panel use one provider table, keeping Claude and ChatGPT names and brand marks together. Session agents retain their Claude Code and Codex names.

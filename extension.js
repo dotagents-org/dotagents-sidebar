@@ -6,8 +6,9 @@ const vscode = require("vscode");
 const { writer } = require("./log.js");
 const { spawn } = require("child_process");
 const host = require("./host");
-const { AGENTS, agentOf, TERMINAL, terminalCommand, newConversation, command, conversationArgs, codexHome, readRollouts, findCodexSessions, env, newer } = require("./agent");
+const { AGENTS, agentOf, TERMINAL, terminalCommand, newConversation, command, conversationArgs, env, newer } = require("./agent");
 const sessions = require("./sessions");
+const codexSessions = require("./codex-sessions");
 const keys = require("./media/keys.js");
 
 const { startAccounts } = require("./accounts");
@@ -507,30 +508,19 @@ class SidebarView {
   // rollouts every few seconds (a rollout may only appear once the first prompt is sent), until
   // each has one
   watchCodex() {
-    if (this.watching || !this.pendingCodex().length) return;
+    if (this.watching || !codexSessions.pending(this.state.sessions).length) return;
     this.watching = setInterval(() => {
       try {
-        const pending = this.pendingCodex();
-        if (pending.length) this.findConversations(pending);
-        if (this.pendingCodex().length) return;
+        for (const [id, conversation] of Object.entries(codexSessions.discover(this.state.sessions))) {
+          if (this.session(id)) this.update(sessions.remember(this.state, id, { conversation }));
+        }
+        if (codexSessions.pending(this.state.sessions).length) return;
       } catch (err) {
         this.log.error("Could not look for the Codex conversations", err);
       }
       clearInterval(this.watching);
       this.watching = undefined;
     }, 3000);
-  }
-
-  pendingCodex() {
-    return this.state.sessions.filter((s) => s.provider === "codex" && !s.conversation && s.startedAt && s.cwd);
-  }
-
-  findConversations(pending) {
-    const taken = new Set(this.state.sessions.map((s) => s.conversation));
-    const rollouts = readRollouts(codexHome(), Math.min(...pending.map((s) => s.startedAt))).filter((r) => !taken.has(r.id));
-    for (const [id, conversation] of Object.entries(findCodexSessions(pending, rollouts))) {
-      if (this.session(id)) this.update(sessions.remember(this.state, id, { conversation }));
-    }
   }
 
   // A new process in the same conversation
