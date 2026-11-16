@@ -18,7 +18,7 @@ The first tab in the list, marked with the accounts' dot. It never closes or spl
 
 ## The avatars
 
-Each account has an avatar, in its color and shape; turing is a rounded square, lovelace a circle, hopper a hexagon and dijkstra a pill, and any other name gets one of the shapes from a hash of the name. dotagents' own is the `..` face. The eyes give the state's shape and the dot in the corner its color, one state at a time, the most urgent first: `error` (sign in again), `limit` (a window at 100%), `waiting` (a session waits on you), `warn` (70% or more, or the pace runs out before the reset), `ok`, `asleep` (no fresh data). A session at work makes it hop. The avatars only move while the tab shows.
+Each account has an avatar, in its color and shape; turing is a rounded square, lovelace a circle, hopper a hexagon and dijkstra an arch, and any other name gets one of the shapes from a hash of the name. dotagents' own is the `..` face. The eyes give the state's shape and the dot in the corner its color, one state at a time, the most urgent first: `error` (sign in again), `limit` (a window at 100%), `waiting` (a session waits on you), `warn` (70% or more, or the pace runs out before the reset), `ok`, `asleep` (no fresh data). A session at work makes it hop. The avatars only move while the tab shows.
 
 ## The status bar
 
