@@ -12,7 +12,7 @@ const os = require("node:os");
 const path = require("node:path");
 
 // The format of what `dotagents start` says (its docs/commands.md); another one is refused.
-const API_VERSION = 1;
+const API_VERSION = 2;
 
 // The same folder as dotagents' stateDir.
 function stateDir(env = process.env, home = os.homedir()) {
@@ -97,6 +97,10 @@ function toneColor(tone, account, dark) {
   const mix = (i) => Math.round(parseInt(account.slice(i, i + 2), 16) + (255 - parseInt(account.slice(i, i + 2), 16)) / 3).toString(16).padStart(2, "0");
   return `#${mix(1)}${mix(3)}${mix(5)}`;
 }
+
+// The status bar and the pick list show the Claude accounts for now: the API lists every provider's
+// profiles, and the slots per provider (apiVersion 2).
+const claudeOnly = (data) => ({ ...data, profiles: data.profiles.filter((p) => (p.provider || "claude") === "claude"), slots: (data.slots && data.slots.claude) || {} });
 
 // The status bar: the current account, its state's dot and its usage, in parts. No background:
 // it would override the parts' colors, and the dot already says what needs you.
@@ -219,7 +223,7 @@ function startAccounts(vscode, context) {
       const why = refusal(json);
       if (!ok || why) throw new Error(why || "no answer");
       data = json;
-      const status = statusFor(data);
+      const status = statusFor(claudeOnly(data));
       const tip = new vscode.MarkdownString(status.tooltip);
       tip.appendMarkdown("\n\n---\n\nClick to switch account");
       showParts(status.parts, status.color, tip);
@@ -233,7 +237,7 @@ function startAccounts(vscode, context) {
 
   async function switchAccount() {
     if (!data) return vscode.window.showWarningMessage(`dotagents: ${down}`);
-    const pick = await vscode.window.showQuickPick(pickItems(data), { placeHolder: "Switch the Claude account, on both sides" });
+    const pick = await vscode.window.showQuickPick(pickItems(claudeOnly(data)), { placeHolder: "Switch the Claude account, on both sides" });
     if (!pick || pick.profile === data.current?.profile) return;
     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `dotagents: switching to ${pick.profile}` }, async () => {
       const result = await act("switch", { profile: pick.profile });
@@ -262,4 +266,4 @@ function startAccounts(vscode, context) {
   };
 }
 
-module.exports = { API_VERSION, startCommand, stateDir, hasAccounts, readServer, refusal, usageText, statusFor, toneColor, pickItems, startAccounts };
+module.exports = { API_VERSION, claudeOnly, startCommand, stateDir, hasAccounts, readServer, refusal, usageText, statusFor, toneColor, pickItems, startAccounts };

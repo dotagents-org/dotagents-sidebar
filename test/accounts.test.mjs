@@ -36,9 +36,9 @@ test("the accounts show where dotagents has profiles, and the server is found wh
 });
 
 test("an answer in another API version is refused with what to update, and an error is passed on", () => {
-  assert.equal(accounts.refusal({ apiVersion: 1, profiles: [] }), "");
-  assert.equal(accounts.refusal({ apiVersion: 1, error: "profiles.json is not valid JSON" }), "dotagents: profiles.json is not valid JSON");
-  assert.match(accounts.refusal({ apiVersion: 2 }), /update dotagents-sidebar/);
+  assert.equal(accounts.refusal({ apiVersion: 2, profiles: [] }), "");
+  assert.equal(accounts.refusal({ apiVersion: 2, error: "profiles.json is not valid JSON" }), "dotagents: profiles.json is not valid JSON");
+  assert.match(accounts.refusal({ apiVersion: 3 }), /update dotagents-sidebar/);
   assert.match(accounts.refusal({ version: 1, profiles: [] }), /run dotagents update/, "a server from before the API had a version");
 });
 
@@ -90,4 +90,12 @@ test("dotagents start runs on its own: directly on Linux and macOS, through a hi
   assert.equal(file, "powershell.exe");
   assert.ok(args.includes("Hidden"));
   assert.match(args.at(-1), /^Start-Process -WindowStyle Hidden -FilePath dotagents\.cmd -ArgumentList start$/);
+});
+
+test("the status bar and the pick list get the Claude profiles and Claude's slots of an API 2 answer", () => {
+  const both = { ...data, profiles: [...data.profiles, { name: "codex-work", provider: "codex", color: "#7B61A8", state: "no-data", windows: [] }], slots: { claude: data.slots, codex: { WSL: "codex-work" } } };
+  const claude = accounts.claudeOnly(both);
+  assert.deepEqual(claude.profiles.map((p) => p.name), data.profiles.map((p) => p.name));
+  assert.deepEqual(claude.slots, data.slots);
+  assert.deepEqual(accounts.pickItems(claude).map((i) => i.profile), data.profiles.map((p) => p.name));
 });

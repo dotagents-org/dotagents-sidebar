@@ -56,6 +56,15 @@ body.vscode-dark .panel, body.vscode-high-contrast .panel { --text: #ededed; --m
 .sides .switch:disabled { opacity: 1; color: var(--muted); font-weight: 400; }
 .panel button:focus-visible { outline: 2px solid var(--warn); outline-offset: 2px; }
 
+/* A provider's header, over its cards, when the panel shows two: its mark, its name and how many
+   accounts; inset like a card's content. */
+.provider { display: flex; align-items: center; gap: 8px; padding: 4px 13px 0; font-weight: 600; }
+.provider svg { width: 16px; height: 16px; }
+.provider .muted { font-weight: 400; font-size: 11px; }
+/* A mark that isn't a button (a Codex account has no Desktop): the same place and size. */
+.who .line .icon.mark { padding: 4px; line-height: 0; }
+.who .line .icon.mark svg { width: calc(var(--avatar) * 3 / 8); height: calc(var(--avatar) * 3 / 8); }
+
 /* The strip over the cards: the age of the numbers and the refresh on the right, inset like a
    card's content (its padding and border), so the refresh sits right over the switches; on the
    left, only when the other side is off. */
