@@ -61,7 +61,7 @@ body.vscode-dark .panel, body.vscode-high-contrast .panel { --text: #ededed; --m
 .provider { display: flex; align-items: center; gap: 8px; padding: 4px 13px 0; font-weight: 600; }
 .provider svg { width: 16px; height: 16px; }
 .provider .muted { font-weight: 400; font-size: 11px; white-space: pre; }
-/* A mark that isn't a button (a Codex account has no Desktop): the same place and size. */
+/* A mark that isn't a button (a ChatGPT account has no Desktop): the same place and size. */
 .who .line .icon.mark { padding: 4px; line-height: 0; }
 .who .line .icon.mark svg { width: calc(var(--avatar) * 3 / 8); height: calc(var(--avatar) * 3 / 8); }
 

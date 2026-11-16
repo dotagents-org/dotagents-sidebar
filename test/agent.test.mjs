@@ -120,8 +120,8 @@ test("findCodexSessions gives each session the first rollout in its folder that 
 });
 
 test("a terminal runs the user's own shell, interactive; bash and PowerShell report their folder", () => {
-  assert.deepEqual(terminalCommand("linux", { SHELL: "/bin/bash" }, "/ext"), { file: "/bin/bash", args: ["--rcfile", "/ext/shell/bash-cwd.sh", "-i"] });
-  assert.deepEqual(terminalCommand("linux", {}, "/ext"), { file: "bash", args: ["--rcfile", "/ext/shell/bash-cwd.sh", "-i"] });
+  assert.deepEqual(terminalCommand("linux", { SHELL: "/bin/bash" }, "/ext"), { file: "/bin/bash", args: ["--rcfile", path.join("/ext", "shell", "bash-cwd.sh"), "-i"] });
+  assert.deepEqual(terminalCommand("linux", {}, "/ext"), { file: "bash", args: ["--rcfile", path.join("/ext", "shell", "bash-cwd.sh"), "-i"] });
   assert.deepEqual(terminalCommand("linux", { SHELL: "/bin/zsh" }), { file: "/bin/zsh", args: ["-i"] });
   const win = terminalCommand("win32", { SHELL: "/bin/zsh" });
   assert.equal(win.file, "powershell.exe");

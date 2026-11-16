@@ -20,7 +20,7 @@ The host is named by workspace and protocol (`PROTOCOL` in `host.js`), not by th
 |---|---|
 | `extension.js` | The view provider, the sessions, the commands, the connection to the host, the updates |
 | `host.js` | The detached process that owns the agents and their screen copies |
-| `agent.js` | The agent, Claude Code: command, environment, conversation flags, newline key |
+| `agent.js` | The session agents, Claude Code and Codex: commands, environment, conversation flags, newline keys |
 | `sessions.js` | The session list: add, split, close, rename, colors, restore |
 | `accounts.js` | The Claude and ChatGPT accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
 | `providers.js` | The one table of the account providers (Claude, ChatGPT): name, tool, mark and status bar icon. `accounts.js` reads it and posts it to the panel with the usage; a provider the table lacks is skipped |

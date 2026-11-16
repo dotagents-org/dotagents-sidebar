@@ -1,4 +1,4 @@
-// The accounts of dotagents (Claude and Codex), when it is installed: the current account of each
+// The accounts of dotagents (Claude and ChatGPT), when it is installed: the current account of each
 // provider and its usage in the status bar, a click to switch, and the panel (every account) as
 // the view's first tab. Everything
 // comes from `dotagents start` on the side the window runs on (in WSL for a WSL window), found

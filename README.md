@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<p align="center"><b>Claude Code and Codex in VS Code's secondary sidebar.<br>Your Claude accounts beside it, live, a click away from switching.</b></p>
+<p align="center"><b>Claude Code and Codex in VS Code's secondary sidebar.<br>Your Claude and ChatGPT accounts beside it, live, a click away from switching.</b></p>
 
 <p align="center">
   <a href="#features">Features</a>&nbsp;&nbsp;&nbsp;
@@ -27,7 +27,7 @@
 
 Claude Code's official extension puts it in a chat panel or a terminal tab. This one gives it a view of its own in the secondary sidebar, laid out like VS Code's terminal panel: the agent's terminal UI on the left, the list of sessions on the right, and the agents keep working while the window reloads.
 
-With [dotagents](https://github.com/dotagents-org/dotagents-core), it is also where your Claude accounts live in VS Code: the first tab shows every account's usage, its state as an avatar, and the switch; the status bar shows the current one. It works without dotagents, with the sessions only.
+With [dotagents](https://github.com/dotagents-org/dotagents-core), it is also where your Claude and ChatGPT accounts live in VS Code: the first tab shows every account's usage, its state as an avatar, and the switch; the status bar shows the current one. It works without dotagents, with the sessions only.
 
 ## Features
 
@@ -40,11 +40,11 @@ With [dotagents](https://github.com/dotagents-org/dotagents-core), it is also wh
 - **Back to the conversation.** A session that starts again (a crash, a restart, the next day) opens its conversation with `--resume` (`codex resume` for Codex).
 - **Like the integrated terminal.** Your terminal font and colors, VS Code's shortcuts while a session has focus, copy and paste, a click on a file path to open it, Shift+Enter for a newline, names and colors per session.
 
-**Your Claude accounts, with dotagents**
+**Your Claude and ChatGPT accounts, with dotagents**
 
 - **The accounts tab.** Every account with its 5-hour, weekly and model windows, the projection to the reset, and a switch that puts it on both sides of the machine.
 - **Avatars that say how it is.** Each account in its color and shape; the eyes and the dot in the corner give its state, and a session at work makes it hop.
-- **The status bar.** The current account and its usage as in the statusLine; a click switches.
+- **The status bar.** A group for each provider, showing its current account and usage as in the statusLine; a click switches.
 
 **Everywhere**
 
@@ -96,9 +96,9 @@ Issues and pull requests are welcome. There is no build step: `npm install`, `np
 
 ## The family
 
-- **[dotagents-core](https://github.com/dotagents-org/dotagents-core)**: the `dotagents` command, the workspace standards, and the logic of the Claude accounts, with the local API (`dotagents start`).
+- **[dotagents-core](https://github.com/dotagents-org/dotagents-core)**: the `dotagents` command, the workspace standards, and the logic of the Claude and ChatGPT accounts, with the local API (`dotagents start`).
 - **dotagents-config**: your configuration, a repository of your own next to dotagents-core.
-- **dotagents-sidebar**, this repository: Claude Code and your Claude accounts in VS Code's secondary sidebar.
+- **dotagents-sidebar**, this repository: Claude Code, Codex and your Claude and ChatGPT accounts in VS Code's secondary sidebar.
 
 ## Credits
 

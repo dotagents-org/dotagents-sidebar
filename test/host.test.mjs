@@ -42,7 +42,14 @@ function fakePty() {
 }
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "agents-host-"));
+const folders = [];
+const tmp = () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agents-host-"));
+  folders.push(dir);
+  return dir;
+};
+after(() => folders.forEach((dir) => fs.rmSync(dir, { recursive: true, force: true })));
+const testSocket = (dir) => process.platform === "win32" ? host.socketPath(path.basename(dir)) : path.join(dir, "s");
 
 // A client that collects what the host sends
 async function client(socketPath) {
@@ -64,7 +71,7 @@ const create = { type: "create", id: "s1", file: "bash", args: ["-ic", "agent"],
 test("the host runs the agent, relays input and output, and survives its client", async () => {
   const dir = tmp();
   const pty = fakePty();
-  const host = await createHost({ pty, socketPath: path.join(dir, "s"), grace: 1000 });
+  const host = await createHost({ pty, socketPath: testSocket(dir), grace: 1000 });
   const a = await client(host.socketPath);
   a.send(create);
   await wait(30);
@@ -101,7 +108,7 @@ test("the host runs the agent, relays input and output, and survives its client"
 test("every piece of output is in the snapshot or after it, never in both", async () => {
   const dir = tmp();
   const pty = fakePty();
-  const host = await createHost({ pty, socketPath: path.join(dir, "s"), grace: 1000 });
+  const host = await createHost({ pty, socketPath: testSocket(dir), grace: 1000 });
   const a = await client(host.socketPath);
   a.send({ ...create, scrollback: 1000 });
   await wait(30);
@@ -130,7 +137,7 @@ test("every piece of output is in the snapshot or after it, never in both", asyn
 test("an agent that exits stays as a screen, with its exit code, until it is closed", async () => {
   const dir = tmp();
   const pty = fakePty();
-  const host = await createHost({ pty, socketPath: path.join(dir, "s"), grace: 1000 });
+  const host = await createHost({ pty, socketPath: testSocket(dir), grace: 1000 });
   const a = await client(host.socketPath);
   a.send(create);
   await wait(30);
@@ -152,7 +159,7 @@ test("with no client for the grace period, the host stops the agents and exits",
   const dir = tmp();
   const pty = fakePty();
   let exited = false;
-  const host = await createHost({ pty, socketPath: path.join(dir, "s"), grace: 100, onExit: () => (exited = true) });
+  const host = await createHost({ pty, socketPath: testSocket(dir), grace: 100, onExit: () => (exited = true) });
   const a = await client(host.socketPath);
   a.send(create);
   await wait(30);
@@ -166,7 +173,7 @@ test("with no client for the grace period, the host stops the agents and exits",
 test("a client that comes back within the grace period keeps the agents", async () => {
   const dir = tmp();
   const pty = fakePty();
-  const host = await createHost({ pty, socketPath: path.join(dir, "s"), grace: 200 });
+  const host = await createHost({ pty, socketPath: testSocket(dir), grace: 200 });
   const a = await client(host.socketPath);
   a.send(create);
   await wait(30);
@@ -181,11 +188,11 @@ test("a client that comes back within the grace period keeps the agents", async 
 
 test("a second host on the same socket gives way to the first; a stale socket is replaced", async () => {
   const dir = tmp();
-  const socketPath = path.join(dir, "s");
+  const socketPath = testSocket(dir);
   const first = await createHost({ pty: fakePty(), socketPath, grace: 1000 });
   await assert.rejects(createHost({ pty: fakePty(), socketPath, grace: 1000 }), /already running/);
   await first.close();
-  fs.writeFileSync(socketPath, ""); // left behind by a host that crashed
+  if (process.platform !== "win32") fs.writeFileSync(socketPath, ""); // left behind by a host that crashed
   const second = await createHost({ pty: fakePty(), socketPath, grace: 1000 });
   await second.close();
 });
@@ -202,7 +209,7 @@ test("a session whose command can't start is written to the log, with the comman
   const dir = tmp();
   const logged = [];
   const pty = { spawn: () => { throw new Error("spawn nosuchagent ENOENT"); } };
-  const host = await createHost({ pty, socketPath: path.join(dir, "s"), grace: 1000, log: (...entry) => logged.push(entry) });
+  const host = await createHost({ pty, socketPath: testSocket(dir), grace: 1000, log: (...entry) => logged.push(entry) });
   const a = await client(host.socketPath);
   a.send({ ...create, file: "nosuchagent", args: ["--x"] });
   assert.deepEqual(await a.next("exit"), { type: "exit", id: "s1", exitCode: -1 });

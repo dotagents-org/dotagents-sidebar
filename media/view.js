@@ -115,7 +115,7 @@
     for (const src of accounts.scripts) {
       const script = document.createElement("script");
       script.nonce = accounts.nonce;
-      script.async = false; // in order: the avatars, then the panel
+      script.async = false; // in order: the providers, avatars, then panel
       script.src = src;
       document.body.append(script);
     }

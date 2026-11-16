@@ -1,7 +1,7 @@
 {
   "name": "dotagents-sidebar",
   "displayName": "dotagents-sidebar",
-  "description": "Claude Code and Codex in VS Code's secondary sidebar: several sessions, splits, and agents that keep working across window reloads, with your Claude accounts as the first tab.",
+  "description": "Claude Code and Codex in VS Code's secondary sidebar: several sessions, splits, and agents that keep working across window reloads, with your Claude and ChatGPT accounts as the first tab.",
   "version": "0.0.0",
   "publisher": "gabrieldulolmarques",
   "license": "MIT",

@@ -129,7 +129,7 @@ class SidebarView {
       },
       dispose: () => channel.dispose(),
     };
-    this.accounts = undefined; // the Claude accounts (accounts.js), when dotagents is set up here
+    this.accounts = undefined; // the accounts (accounts.js), when dotagents is set up here
   }
 
   // With dotagents set up on this side, the accounts are a fixed tab, the first in the list:
@@ -714,7 +714,7 @@ async function activate(context) {
   try {
     view.connectAccounts();
   } catch (err) {
-    view.log.error("Could not set up the Claude accounts", err);
+    view.log.error("Could not set up the accounts", err);
   }
   // A command run from a session's context menu gets that session; from the title bar, the active one
   const onSession = (name, run) => vscode.commands.registerCommand(`dotagentsSidebar.${name}`, (arg) => run(arg?.sessionId));
