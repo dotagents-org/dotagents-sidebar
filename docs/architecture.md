@@ -20,11 +20,14 @@ The host is named by workspace and protocol (`PROTOCOL` in `host.js`), not by th
 |---|---|
 | `extension.js` | The view provider, the sessions, the commands, the connection to the host, the updates |
 | `host.js` | The detached process that owns the agents and their screen copies |
-| `agent.js` | The session agents, Claude Code and Codex: commands, environment, conversation flags, newline keys |
+| `agent.js` | The table of the session agents (Claude Code, Codex) and the terminal: commands, environment, conversation flags, newline keys |
+| `codex-sessions.js` | Finds the conversation a Codex session started: reads the rollouts in `$CODEX_HOME/sessions/` and gives each pending session the first one in its folder no other session took. Pure apart from the reading, so it is tested without VS Code |
 | `sessions.js` | The session list: add, split, close, rename, colors, restore |
 | `accounts.js` | The Claude and ChatGPT accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
+| `log.js` | The sidebar's logs, `sidebar.log` and `host.log`, in the format of the core's `docs/logs.md` (a copy of its writer) |
 | `providers.js` | The one table of the account providers (Claude, ChatGPT): name, tool, mark and status bar icon. `accounts.js` reads it and posts it to the panel with the usage; a provider the table lacks is skipped |
 | `media/view.js`, `media/view.css` | The webview: a terminal per session, the list, the title strip |
+| `media/drag.js` | What dragging a session in the list does, worked out as the terminal panel's tabs do it |
 | `media/keys.js` | Which keys go to VS Code, worked out from the keybindings |
 | `shell/bash-cwd.sh` | Run by a terminal session's bash after `~/.bashrc`: reports the current folder (OSC 7) at each prompt |
 | `media/cwd.js` | The folder a terminal reports (OSC 7, OSC 9;9) and the path its title shows |
