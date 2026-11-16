@@ -22,7 +22,7 @@ Each account has an avatar, in its color and shape; turing is a rounded square, 
 
 ## The status bar
 
-One group per provider, side by side: Claude's, and ChatGPT's only when there is a ChatGPT account. Each group shows the current account of its provider (the one in the slot, the worse of the two sides) as the statusLine shows it: the provider's mark (Claude's, or OpenAI's on a Codex account) and the name in its color, the state as the avatars' dot, and each window's bar and percentage, with ↻ and the time to the reset from 70% on (`personal ● 5h ━━━━━━── 79% ↻ 3h17m  7d ━━━───── 38%`). The tooltip of a group lists the accounts of its provider; a click lists the accounts of both providers, with the provider named, to switch. All the items share one priority, so no other extension's item lands between them.
+One group per provider, side by side: Claude's, and ChatGPT's only when there is a ChatGPT account. Each group shows the current account of its provider (the one in the slot, the worse of the two sides) as the statusLine shows it: the provider's mark (Claude's, or OpenAI's on a ChatGPT account) and the name in its color, the state as the avatars' dot, and each window's bar and percentage, with ↻ and the time to the reset from 70% on (`personal ● 5h ━━━━━━── 79% ↻ 3h17m  7d ━━━───── 38%`). The tooltip of a group lists the accounts of its provider; a click lists the accounts of both providers, with the provider named, to switch. All the items share one priority, so no other extension's item lands between them.
 
 The marks are glyphs of `media/icons.woff`, which `scripts/vscode-icon.py` writes (the status bar takes icons only from fonts).
 

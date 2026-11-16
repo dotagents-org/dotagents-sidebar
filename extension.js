@@ -128,7 +128,7 @@ class SidebarView {
         file("error", "extension", `${text}: ${err.stack || err.message}`);
       },
     };
-    this.accounts = undefined; // the Claude accounts (accounts.js), when dotagents is set up here
+    this.accounts = undefined; // the accounts (accounts.js), when dotagents is set up here
   }
 
   // With dotagents set up on this side, the accounts are a fixed tab, the first in the list:
@@ -611,7 +611,7 @@ class SidebarView {
     const panel = (name) => String(webview.asWebviewUri(vscode.Uri.joinPath(this.accounts.api.panelRoot, name)));
     // The panel's scripts load only when its tab first opens (media/view.js), so nothing of it runs
     // while the agents are in use
-    const accounts = this.accounts ? { icon: String(uri("media", "accounts.svg")), scripts: [panel("avatar.js"), panel("panel.js")], nonce } : null;
+    const accounts = this.accounts ? { icon: String(uri("media", "accounts.svg")), scripts: [panel("providers.js"), panel("avatar.js"), panel("panel.js")], nonce } : null;
     const settings = JSON.stringify({ ...terminalSettings(), agents, terminal, workspace: workspaceName(), home: os.homedir(), keys: this.keys, accounts }).replace(/</g, "\\u003c");
     return `<!doctype html>
 <html>
@@ -712,7 +712,7 @@ async function activate(context) {
   try {
     view.connectAccounts();
   } catch (err) {
-    view.log.error("Could not set up the Claude accounts", err);
+    view.log.error("Could not set up the accounts", err);
   }
   // A command run from a session's context menu gets that session; from the title bar, the active one
   const onSession = (name, run) => vscode.commands.registerCommand(`dotagentsSidebar.${name}`, (arg) => run(arg?.sessionId));

@@ -19,6 +19,8 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Changed
 
+- **Shared account labels and marks.** The status bar, switch list and accounts panel use one provider table, keeping Claude and ChatGPT names and brand marks together. Session agents retain their Claude Code and Codex names.
+
 - **Accounts per provider.** The status bar has a group for Claude and, only when there is a ChatGPT account, a second for ChatGPT, each led by its provider's mark (Claude, OpenAI) and showing its own current account; the items are named `Account`, and all share one priority so they stay together. The switch command lists the accounts of both providers, with the provider named, and switches the chosen one. A panel group's header says the plan with its seats (`team  2 seats`) when known. hopper (a hexagon) and dijkstra (an arch) have avatars of their own. The marks are new glyphs of `media/icons.woff`, written by `scripts/vscode-icon.py`.
 - **The brands' own marks, from [LobeHub](https://lobehub.com/icons) (MIT):** Claude Code's sessions and their terminal tabs show the Claude Code mark (`media/claude-code-{light,dark}.svg`), and the button that opens an account's Claude Desktop keeps the Claude mark, the app's.
 - **Accounts panel.** The panel opens straight on the cards: the `dotagents` seal, the profile count and the `Windows and WSL` line are gone (each card already says where its account is). The age of the numbers and the refresh sit on a line at the top, right-aligned; `WSL off` shows at its left, in the warning color, only when the other side is off.

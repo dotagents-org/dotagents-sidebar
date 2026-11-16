@@ -97,7 +97,7 @@ test("dotagents start runs on its own: directly on Linux and macOS, through a hi
   assert.match(args.at(-1), /^Start-Process -WindowStyle Hidden -FilePath dotagents\.cmd -ArgumentList start$/);
 });
 
-// Two providers, an API 2 answer: Claude's pair and a Codex seat in one slot.
+// Two providers, an API 2 answer: Claude's pair and a ChatGPT seat in one slot.
 const both = {
   ...data,
   current: { claude: data.current.claude, codex: { profile: "hopper", state: "asleep" } },
@@ -113,7 +113,7 @@ test("with a ChatGPT account the status bar has a second group, led by the OpenA
   const [claude, codex] = accounts.groupsFor(both, Date.parse("2026-11-12T12:00:00Z"));
   assert.equal(claude.parts[0].text, "$(dotagents-claude) personal");
   assert.equal(codex.parts[0].text, "$(dotagents-openai) hopper");
-  assert.deepEqual(codex.parts[1], { text: "$(circle-filled)", tone: "blue" }, "the dot is the Codex current's state");
+  assert.deepEqual(codex.parts[1], { text: "$(circle-filled)", tone: "blue" }, "the dot is the ChatGPT current's state");
   assert.equal(codex.color, "#7B61A8");
   assert.match(codex.tooltip, /\*\*hopper\*\* \(WSL\)  5h 40%  7d 95%/);
   assert.match(codex.tooltip, /\*\*dijkstra\*\*  no data/);
@@ -128,7 +128,7 @@ test("a ChatGPT profile without a codex current falls back to the first one, and
   assert.equal(accounts.groupsFor(data).length, 1);
 });
 
-test("with no Claude profile the first group is the brand, and the Codex one still shows", () => {
+test("with no Claude profile the first group is the brand, and the ChatGPT one still shows", () => {
   const onlyCodex = { ...both, profiles: both.profiles.filter((p) => p.provider === "codex"), current: { claude: { profile: "dotagents", state: "asleep" }, codex: both.current.codex } };
   const [brand, codex] = accounts.groupsFor(onlyCodex);
   assert.equal(brand.parts[0].text, "$(dotagents-accounts) dotagents");

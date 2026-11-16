@@ -1,4 +1,4 @@
-// The accounts of dotagents (Claude and Codex), when it is installed: the current account of each
+// The accounts of dotagents (Claude and ChatGPT), when it is installed: the current account of each
 // provider and its usage in the status bar, a click to switch, and the panel (every account) as
 // the view's first tab. Everything
 // comes from `dotagents start` on the side the window runs on (in WSL for a WSL window), found
@@ -69,7 +69,7 @@ const level = (pct) => (pct >= 90 ? "high" : pct >= 70 ? "warn" : "ok");
 // blue is asleep; a ring (limit, waiting) is the other state of the same color.
 const DOTS = { error: ["circle-filled", "red"], limit: ["target", "red"], waiting: ["target", "amber"], warn: ["circle-filled", "amber"], ok: ["circle-filled", "green"], asleep: ["circle-filled", "blue"] };
 // The provider's mark leads its group in the status bar: the company's, as on the panel's cards.
-const PROVIDERS = { claude: { title: "Claude", icon: "dotagents-claude" }, codex: { title: "ChatGPT", icon: "dotagents-openai" } };
+const PROVIDERS = require("./media/accounts/providers.js");
 const providerOf = (p) => (p.provider || "claude") === "codex" ? "codex" : "claude";
 function parts(profile, state, now = Date.now()) {
   const out = [{ text: `$(${PROVIDERS[providerOf(profile)].icon}) ${profile.name}`, tone: "name" }];
