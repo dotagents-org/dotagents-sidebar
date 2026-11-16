@@ -1,11 +1,17 @@
-# Writes media/icons.woff: the accounts mark (the face with the presence dot cut
-# into its corner), in line, as one glyph of an icon font, so the status bar can show it as
-# $(dotagents-accounts). The status bar takes icons only from fonts. Same shape as media/accounts.svg.
+# Writes media/icons.woff, the icon font of the status bar (it takes icons only from fonts):
+#   accounts  U+E001  $(dotagents-accounts)  the face with the presence dot cut into its corner,
+#                     in line, as media/accounts.svg
+#   claude    U+E002  $(dotagents-claude)    the Claude mark
+#   openai    U+E003  $(dotagents-openai)    the OpenAI mark
+# The two marks are LobeHub's (MIT), read from the paths in media/accounts/panel.js, so the panel
+# and the status bar draw the same shape.
 #   uv run --with fonttools --with skia-pathops python scripts/vscode-icon.py
 import pathlib
+import re
 import pathops
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.t2CharStringPen import T2CharStringPen
+from fontTools.svgLib.path import parse_path
 
 K = 0.5523  # a quarter circle as a cubic
 
@@ -40,9 +46,22 @@ shape = ring
 for c in (circle(8.6, 11, 2.1), circle(15.4, 11, 2.1), circle(19, 19, 2.6)):
     shape = op(shape, c, pathops.PathOp.UNION)
 
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+
+
+def mark(name):
+    # A filled path of the 24-unit box, drawn with the even-odd rule: simplify turns it into
+    # contours the font's non-zero rule fills the same way.
+    d = re.search(rf'const {name} = "([^"]+)"', (ROOT / "media" / "accounts" / "panel.js").read_text()).group(1)
+    path = pathops.Path()
+    parse_path(d, path.getPen())
+    path.fillType = pathops.FillType.EVEN_ODD
+    path.simplify(fix_winding=True)
+    return path
+
+
 UPM = 1000
 S = UPM / 24
-pen = T2CharStringPen(UPM, None)
 
 
 class Flip:
@@ -72,19 +91,25 @@ class Flip:
         return (round(p[0] * S), round((24 - p[1]) * S - 125))
 
 
-shape.draw(Flip(pen))
+def glyph(shape):
+    pen = T2CharStringPen(UPM, None)
+    shape.draw(Flip(pen))
+    return pen.getCharString()
+
+
+names = [".notdef", "accounts", "claude", "openai"]
+charstrings = {".notdef": T2CharStringPen(UPM, None).getCharString(), "accounts": glyph(shape), "claude": glyph(mark("CLAUDE")), "openai": glyph(mark("OPENAI"))}
 
 fb = FontBuilder(UPM, isTTF=False)
-fb.setupGlyphOrder([".notdef", "accounts"])
-fb.setupCharacterMap({0xE001: "accounts"})
-empty = T2CharStringPen(UPM, None)
-fb.setupCFF("dotagentsicons", {"FullName": "dotagents icons"}, {".notdef": empty.getCharString(), "accounts": pen.getCharString()}, {})
-fb.setupHorizontalMetrics({".notdef": (UPM, 0), "accounts": (UPM, 0)})
+fb.setupGlyphOrder(names)
+fb.setupCharacterMap({0xE001: "accounts", 0xE002: "claude", 0xE003: "openai"})
+fb.setupCFF("dotagentsicons", {"FullName": "dotagents icons"}, charstrings, {})
+fb.setupHorizontalMetrics({n: (UPM, 0) for n in names})
 fb.setupHorizontalHeader(ascent=875, descent=-125)
 fb.setupNameTable({"familyName": "dotagents icons", "styleName": "Regular"})
 fb.setupOS2(sTypoAscender=875, sTypoDescender=-125, usWinAscent=875, usWinDescent=125)
 fb.setupPost()
 fb.font.flavor = "woff"
-out = pathlib.Path(__file__).resolve().parent.parent / "media" / "icons.woff"
+out = ROOT / "media" / "icons.woff"
 fb.save(str(out))
 print(out, out.stat().st_size, "bytes")

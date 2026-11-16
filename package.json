@@ -109,7 +109,7 @@
       },
       {
         "command": "dotagentsSidebar.switchAccount",
-        "title": "dotagents-sidebar: Switch Claude Account"
+        "title": "dotagents-sidebar: Switch Account"
       }
     ],
     "menus": {
@@ -204,6 +204,20 @@
         "default": {
           "fontPath": "media/icons.woff",
           "fontCharacter": "\\E001"
+        }
+      },
+      "dotagents-claude": {
+        "description": "The Claude mark, on a Claude account",
+        "default": {
+          "fontPath": "media/icons.woff",
+          "fontCharacter": "\\E002"
+        }
+      },
+      "dotagents-openai": {
+        "description": "The OpenAI mark, on a Codex account",
+        "default": {
+          "fontPath": "media/icons.woff",
+          "fontCharacter": "\\E003"
         }
       }
     }
