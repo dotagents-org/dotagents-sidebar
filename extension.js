@@ -494,9 +494,17 @@ class SidebarView {
     this.send({ type: "note", id, data: `\r\n\x1b[2m[${reason}. Press Enter to start it again.]\x1b[0m\r\n` });
   }
 
-  // The agent of a new session: the one asked for, else Claude Code
+  // The agent of a new session: the one asked for, else the one of the last agent session made
+  // here (the + button repeats it), else Claude Code. A terminal doesn't count: it has its own button.
   open(action, kind, provider) {
-    this.update(kind === "terminal" ? action(this.state, TERMINAL.name, "terminal") : action(this.state, agentOf({ provider }).name, undefined, provider));
+    if (kind === "terminal") return this.show(action(this.state, TERMINAL.name, "terminal"));
+    const agent = (provider ?? this.context.workspaceState.get("lastAgent")) === "codex" ? "codex" : "claude";
+    this.context.workspaceState.update("lastAgent", agent);
+    this.show(action(this.state, agentOf({ provider: agent }).name, undefined, agent === "codex" ? "codex" : undefined));
+  }
+
+  show(state) {
+    this.update(state);
     vscode.commands.executeCommand("dotagentsSidebar.view.focus");
   }
 
@@ -729,13 +737,15 @@ async function activate(context) {
     // The view reads the theme's colors when it loads
     vscode.window.onDidChangeActiveColorTheme(() => view.reload()),
     vscode.commands.registerCommand("dotagentsSidebar.new", () => view.open(sessions.add)),
+    vscode.commands.registerCommand("dotagentsSidebar.new.claude", () => view.open(sessions.add, undefined, "claude")),
     vscode.commands.registerCommand("dotagentsSidebar.new.codex", () => view.open(sessions.add, undefined, "codex")),
     vscode.commands.registerCommand("dotagentsSidebar.newTerminal", () => view.open(sessions.add, "terminal")),
     // A split is a session of the same kind as the active one: a terminal beside a terminal, Codex
     // beside Codex
     vscode.commands.registerCommand("dotagentsSidebar.split", () => {
       const active = view.session(view.state.active);
-      view.open(sessions.split, active?.kind, active?.provider);
+      // The split keeps the active session's agent; with none, it acts as +.
+      view.open(sessions.split, active?.kind, active ? active.provider ?? "claude" : undefined);
     }),
     vscode.commands.registerCommand("dotagentsSidebar.split.codex", () => view.open(sessions.split, undefined, "codex")),
     onSession("close", (id) => view.close(id)),

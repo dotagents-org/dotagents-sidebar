@@ -63,6 +63,15 @@
     "commands": [
       {
         "command": "dotagentsSidebar.new",
+        "title": "New Session",
+        "icon": {
+          "light": "media/new-agent-light.svg",
+          "dark": "media/new-agent-dark.svg"
+        },
+        "category": "dotagents-sidebar"
+      },
+      {
+        "command": "dotagentsSidebar.new.claude",
         "title": "New Claude Code Session",
         "icon": {
           "light": "media/new-agent-light.svg",
@@ -193,7 +202,7 @@
       ],
       "dotagentsSidebar.newMenu": [
         {
-          "command": "dotagentsSidebar.new",
+          "command": "dotagentsSidebar.new.claude",
           "group": "1_agents@1"
         },
         {

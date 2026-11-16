@@ -4,7 +4,7 @@ Each session is an agent running in its own terminal. The list on the right show
 
 ## Sessions and splits
 
-- **New session:** the first button (the face with a `+`) opens one with Claude Code; the `⌄` next to it, as in VS Code's terminal panel, picks Claude Code, Codex or a terminal. Each session's mark in the list is its agent's, in the session's color.
+- **New session:** the first button (the face with a `+`) opens one with the agent of the last session you made (Claude Code at first); the `⌄` next to it, as in VS Code's terminal panel, picks Claude Code, Codex or a terminal. Each session's mark in the list is its agent's, in the session's color.
 - **New terminal:** the terminal button next to it opens a session with your shell (`$SHELL`, or PowerShell on Windows) in the workspace folder. Its title shows the folder the shell is in as a path (`~/work/app/src` from home and the whole path elsewhere, or `C:\Users\me\work` on Windows; cut on the left when long), which bash and PowerShell report at every prompt (other shells keep the starting folder). Exiting it cleanly closes the session; a shell that fails can be started again with Enter. It has no conversation to resume, and Restart starts a new shell.
 - **Split:** opens a session next to the active one, of the same kind (a terminal beside a terminal, Claude Code beside Claude Code, Codex beside Codex; `Split With Codex Session` in the command palette opens Codex beside any session). A split always shows side by side, and its sessions are joined in the list by a line with a corner at each end, as the terminal panel's tabs are.
 - **Reorder:** drag a session in the list, as the terminal panel's tabs work. It takes its whole split with it next to the split of the row you drop it on (after it when dragging down, before it when dragging up); dropped on a row of its own split it is only reordered inside it; dropped below the last row it goes to the end. A line shows where, the sessions that move are dimmed, and the session you moved becomes the active one. Hold **Shift** to change its split instead: dropped on a row it joins that row's split (a box shows which), and dropped below the last row it leaves its split, alone at the end of the list. **Escape** gives the drag up. The order is saved, and the accounts tab stays first.
@@ -48,7 +48,8 @@ Right-click a session for *Rename*, *Change Color* (the terminal panel's eight c
 
 | Command | Where | What it does |
 |---|---|---|
-| `dotagents-sidebar: New Claude Code Session` | `+`, and the `⌄` menu next to it | A Claude Code session |
+| `dotagents-sidebar: New Session` | `+` | A session with the agent of the last one made, Claude Code at first |
+| `dotagents-sidebar: New Claude Code Session` | the `⌄` menu next to `+` | A Claude Code session |
 | `dotagents-sidebar: New Codex Session` | the `⌄` menu next to `+` | A Codex session |
 | `dotagents-sidebar: New Terminal` | title bar, and the `⌄` menu | A session with your shell |
 | `dotagents-sidebar: Split Session` | title bar | A session next to the active one |

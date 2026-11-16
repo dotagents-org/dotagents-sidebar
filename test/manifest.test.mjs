@@ -25,7 +25,7 @@ test("each agent has a terminal profile, its activation event and its icons", ()
   }
 });
 
-test("the + button opens Claude Code, and the menu beside it picks Claude Code, Codex or a terminal", () => {
+test("the + button repeats the last agent, and the menu beside it picks Claude Code, Codex or a terminal", () => {
   const commands = pkg.contributes.commands.map((c) => c.command);
   for (const name of ["new", "new.codex", "split", "split.codex"]) assert.ok(commands.includes(`dotagentsSidebar.${name}`), name);
   const buttons = pkg.contributes.menus["view/title"];
@@ -35,7 +35,7 @@ test("the + button opens Claude Code, and the menu beside it picks Claude Code, 
   assert.equal(menu.submenu, "dotagentsSidebar.newMenu");
   const submenu = pkg.contributes.submenus.find((s) => s.id === menu.submenu);
   for (const theme of ["light", "dark"]) assert.ok(fs.existsSync(path.join(root, submenu.icon[theme])), `the menu's own ${theme} icon`);
-  assert.deepEqual(pkg.contributes.menus[menu.submenu].map((m) => m.command), ["dotagentsSidebar.new", "dotagentsSidebar.new.codex", "dotagentsSidebar.newTerminal"]);
+  assert.deepEqual(pkg.contributes.menus[menu.submenu].map((m) => m.command), ["dotagentsSidebar.new.claude", "dotagentsSidebar.new.codex", "dotagentsSidebar.newTerminal"]);
   assert.equal(buttons.filter((b) => b.command === "dotagentsSidebar.new.codex").length, 0);
   assert.equal(new Set(buttons.map((b) => b.group)).size, buttons.length);
   // Titles without the prefix, so the menu reads "New Codex Session"; the palette adds the category.
