@@ -275,6 +275,7 @@
     }
   }
 
+  let settle;
   function layoutAll() {
     clearTimeout(settle);
     for (const [id, terminal] of terminals) layout(id, terminal);
@@ -283,7 +284,6 @@
   // While the view is being resized, the grid keeps its size and only stays centered: every new
   // size makes the agent clear and redraw its whole screen, which flickers during a drag. The
   // grid fits, and the agent redraws, once the size holds still, as in the integrated terminal
-  let settle;
   function resizing() {
     for (const terminal of terminals.values()) place(terminal);
     clearTimeout(settle);

@@ -61,8 +61,8 @@
   const seen = new Map();
   const TRANSITION = 0.4; // seconds
   const easeOut = (p) => 1 - (1 - p) ** 5; // exponential-like ease-out, no overshoot
-  const progress = (since, now) => (since === undefined || reduced.matches ? 1 : Math.min(1, (now - since) / TRANSITION));
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  const progress = (since, now) => (since === undefined || reduced.matches ? 1 : Math.min(1, (now - since) / TRANSITION));
   let running = false;
 
   function mount(canvas, { who, color, state, working = false, size = 52 }) {
