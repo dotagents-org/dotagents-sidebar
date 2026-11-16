@@ -36,6 +36,18 @@ const WHO = {
     body: "M50 12A38 38 0 1 1 49.99 12Z",
     eyes: { y: 47, spacing: 24, scale: 1.3 },
   },
+  hopper: {
+    color: "#7B61A8",
+    ink: "#f5f5f5",
+    body: "M26.5 22.8Q31 15 40 15L60 15Q69 15 73.5 22.8L84.5 42.2Q89 50 84.5 57.8L73.5 77.2Q69 85 60 85L40 85Q31 85 26.5 77.2L15.5 57.8Q11 50 15.5 42.2Z",
+    eyes: { y: 48, spacing: 26, scale: 1.3 },
+  },
+  dijkstra: {
+    color: "#B8862B",
+    ink: "#151515",
+    body: "M26 36A24 24 0 0 1 74 36V64A24 24 0 0 1 26 64Z",
+    eyes: { y: 44, spacing: 18, scale: 1.1 },
+  },
 };
 
 // The brand's eyes are always light: the state's color goes in the dot, for every avatar.

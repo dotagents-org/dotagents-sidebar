@@ -27,9 +27,11 @@
     { body: PEBBLE, eyes: { y: 49, spacing: 24, scale: 1.3 } },
   ];
   const BRAND_DEF = { body: SQUARE, eyes: { y: 48, spacing: 24, scale: 1.3 } };
-  // turing and lovelace keep the shapes they were drawn with; any other account gets one from
-  // its name, always the same.
-  const NAMED = { turing: SHAPES[0], lovelace: SHAPES[1] };
+  // A pill, upright: a capsule, kept out of SHAPES so the hash of any other name still lands on the same shape.
+  const PILL = { body: "M26 36A24 24 0 0 1 74 36V64A24 24 0 0 1 26 64Z", eyes: { y: 44, spacing: 18, scale: 1.1 } };
+  // The accounts with a shape of their own, kept as they were drawn (the Claude pair, then the
+  // Codex pair); any other account gets one from its name, always the same.
+  const NAMED = { turing: SHAPES[0], lovelace: SHAPES[1], hopper: SHAPES[2], dijkstra: PILL };
   function defFor(who) {
     if (who === "dotagents") return BRAND_DEF;
     if (NAMED[who]) return NAMED[who];

@@ -22,7 +22,7 @@ The host is named by workspace and protocol (`PROTOCOL` in `host.js`), not by th
 | `host.js` | The detached process that owns the agents and their screen copies |
 | `agent.js` | The agent, Claude Code: command, environment, conversation flags, newline key |
 | `sessions.js` | The session list: add, split, close, rename, colors, restore |
-| `accounts.js` | The Claude accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
+| `accounts.js` | The Claude and Codex accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
 | `media/view.js`, `media/view.css` | The webview: a terminal per session, the list, the title strip |
 | `media/keys.js` | Which keys go to VS Code, worked out from the keybindings |
 | `shell/bash-cwd.sh` | Run by a terminal session's bash after `~/.bashrc`: reports the current folder (OSC 7) at each prompt |
@@ -32,7 +32,7 @@ The host is named by workspace and protocol (`PROTOCOL` in `host.js`), not by th
 | `skip-shell.json` | VS Code's default commands that skip the shell, copied from its source |
 | `scripts/avatars/generate.mjs` | The avatars as still pictures and strips, for documents (`assets/avatars/`); the same rules as `avatar.js` |
 | `scripts/readme/generate.mjs` | The README's pictures of the avatars (`assets/readme/`) |
-| `scripts/vscode-icon.py` | The status bar's mark, a glyph of `media/icons.woff` |
+| `scripts/vscode-icon.py` | The status bar's marks (accounts, Claude, OpenAI), glyphs of `media/icons.woff` |
 | `scripts/lockup.py` | The README lockup (SVG, then the PNGs the README shows) from the mark and Geist Mono |
 
 ## Development
