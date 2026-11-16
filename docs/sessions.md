@@ -4,15 +4,17 @@ Each session is an agent running in its own terminal. The list on the right show
 
 ## Sessions and splits
 
-- **New session:** the first button (the face with a `+`) opens one with Claude Code.
+- **New session:** the first button (the face with a `+`) opens one with Claude Code; the button with the Codex mark next to it opens one with Codex. Each session's mark in the list is its agent's, in the session's color.
 - **New terminal:** the terminal button next to it opens a session with your shell (`$SHELL`, or PowerShell on Windows) in the workspace folder. Its title shows the folder the shell is in as a path (`~/work/app/src` from home and the whole path elsewhere, or `C:\Users\me\work` on Windows; cut on the left when long), which bash and PowerShell report at every prompt (other shells keep the starting folder). Exiting it cleanly closes the session; a shell that fails can be started again with Enter. It has no conversation to resume, and Restart starts a new shell.
-- **Split:** opens a session next to the active one, of the same kind (a terminal beside a terminal, Claude Code beside Claude Code). A split always shows side by side, and its sessions are joined in the list by a line with a corner at each end, as the terminal panel's tabs are.
+- **Split:** opens a session next to the active one, of the same kind (a terminal beside a terminal, Claude Code beside Claude Code, Codex beside Codex; `Split With Codex Session` in the command palette opens Codex beside any session). A split always shows side by side, and its sessions are joined in the list by a line with a corner at each end, as the terminal panel's tabs are.
 - **Reorder:** drag a session in the list, as the terminal panel's tabs work. It takes its whole split with it next to the split of the row you drop it on (after it when dragging down, before it when dragging up); dropped on a row of its own split it is only reordered inside it; dropped below the last row it goes to the end. A line shows where, the sessions that move are dimmed, and the session you moved becomes the active one. Hold **Shift** to change its split instead: dropped on a row it joins that row's split (a box shows which), and dropped below the last row it leaves its split, alone at the end of the list. **Escape** gives the drag up. The order is saved, and the accounts tab stays first.
 - **Close:** stops the agent and closes the session; when it was the active one inside a split, the focus stays in that split. **Restart** starts a new process in the same conversation.
 
 ## Back to the conversation
 
-Each session remembers its agent's conversation. When its agent starts again (after a crash, a restart, the next day), it opens that conversation: `claude --resume`.
+Each session remembers its agent's conversation. When its agent starts again (after a crash, a restart, the next day), it opens that conversation: `claude --resume`, or `codex resume`.
+
+Codex picks its own conversation id, so the view finds it: the first rollout (`$CODEX_HOME/sessions/YYYY/MM/DD/rollout-<time>-<id>.jsonl`, `~/.codex` by default) created in the session's folder after the session started. Codex may write it only when the first prompt is sent, so the view looks every few seconds until it finds one. A Codex session with no conversation found yet starts a new one when it restarts. A Codex session uses the account in the Codex slot of dotagents.
 
 ## The title
 
@@ -20,7 +22,7 @@ The view is named after the active tab: the session's agent, or *Accounts* on th
 
 ## Keys
 
-While a session has focus, the keys VS Code would keep in its integrated terminal go to VS Code: the keybindings of the commands in `terminal.integrated.commandsToSkipShell` and the first key of chords. Copy, paste and keys without Ctrl, Alt or Meta always go to the agent. Shift+Enter inserts a newline in Claude Code. The keys in use are listed in the **dotagents-sidebar** output; `dotagentsSidebar.keysForVsCode` adds or takes back keys.
+While a session has focus, the keys VS Code would keep in its integrated terminal go to VS Code: the keybindings of the commands in `terminal.integrated.commandsToSkipShell` and the first key of chords. Copy, paste and keys without Ctrl, Alt or Meta always go to the agent. Shift+Enter inserts a newline in Claude Code and in Codex. The keys in use are listed in the **dotagents-sidebar** output; `dotagentsSidebar.keysForVsCode` adds or takes back keys.
 
 ## Copy and paste
 
@@ -40,15 +42,17 @@ Right-click a session for *Rename*, *Change Color* (the terminal panel's eight c
 
 ## Terminal profiles
 
-A *Claude Code* entry in the terminal panel's `⌄` menu opens it in a regular terminal, with the same command and environment as the view.
+*Claude Code* and *Codex* entries in the terminal panel's `⌄` menu open them in a regular terminal, with the same command and environment as the view.
 
 ## Commands
 
 | Command | Where | What it does |
 |---|---|---|
 | `dotagents-sidebar: New Session` | `+` | A Claude Code session |
+| `dotagents-sidebar: New Codex Session` | title bar | A Codex session |
 | `dotagents-sidebar: New Terminal` | title bar | A session with your shell |
 | `dotagents-sidebar: Split Session` | title bar | A session next to the active one |
+| `dotagents-sidebar: Split With Codex Session` | command palette | A Codex session next to the active one |
 | `dotagents-sidebar: Restart Session` | title bar, session menu | A new process in the same conversation |
 | `dotagents-sidebar: Close Session` | title bar, session menu | Stops the agent and closes the session |
 | `dotagents-sidebar: Rename Session...` | session menu | Names the session; the title shows it |

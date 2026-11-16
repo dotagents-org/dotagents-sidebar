@@ -221,3 +221,18 @@ test("join changes nothing for itself, a session that is not there, or one alrea
   assert.equal(join(state, "s1", "s9"), state);
   assert.equal(join(state, "s5", "s2"), state);
 });
+
+test("a Codex session has the provider; a Claude Code one has none, so saved sessions keep opening", () => {
+  let state = add(EMPTY, "Claude Code");
+  state = add(state, "Codex", undefined, "codex");
+  assert.equal(state.sessions[0].provider, undefined);
+  assert.deepEqual(state.sessions[1], { id: "s2", name: "Codex", color: ROTATION[1], group: "s2", provider: "codex" });
+  state = split(state, "Codex", undefined, "codex");
+  assert.equal(state.sessions[2].provider, "codex");
+  assert.equal(state.sessions[2].group, "s2");
+  state = split(add(EMPTY, "Terminal", "terminal"), "Claude Code", undefined, "claude");
+  assert.equal("provider" in state.sessions[1], false);
+  // A state saved before Codex restores as it was
+  const saved = { sessions: [{ id: "s1", name: "Claude Code", color: "blue", group: "s1", conversation: "abc" }], active: "s1", next: 2 };
+  assert.deepEqual(restore(saved).sessions, saved.sessions);
+});
