@@ -152,3 +152,30 @@ test("a provider's view takes its profiles, its slots and its current from an AP
   assert.deepEqual(accounts.forProvider(both, "claude").slots, data.slots.claude);
   assert.deepEqual(accounts.forProvider({ ...data, slots: undefined }, "codex").slots, {});
 });
+
+// What the sidebar shows of the table comes from providers.js, whatever the API's profiles say.
+const withUnknown = { ...both, profiles: [...both.profiles, { name: "ghost", provider: "gemini", state: "ok", avatar: "ok", windows: [{ kind: "session", pct: 1 }] }] };
+
+test("both providers: the panel is told each one's name, tool and mark, and the status bar and the pick list use the same table", () => {
+  const table = accounts.panelProviders;
+  assert.deepEqual(Object.keys(table), ["claude", "codex"], "Claude first");
+  assert.deepEqual([table.claude.title, table.claude.agent, table.codex.title, table.codex.agent], ["Claude", "Claude Code", "ChatGPT", "Codex"]);
+  assert.notEqual(table.claude.mark, table.codex.mark);
+  assert.ok(table.claude.mark && table.codex.mark);
+  assert.equal(accounts.groupsFor(both).length, 2);
+  assert.equal(accounts.pickItems(both).find((i) => i.provider === "codex").description.split("  ")[0], "ChatGPT");
+});
+
+test("Claude only: with no ChatGPT profile there is no ChatGPT group in the status bar nor in the pick list", () => {
+  const claudeOnly = { ...both, profiles: both.profiles.filter((p) => p.provider === "claude") };
+  assert.equal(accounts.groupsFor(claudeOnly).length, 1);
+  assert.deepEqual(accounts.pickItems(claudeOnly).map((i) => i.provider), ["claude", "claude"]);
+  assert.equal(accounts.known(claudeOnly).profiles.length, 2);
+});
+
+test("an unknown provider id is skipped: no group, no pick item, and not in what the panel gets", () => {
+  assert.equal(accounts.groupsFor(withUnknown).length, 2);
+  assert.ok(!accounts.pickItems(withUnknown).some((i) => i.profile === "ghost"));
+  assert.deepEqual(accounts.known(withUnknown).profiles.map((p) => p.name), ["personal", "work", "hopper", "dijkstra"]);
+  assert.deepEqual(accounts.groupsFor({ ...data, profiles: [{ ...data.profiles[0], provider: "gemini" }] })[0].parts[0].text, "$(dotagents-accounts) dotagents", "only unknown profiles leave Claude's brand group");
+});
