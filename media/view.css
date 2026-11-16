@@ -34,23 +34,106 @@ body {
   overflow: hidden !important;
 }
 
-/* The active session's title, like a terminal tab */
+/* The strip over the panes: the window buttons, the active session's title (like a terminal tab)
+   in the middle, the view's buttons. The two sides take the same width, so the title stays centered */
 #header {
   flex: none;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr);
   align-items: center;
-  justify-content: safe center;
   gap: 8px;
   box-sizing: border-box;
   height: var(--strip);
-  padding: 0 8px;
+  padding: 0 6px 0 8px;
   overflow: hidden;
   white-space: nowrap;
   border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border));
 }
 
-#header:empty {
-  display: none;
+#header .title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+#header button {
+  flex: none;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+}
+
+/* The active session's round buttons, in the colors of the identity's levels (high, warning, ok);
+   their signs show while the pointer is over them. 16 px, the size of every mark in the view, and
+   26 px apart, as the new-session buttons at the right (24 px each, 2 px between) */
+#header .window {
+  display: flex;
+  gap: 10px;
+  --close: #fe6367;
+  --split: #fe9911;
+  --restart: #01ca54;
+  --sign: #171717;
+}
+
+body.vscode-light #header .window,
+body.vscode-high-contrast-light #header .window {
+  --close: #d50322;
+  --split: #a25204;
+  --restart: #107d32;
+  --sign: #ffffff;
+}
+
+#header .window button {
+  display: flex;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  color: var(--sign);
+}
+
+#header .window svg {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+#header .window:hover svg,
+#header .window button:focus-visible svg {
+  opacity: 1;
+}
+
+#header .window .close { background: var(--close); }
+#header .window .split { background: var(--split); }
+#header .window .restart { background: var(--restart); }
+
+/* New sessions: 16 px marks, as the round buttons at the left, in a round 24 px hover */
+#header .buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+#header .buttons button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: none;
+}
+
+#header .buttons button:hover,
+#header .buttons button:focus-visible {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+#header .buttons img {
+  width: 16px;
+  height: 16px;
 }
 
 #header .workspace,
@@ -85,11 +168,6 @@ body {
   text-overflow: ellipsis;
 }
 
-/* No title over the accounts tab */
-#header.hidden {
-  display: none;
-}
-
 /* The title over the panes; the session list runs the full height beside them */
 #main {
   flex: 1;
@@ -115,11 +193,33 @@ body {
 
 /* The padding is the margin around the grid */
 .pane {
+  position: relative;
   flex: 1;
   min-width: 0;
   min-height: 0;
   padding: 4px 6px;
   overflow: hidden;
+}
+
+/* The pane the keys go to has a line around it, in its session's color, like its mark; it goes away
+   when the focus leaves the view */
+.pane::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border: 1px solid var(--session, var(--vscode-focusBorder));
+  border-radius: 6px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.pane:focus-within::after {
+  opacity: 1;
+}
+
+.pane.accounts::after {
+  content: none;
 }
 
 .pane.hidden {

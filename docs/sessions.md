@@ -4,11 +4,11 @@ Each session is an agent running in its own terminal. The list on the right show
 
 ## Sessions and splits
 
-- **New session:** the first three buttons of the title bar open one with Claude Code (its mark), with Codex (its mark) or with your shell (the terminal's). Each session's mark in the list is its agent's, in the session's color.
+- **New session:** the three buttons at the right of the title strip (the line over the panes, with the active session's title) open one with Claude Code (its mark), with Codex (its mark) or with your shell (the terminal's). Each session's mark in the list is its agent's, in the session's color.
 - **New terminal:** the terminal button next to it opens a session with your shell (`$SHELL`, or PowerShell on Windows) in the workspace folder. Its title shows the folder the shell is in as a path (`~/work/app/src` from home and the whole path elsewhere, or `C:\Users\me\work` on Windows; cut on the left when long), which bash and PowerShell report at every prompt (other shells keep the starting folder). Exiting it cleanly closes the session; a shell that fails can be started again with Enter. It has no conversation to resume, and Restart starts a new shell.
-- **Split:** opens a session next to the active one, of the same kind (a terminal beside a terminal, Claude Code beside Claude Code, Codex beside Codex; `Split With Codex Session` in the command palette opens Codex beside any session). A split always shows side by side, and its sessions are joined in the list by a line with a corner at each end, as the terminal panel's tabs are.
+- **Split:** opens a session next to the active one, of the same kind (a terminal beside a terminal, Claude Code beside Claude Code, Codex beside Codex; `Split With Claude Code Session` and `Split With Codex Session` in the command palette open Claude Code or Codex beside any session). A split always shows side by side, the pane you are typing in with a line around it in its session's color, and its sessions are joined in the list by a line with a corner at each end, as the terminal panel's tabs are.
 - **Reorder:** drag a session in the list, as the terminal panel's tabs work. It takes its whole split with it next to the split of the row you drop it on (after it when dragging down, before it when dragging up); dropped on a row of its own split it is only reordered inside it; dropped below the last row it goes to the end. A line shows where, the sessions that move are dimmed, and the session you moved becomes the active one. Hold **Shift** to change its split instead: dropped on a row it joins that row's split (a box shows which), and dropped below the last row it leaves its split, alone at the end of the list. **Escape** gives the drag up. The order is saved, and the accounts tab stays first.
-- **Close:** stops the agent and closes the session; when it was the active one inside a split, the focus stays in that split. **Restart** starts a new process in the same conversation.
+- **Close, split, restart:** the round buttons at the left of the title strip act on the active session, red closing it, amber splitting it and green restarting it; each shows its sign under the pointer. **Close** stops the agent and closes the session; when it was the active one inside a split, the focus stays in that split. **Restart** starts a new process in the same conversation.
 
 ## Back to the conversation
 
@@ -48,13 +48,14 @@ Right-click a session for *Rename*, *Change Color* (the terminal panel's eight c
 
 | Command | Where | What it does |
 |---|---|---|
-| `dotagents-sidebar: New Claude Code Session` | title bar, Claude Code's mark | A Claude Code session |
-| `dotagents-sidebar: New Codex Session` | title bar, Codex's mark | A Codex session |
-| `dotagents-sidebar: New Terminal` | title bar | A session with your shell |
-| `dotagents-sidebar: Split Session` | title bar | A session next to the active one |
+| `dotagents-sidebar: New Claude Code Session` | title strip, Claude Code's mark | A Claude Code session |
+| `dotagents-sidebar: New Codex Session` | title strip, Codex's mark | A Codex session |
+| `dotagents-sidebar: New Terminal` | title strip | A session with your shell |
+| `dotagents-sidebar: Split Session` | title strip's amber button | A session next to the active one |
+| `dotagents-sidebar: Split With Claude Code Session` | command palette | A Claude Code session next to the active one |
 | `dotagents-sidebar: Split With Codex Session` | command palette | A Codex session next to the active one |
-| `dotagents-sidebar: Restart Session` | title bar, session menu | A new process in the same conversation |
-| `dotagents-sidebar: Close Session` | title bar, session menu | Stops the agent and closes the session |
+| `dotagents-sidebar: Restart Session` | title strip's green button, session menu | A new process in the same conversation |
+| `dotagents-sidebar: Close Session` | title strip's red button, session menu | Stops the agent and closes the session |
 | `dotagents-sidebar: Rename Session...` | session menu | Names the session; the title shows it |
 | `dotagents-sidebar: Change Session Color...` | session menu | One of the terminal panel's colors, or none |
 | `dotagents-sidebar: Switch Account` | status bar | Lists the accounts and switches, on both sides ([Accounts](accounts.md)) |

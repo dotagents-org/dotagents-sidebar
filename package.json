@@ -98,6 +98,11 @@
         "category": "dotagents-sidebar"
       },
       {
+        "command": "dotagentsSidebar.split.claude",
+        "title": "Split With Claude Code Session",
+        "category": "dotagents-sidebar"
+      },
+      {
         "command": "dotagentsSidebar.split.codex",
         "title": "Split With Codex Session",
         "category": "dotagents-sidebar"
@@ -137,38 +142,6 @@
       }
     ],
     "menus": {
-      "view/title": [
-        {
-          "command": "dotagentsSidebar.new",
-          "when": "view == dotagentsSidebar.view",
-          "group": "navigation@1"
-        },
-        {
-          "command": "dotagentsSidebar.new.codex",
-          "when": "view == dotagentsSidebar.view",
-          "group": "navigation@2"
-        },
-        {
-          "command": "dotagentsSidebar.newTerminal",
-          "when": "view == dotagentsSidebar.view",
-          "group": "navigation@3"
-        },
-        {
-          "command": "dotagentsSidebar.split",
-          "when": "view == dotagentsSidebar.view",
-          "group": "navigation@4"
-        },
-        {
-          "command": "dotagentsSidebar.restart",
-          "when": "view == dotagentsSidebar.view",
-          "group": "navigation@5"
-        },
-        {
-          "command": "dotagentsSidebar.close",
-          "when": "view == dotagentsSidebar.view",
-          "group": "navigation@6"
-        }
-      ],
       "webview/context": [
         {
           "command": "dotagentsSidebar.rename",

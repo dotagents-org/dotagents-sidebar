@@ -25,16 +25,19 @@ test("each agent has a terminal profile, its activation event and its icons", ()
   }
 });
 
-test("the title bar opens Claude Code, Codex or a terminal, each from its own button with its mark", () => {
+test("the title strip opens Claude Code, Codex or a terminal, each from its own button with its mark", () => {
   const commands = pkg.contributes.commands.map((c) => c.command);
-  for (const name of ["new", "new.codex", "split", "split.codex"]) assert.ok(commands.includes(`dotagentsSidebar.${name}`), name);
-  const buttons = pkg.contributes.menus["view/title"];
-  assert.deepEqual(buttons.slice(0, 3).map((b) => b.command), ["dotagentsSidebar.new", "dotagentsSidebar.new.codex", "dotagentsSidebar.newTerminal"]);
+  for (const name of ["new", "new.codex", "split", "split.claude", "split.codex"]) assert.ok(commands.includes(`dotagentsSidebar.${name}`), name);
+  // The view draws the buttons in its own strip (extension.js, TITLE_BUTTONS), so VS Code's title bar has none
+  assert.equal(pkg.contributes.menus["view/title"], undefined);
+  const source = fs.readFileSync(path.join(root, "extension.js"), "utf8");
+  const buttons = JSON.parse(source.match(/const TITLE_BUTTONS = (\[.*\]);/)[1]);
+  assert.deepEqual(buttons.slice(0, 3), ["dotagentsSidebar.new", "dotagentsSidebar.new.codex", "dotagentsSidebar.newTerminal"]);
+  for (const name of buttons) assert.ok(pkg.contributes.commands.find((c) => c.command === name)?.icon?.dark, name);
   const icon = (name) => pkg.contributes.commands.find((c) => c.command === name).icon.dark;
   assert.equal(icon("dotagentsSidebar.new"), "media/claude-code-dark.svg");
   assert.equal(icon("dotagentsSidebar.new.codex"), "media/codex-dark.svg");
   assert.equal(pkg.contributes.submenus, undefined, "no + or ⌄ menu");
-  assert.equal(new Set(buttons.map((b) => b.group)).size, buttons.length);
   // Titles without the prefix; the palette adds the category.
   for (const c of pkg.contributes.commands) assert.equal(c.category, "dotagents-sidebar", c.command);
 });

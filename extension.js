@@ -13,6 +13,14 @@ const keys = require("./media/keys.js");
 
 const { startAccounts } = require("./accounts");
 const SKIP_SHELL = require("./skip-shell.json");
+const { contributes } = require("./package.json");
+
+// The buttons at the right of the title strip, in order, with the icon each command declares
+// (media/view.js draws them; the strip replaces VS Code's title bar buttons)
+const TITLE_BUTTONS = ["dotagentsSidebar.new", "dotagentsSidebar.new.codex", "dotagentsSidebar.newTerminal"];
+// The round buttons at its left, for the active session: red closes it (a message of its own), amber
+// splits it, green restarts it
+const SESSION_BUTTONS = ["dotagentsSidebar.split", "dotagentsSidebar.restart"];
 
 // One host per workspace and protocol (host.js), not per version of the extension: an update
 // reaches the host the old version started, and its agents keep running. An empty window has
@@ -362,6 +370,10 @@ class SidebarView {
       case "close":
         this.close(msg.id);
         break;
+      // A button of the title strip: only the commands it draws
+      case "command":
+        if (TITLE_BUTTONS.includes(msg.command) || SESSION_BUTTONS.includes(msg.command)) vscode.commands.executeCommand(msg.command);
+        break;
       case "links": {
         // Which of a hovered line's paths exist: { path: the file it is }
         const paths = Array.isArray(msg.paths) ? msg.paths.filter((p) => typeof p === "string" && p.length <= 1024).slice(0, 10) : [];
@@ -595,11 +607,15 @@ class SidebarView {
     const mark = (agent) => ({ name: agent.name, newline: agent.newline, icon: String(uri("media", `${agent.id === "codex" ? "codex" : "claude-code"}-dark.svg`)) });
     const agents = { claude: mark(AGENTS.claude), codex: mark(AGENTS.codex) };
     const terminal = { name: TERMINAL.name, icon: String(uri("media", "terminal.svg")) };
+    const buttons = TITLE_BUTTONS.map((name) => {
+      const { title, icon } = contributes.commands.find((c) => c.command === name);
+      return { command: name, title, light: String(uri(icon.light)), dark: String(uri(icon.dark)) };
+    });
     const panel = (name) => String(webview.asWebviewUri(vscode.Uri.joinPath(this.accounts.api.panelRoot, name)));
     // The panel's scripts load only when its tab first opens (media/view.js), so nothing of it runs
     // while the agents are in use
     const accounts = this.accounts ? { icon: String(uri("media", "accounts.svg")), scripts: [panel("avatar.js"), panel("panel.js")], nonce } : null;
-    const settings = JSON.stringify({ ...terminalSettings(), agents, terminal, workspace: workspaceName(), home: os.homedir(), keys: this.keys, accounts }).replace(/</g, "\\u003c");
+    const settings = JSON.stringify({ ...terminalSettings(), agents, terminal, buttons, workspace: workspaceName(), home: os.homedir(), keys: this.keys, accounts }).replace(/</g, "\\u003c");
     return `<!doctype html>
 <html>
 <head>
@@ -724,6 +740,7 @@ async function activate(context) {
       const active = view.session(view.state.active);
       view.open(sessions.split, active?.kind, active?.provider);
     }),
+    vscode.commands.registerCommand("dotagentsSidebar.split.claude", () => view.open(sessions.split, undefined, "claude")),
     vscode.commands.registerCommand("dotagentsSidebar.split.codex", () => view.open(sessions.split, undefined, "codex")),
     onSession("close", (id) => view.close(id)),
     onSession("restart", (id) => view.restart(id)),

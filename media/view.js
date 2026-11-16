@@ -456,11 +456,66 @@
   // The active session, like a terminal tab: the agent's mark in the session's color, the workspace
   // (dimmer) and the session's own name, when it has one other than the agent's. The agent's name is
   // the view's title.
-  // The accounts tab has no title: the panel starts with its own seal.
+  // At its left, the active session's round buttons (close, split, restart); at its right, new
+  // sessions, the buttons that were VS Code's title bar's. The accounts tab and an empty view keep only those: the
+  // panel starts with its own seal.
   function title(session) {
-    header.classList.toggle("hidden", showAccounts);
-    if (showAccounts) return header.replaceChildren();
-    if (!session) return header.replaceChildren();
+    const shown = showAccounts ? null : session;
+    const text = shown ? sessionTitle(shown) : document.createElement("span");
+    text.classList.add("title");
+    header.replaceChildren(windowButtons(shown), text, titleButtons());
+  }
+
+  // Round buttons for the active session, in the colors of the identity's levels: red closes it,
+  // amber splits it, green restarts it. Each shows its sign, in the icons' line, under the pointer
+  const SIGNS = {
+    close: '<path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/>',
+    split: '<rect x="6" y="6" width="12" height="12" rx="3.5"/><path d="M12 6v12"/>',
+    restart: '<path d="M16.5 12A4.5 4.5 0 1 1 12 7.5"/><path d="M10.6 5.9 12.4 7.5l-1.8 1.5"/>',
+  };
+  function windowButtons(session) {
+    const el = document.createElement("span");
+    el.className = "window";
+    if (!session) return el;
+    const button = (cls, label, message) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = cls;
+      b.title = label;
+      b.setAttribute("aria-label", label);
+      b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${SIGNS[cls]}</svg>`;
+      b.addEventListener("click", () => vscode.postMessage(message));
+      return b;
+    };
+    el.append(
+      button("close", "Close Session", { type: "close", id: session.id }),
+      button("split", "Split Session", { type: "command", command: "dotagentsSidebar.split" }),
+      button("restart", "Restart Session", { type: "command", command: "dotagentsSidebar.restart" })
+    );
+    return el;
+  }
+
+  // A new Claude Code, Codex or terminal session, with the icons the commands declare
+  const lightTheme = document.body.classList.contains("vscode-light") || document.body.classList.contains("vscode-high-contrast-light");
+  function titleButtons() {
+    const el = document.createElement("span");
+    el.className = "buttons";
+    for (const { command, title, light, dark } of settings.buttons) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.title = title;
+      b.setAttribute("aria-label", title);
+      const img = document.createElement("img");
+      img.src = lightTheme ? light : dark;
+      img.alt = "";
+      b.append(img);
+      b.addEventListener("click", () => vscode.postMessage({ type: "command", command }));
+      el.append(b);
+    }
+    return el;
+  }
+
+  function sessionTitle(session) {
     const part = (cls, text) => {
       const el = document.createElement("span");
       el.className = cls;
@@ -490,7 +545,9 @@
     if (name) parts.push(part("slash", "/"), part("session", name));
     const text = part("name", "");
     text.append(...parts);
-    header.replaceChildren(icon, text);
+    const el = document.createElement("span");
+    el.append(icon, text);
+    return el;
   }
 
   // Draw the state: a terminal per session, the active group's panes, the list
@@ -506,6 +563,7 @@
       if (!terminals.has(session.id)) terminals.set(session.id, open(session));
       const { el } = terminals.get(session.id);
       el.classList.toggle("hidden", showAccounts || !active || session.group !== active.group);
+      el.style.setProperty("--session", theme[session.color] || null); // the line around the focused pane
       panes.appendChild(el); // the panes follow the order of the list
     }
     accountsPane?.classList.toggle("hidden", !showAccounts);

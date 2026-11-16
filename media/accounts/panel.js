@@ -58,7 +58,7 @@
     const reset = w.reset || !w.resetsAt ? (w.kind === "session" ? "no window open" : "reset") : `resets ${span(Date.parse(w.resetsAt) - now)}`;
     let projection = null;
     const pr = p.state === "ok" ? w.projection : null;
-    if (pr && pr.from) projection = el("span", { class: "note" }, `projection from ${hhmm(new Date(pr.from))}`);
+    if (pr && pr.from) projection = el("span", { class: "note" }, `projection from ${w.kind === "session" ? hhmm(new Date(pr.from)) : dayTime(new Date(pr.from))}`);
     else if (pr && pr.runsOutAt) {
       const when = new Date(pr.runsOutAt);
       projection = el("span", { class: "note warn" }, `at this pace, runs out ${w.kind === "session" ? hhmm(when) : dayTime(when)}`);
@@ -133,7 +133,6 @@
       const button = el("button", { type: "button", class: `switch${busy(key)}`, title: `Use ${p.name} on ${sides.join(" and ") || "this machine"}` }, everywhere ? "in use" : "switch");
       if (everywhere) button.disabled = true;
       else button.addEventListener("click", run("switch", { profile: p.name }, key));
-      // The windows' labels in one column, as wide as the profile's longest (5h, 7d, Fable).
       const card = el(
         "article",
         { class: "card" },
@@ -158,7 +157,6 @@
         ...p.windows.map((w) => windowRow(p, w, now)),
         el("div", { class: "sides" }, where, button)
       );
-      card.style.setProperty("--label", `${Math.max(2, ...p.windows.map((w) => label(w).length))}ch`);
       return card;
     };
     // One group per provider, Claude first; a header names each one only when there are two.
@@ -194,6 +192,9 @@
       ...blocks,
       failure && el("p", { class: "message high" }, failure)
     );
+    // The windows' labels in one column for every card, as wide as the longest (5h, 7d, Fable), as
+    // in the CLI's usage, so the bars of Claude's and ChatGPT's accounts line up.
+    sheet.style.setProperty("--label", `${Math.max(2, ...data.profiles.flatMap((p) => p.windows.map((w) => label(w).length)))}ch`);
     sheet.style.setProperty("--n", String(Math.max(1, ...groups.map((g) => g.profiles.length))));
     root.replaceChildren(sheet);
   }

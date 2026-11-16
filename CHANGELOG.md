@@ -19,6 +19,10 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Changed
 
+- **Claude and ChatGPT side by side.** In the accounts tab the windows' labels share one column across every card, so the bars of both providers line up, and a week's "projection from" says the day. `Split With Claude Code Session` joins `Split With Codex Session` in the command palette.
+
+- **The buttons in the title strip.** The view's buttons moved from VS Code's title bar to the strip with the session's title and path. At its left, three round buttons act on the active session in the identity's level colors: red closes it, amber splits it, green restarts it, each showing its sign under the pointer. At its right, round too, a new Claude Code, Codex or terminal session. The strip shows over the accounts tab and an empty view too, with the new-session buttons only.
+- **The focused pane has a line around it.** The pane the keys go to shows a rounded line in its session's color (the theme's focus border for a session without one), which goes away when the focus leaves the view, so in a split you see where you are typing.
 - **Codex discovery.** Rollout reading and pending-session matching live together in a module separate from the agent launch table.
 
 - **Session startup.** Agent and terminal sessions share the host creation message and dimmed notice formatting.

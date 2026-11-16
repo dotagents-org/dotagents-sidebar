@@ -12,7 +12,9 @@ const { AGENTS, command, conversationArgs, env, terminalCommand } = require("../
 function view(kind) {
   const messages = [];
   let disposed = 0;
+  const ran = [];
   const vscode = {
+    commands: { executeCommand: (...args) => ran.push(args) },
     workspace: {
       workspaceFolders: [{ uri: { scheme: "file", fsPath: "/work/project" } }],
       getConfiguration: () => ({ get: (key) => key === "scrollback" ? 4321 : undefined }),
@@ -29,8 +31,18 @@ function view(kind) {
   view.state = sessions.add(view.state, kind === "terminal" ? "Terminal" : "Claude Code", kind);
   view.view = { webview: { postMessage: (msg) => messages.push(msg) } };
   view.connectHost = async () => ({ send: (msg) => messages.push(msg) });
-  return { view, messages, disposed: () => disposed };
+  return { view, messages, ran, disposed: () => disposed };
 }
+
+test("the title strip's buttons run only the commands it draws", () => {
+  const { view: sidebar, ran } = view();
+  sidebar.onMessage({ type: "command", command: "dotagentsSidebar.new.codex" });
+  sidebar.onMessage({ type: "command", command: "dotagentsSidebar.split" });
+  sidebar.onMessage({ type: "command", command: "dotagentsSidebar.restart" });
+  sidebar.onMessage({ type: "command", command: "workbench.action.terminal.sendSequence" });
+  sidebar.onMessage({ type: "command", command: "toString" });
+  assert.deepEqual(ran, [["dotagentsSidebar.new.codex"], ["dotagentsSidebar.split"], ["dotagentsSidebar.restart"]]);
+});
 
 for (const kind of [undefined, "terminal"]) {
   test(`starting ${kind || "an agent"} clears its pane and sends the full host create message`, async () => {
