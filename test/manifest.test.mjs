@@ -25,19 +25,27 @@ test("each agent has a terminal profile, its activation event and its icons", ()
   }
 });
 
-test("Codex has its own new and split commands; the new session button stays Claude Code's", () => {
+test("the + button opens Claude Code, and the menu beside it picks Claude Code, Codex or a terminal", () => {
   const commands = pkg.contributes.commands.map((c) => c.command);
   for (const name of ["new", "new.codex", "split", "split.codex"]) assert.ok(commands.includes(`dotagentsSidebar.${name}`), name);
   const buttons = pkg.contributes.menus["view/title"];
   assert.equal(buttons.find((b) => b.group === "navigation@1").command, "dotagentsSidebar.new");
-  assert.equal(buttons.filter((b) => b.command === "dotagentsSidebar.new.codex").length, 1);
+  // The ⌄ right after +, as in the terminal panel: a submenu, not one more button per agent.
+  const menu = buttons.find((b) => b.group === "navigation@2");
+  assert.equal(menu.submenu, "dotagentsSidebar.newMenu");
+  assert.ok(pkg.contributes.submenus.some((s) => s.id === menu.submenu && s.icon === "$(chevron-down)"));
+  assert.deepEqual(pkg.contributes.menus[menu.submenu].map((m) => m.command), ["dotagentsSidebar.new", "dotagentsSidebar.new.codex", "dotagentsSidebar.newTerminal"]);
+  assert.equal(buttons.filter((b) => b.command === "dotagentsSidebar.new.codex").length, 0);
   assert.equal(new Set(buttons.map((b) => b.group)).size, buttons.length);
+  // Titles without the prefix, so the menu reads "New Codex Session"; the palette adds the category.
+  for (const c of pkg.contributes.commands) assert.equal(c.category, "dotagents-sidebar", c.command);
 });
 
-test("every command the menus use is declared", () => {
+test("every command and submenu the menus use is declared", () => {
   const declared = new Set(pkg.contributes.commands.map((c) => c.command));
+  const submenus = new Set((pkg.contributes.submenus || []).map((s) => s.id));
   for (const items of Object.values(pkg.contributes.menus)) {
-    for (const item of items) assert.ok(declared.has(item.command), item.command);
+    for (const item of items) assert.ok(item.submenu ? submenus.has(item.submenu) : declared.has(item.command), item.submenu || item.command);
   }
 });
 

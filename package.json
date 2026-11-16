@@ -63,67 +63,77 @@
     "commands": [
       {
         "command": "dotagentsSidebar.new",
-        "title": "dotagents-sidebar: New Session",
+        "title": "New Claude Code Session",
         "icon": {
           "light": "media/new-agent-light.svg",
           "dark": "media/new-agent-dark.svg"
-        }
+        },
+        "category": "dotagents-sidebar"
       },
       {
         "command": "dotagentsSidebar.new.codex",
-        "title": "dotagents-sidebar: New Codex Session",
+        "title": "New Codex Session",
         "icon": {
           "light": "media/codex-light.svg",
           "dark": "media/codex-dark.svg"
-        }
+        },
+        "category": "dotagents-sidebar"
       },
       {
         "command": "dotagentsSidebar.newTerminal",
-        "title": "dotagents-sidebar: New Terminal",
+        "title": "New Terminal",
         "icon": {
           "light": "media/terminal-light.svg",
           "dark": "media/terminal-dark.svg"
-        }
+        },
+        "category": "dotagents-sidebar"
       },
       {
         "command": "dotagentsSidebar.split",
-        "title": "dotagents-sidebar: Split Session",
+        "title": "Split Session",
         "icon": {
           "light": "media/split-light.svg",
           "dark": "media/split-dark.svg"
-        }
+        },
+        "category": "dotagents-sidebar"
       },
       {
         "command": "dotagentsSidebar.split.codex",
-        "title": "dotagents-sidebar: Split With Codex Session"
+        "title": "Split With Codex Session",
+        "category": "dotagents-sidebar"
       },
       {
         "command": "dotagentsSidebar.close",
-        "title": "dotagents-sidebar: Close Session",
+        "title": "Close Session",
         "icon": {
           "light": "media/close-light.svg",
           "dark": "media/close-dark.svg"
-        }
+        },
+        "category": "dotagents-sidebar"
       },
       {
         "command": "dotagentsSidebar.restart",
-        "title": "dotagents-sidebar: Restart Session",
+        "title": "Restart Session",
         "icon": {
           "light": "media/restart-light.svg",
           "dark": "media/restart-dark.svg"
-        }
+        },
+        "category": "dotagents-sidebar"
       },
       {
         "command": "dotagentsSidebar.rename",
-        "title": "dotagents-sidebar: Rename Session..."
+        "title": "Rename Session...",
+        "category": "dotagents-sidebar"
       },
       {
         "command": "dotagentsSidebar.recolor",
-        "title": "dotagents-sidebar: Change Session Color..."
+        "title": "Change Session Color...",
+        "category": "dotagents-sidebar"
       },
       {
         "command": "dotagentsSidebar.switchAccount",
-        "title": "dotagents-sidebar: Switch Account"
+        "title": "Switch Account",
+        "category": "dotagents-sidebar"
       }
     ],
     "menus": {
@@ -134,7 +144,7 @@
           "group": "navigation@1"
         },
         {
-          "command": "dotagentsSidebar.new.codex",
+          "submenu": "dotagentsSidebar.newMenu",
           "when": "view == dotagentsSidebar.view",
           "group": "navigation@2"
         },
@@ -179,6 +189,20 @@
           "command": "dotagentsSidebar.close",
           "when": "webviewId == 'dotagentsSidebar.view' && webviewSection == 'session'",
           "group": "2_run@2"
+        }
+      ],
+      "dotagentsSidebar.newMenu": [
+        {
+          "command": "dotagentsSidebar.new",
+          "group": "1_agents@1"
+        },
+        {
+          "command": "dotagentsSidebar.new.codex",
+          "group": "1_agents@2"
+        },
+        {
+          "command": "dotagentsSidebar.newTerminal",
+          "group": "2_terminal@1"
         }
       ]
     },
@@ -244,7 +268,14 @@
           "fontCharacter": "\\E003"
         }
       }
-    }
+    },
+    "submenus": [
+      {
+        "id": "dotagentsSidebar.newMenu",
+        "label": "New Session",
+        "icon": "$(chevron-down)"
+      }
+    ]
   },
   "dependencies": {
     "@xterm/addon-fit": "0.11.0",
