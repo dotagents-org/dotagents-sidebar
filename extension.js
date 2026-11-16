@@ -127,6 +127,7 @@ class SidebarView {
         channel.appendLine(`${new Date().toISOString()} ${text}: ${err.message}`);
         file("error", "extension", `${text}: ${err.stack || err.message}`);
       },
+      dispose: () => channel.dispose(),
     };
     this.accounts = undefined; // the Claude accounts (accounts.js), when dotagents is set up here
   }
@@ -557,8 +558,9 @@ class SidebarView {
   // The window is reloading or closing: let go of the host, which keeps the agents running
   dispose() {
     this.disposed = true;
-    this.log.dispose();
+    // The host first: its channel closes even if anything after this fails
     this.hostReady?.then((channel) => channel.close()).catch(() => {});
+    this.log.dispose();
   }
 
   html(webview) {
