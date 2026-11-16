@@ -34,6 +34,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Fixed
 
+- **Reloading the window no longer fails while letting go of the host.** The view's `dispose()` called a `dispose` its log didn't have, so it threw before closing the host's channel and left the output channel behind; the host's channel now closes first, then the log's.
 - **Sessions after a window reload.** After Developer: Reload Window, only the session in view was drawn right; the others came back with wrapped, misplaced lines when opened. A pane that isn't showing can't be fitted, so its terminal was still 80x24 when the host's screen, drawn at the real size, was written into it. The host now sends each screen's size and the pane takes it before the screen is written; with a host from before that (it outlives an update), the pane takes the size of one that is showing.
 - **Status bar parts kept together.** Another extension's item (a port, a line count) could land between the account and its usage bars, since each part had its own priority. They now share one, so VS Code keeps them side by side, in order.
 - **Paste on Windows.** Ctrl+V sent a ^V before the text, which Claude Code on Windows reads as pasting an image, so the text never came. Now only the paste itself reaches the agent, as in the integrated terminal.
