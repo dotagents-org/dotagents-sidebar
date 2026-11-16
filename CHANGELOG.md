@@ -18,6 +18,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Changed
 
+- **The brands' own marks, from [LobeHub](https://lobehub.com/icons) (MIT):** Claude Code's sessions and their terminal tabs show the Claude Code mark (`media/claude-code-{light,dark}.svg`), and the button that opens an account's Claude Desktop keeps the Claude mark, the app's.
 - **Accounts panel.** The panel opens straight on the cards: the `dotagents` seal, the profile count and the `Windows and WSL` line are gone (each card already says where its account is). The age of the numbers and the refresh sit on a line at the top, right-aligned; `WSL off` shows at its left, in the warning color, only when the other side is off.
 - **Bigger avatars.** The accounts' avatars are 56 px, were 40, and the name, the gap beside them and the icon that opens the account's Desktop (21 px, were 15) scale with the avatar from one value, `--avatar` in `panel.css`, so the header of a card keeps its proportions if you change it.
 - **Splits are drawn joined.** The sessions of a split are linked in the list by a line with a corner on the first, a branch on those between and a corner on the last, as the terminal panel's tabs do, instead of the same bar on each, so a split no longer looks like one session.

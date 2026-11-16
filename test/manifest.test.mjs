@@ -19,7 +19,7 @@ test("Claude Code has a terminal profile, its activation event and its icons", (
   // the menu gets a codicon; the terminal's tab gets the agent's mark from the extension
   assert.match(profile.icon, /^[a-z-]+$/);
   assert.ok(pkg.activationEvents.includes("onTerminalProfile:dotagentsSidebar.profile.claude"));
-  for (const theme of ["light", "dark"]) assert.ok(fs.existsSync(path.join(root, "media", `claude-${theme}.svg`)), theme);
+  for (const theme of ["light", "dark"]) assert.ok(fs.existsSync(path.join(root, "media", `claude-code-${theme}.svg`)), theme);
 });
 
 test("every command the menus use is declared", () => {

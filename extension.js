@@ -564,7 +564,7 @@ class SidebarView {
   html(webview) {
     const uri = (...p) => webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, ...p));
     const nonce = crypto.randomBytes(16).toString("base64");
-    const agent = { name: AGENT.name, newline: AGENT.newline, icon: String(uri("media", "claude-dark.svg")), terminal: { name: TERMINAL.name, icon: String(uri("media", "terminal.svg")) } };
+    const agent = { name: AGENT.name, newline: AGENT.newline, icon: String(uri("media", "claude-code-dark.svg")), terminal: { name: TERMINAL.name, icon: String(uri("media", "terminal.svg")) } };
     const panel = (name) => String(webview.asWebviewUri(vscode.Uri.joinPath(this.accounts.api.panelRoot, name)));
     // The panel's scripts load only when its tab first opens (media/view.js), so nothing of it runs
     // while the agents are in use
@@ -607,8 +607,8 @@ function terminalOptions(context) {
     shellPath: file,
     shellArgs: args,
     iconPath: {
-      light: vscode.Uri.joinPath(context.extensionUri, "media", "claude-light.svg"),
-      dark: vscode.Uri.joinPath(context.extensionUri, "media", "claude-dark.svg"),
+      light: vscode.Uri.joinPath(context.extensionUri, "media", "claude-code-light.svg"),
+      dark: vscode.Uri.joinPath(context.extensionUri, "media", "claude-code-dark.svg"),
     },
   };
 }
