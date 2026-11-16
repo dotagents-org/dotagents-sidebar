@@ -104,6 +104,8 @@ function terminalSettings() {
   };
 }
 
+const notice = (text) => `\r\n\x1b[2m[${text}]\x1b[0m\r\n`;
+
 class SidebarView {
   constructor(context) {
     this.context = context;
@@ -277,7 +279,7 @@ class SidebarView {
     try {
       (await this.connectHost()).send(msg);
     } catch (err) {
-      if (msg.id) this.post({ type: "output", id: msg.id, data: `\r\n\x1b[2m[${err.message}]\x1b[0m\r\n` });
+      if (msg.id) this.post({ type: "output", id: msg.id, data: notice(err.message) });
     }
   }
 
@@ -304,7 +306,7 @@ class SidebarView {
     for (const [id, terminal] of this.terminals) {
       if (terminal.exited || !terminal.started) continue;
       terminal.exited = true;
-      this.post({ type: "output", id, data: "\r\n\x1b[2m[The agents' host stopped. Press Enter to resume the session.]\x1b[0m\r\n" });
+      this.post({ type: "output", id, data: notice("The agents' host stopped. Press Enter to resume the session.") });
     }
   }
 
@@ -439,24 +441,17 @@ class SidebarView {
     }
     Object.assign(terminal, { started: true, exited: false, resume, startedAt });
     const { file, args } = command(process.platform, agent, conversationArgs(agent, conversation, resume));
-    this.post({ type: "clear", id });
-    this.send({
-      type: "create",
-      id,
-      file,
-      args,
-      cwd: cwd(),
-      env: env(process.env),
-      cols: terminal.size.cols,
-      rows: terminal.size.rows,
-      scrollback: terminalSettings().scrollback,
-    });
+    this.createProcess(id, terminal, file, args);
   }
 
   startTerminal(id, terminal) {
     Object.assign(terminal, { started: true, exited: false, resume: false, startedAt: Date.now() });
     this.update(sessions.remember(this.state, id, { cwd: cwd() })); // until the shell says where it is
     const { file, args } = terminalCommand(process.platform, process.env);
+    this.createProcess(id, terminal, file, args);
+  }
+
+  createProcess(id, terminal, file, args) {
     this.post({ type: "clear", id });
     this.send({
       type: "create",
@@ -478,7 +473,7 @@ class SidebarView {
       // Like the integrated terminal: a terminal that exits cleanly closes its session
       if (exitCode === 0) return this.close(id);
       terminal.exited = true;
-      this.send({ type: "note", id, data: `\r\n\x1b[2m[${TERMINAL.name} exited with code ${exitCode}. Press Enter to start it again.]\x1b[0m\r\n` });
+      this.send({ type: "note", id, data: notice(`${TERMINAL.name} exited with code ${exitCode}. Press Enter to start it again.`) });
       return;
     }
     const agent = agentOf(this.session(id));
@@ -492,7 +487,7 @@ class SidebarView {
       exitCode === 127
         ? `${agent.command} was not found on the PATH set up by ~/.bashrc. ${agent.install}`
         : `${agent.name} exited with code ${exitCode}`;
-    this.send({ type: "note", id, data: `\r\n\x1b[2m[${reason}. Press Enter to start it again.]\x1b[0m\r\n` });
+    this.send({ type: "note", id, data: notice(`${reason}. Press Enter to start it again.`) });
   }
 
   // The agent of a new session: the one asked for, else Claude Code
