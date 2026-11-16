@@ -69,7 +69,7 @@ const level = (pct) => (pct >= 90 ? "high" : pct >= 70 ? "warn" : "ok");
 // blue is asleep; a ring (limit, waiting) is the other state of the same color.
 const DOTS = { error: ["circle-filled", "red"], limit: ["target", "red"], waiting: ["target", "amber"], warn: ["circle-filled", "amber"], ok: ["circle-filled", "green"], asleep: ["circle-filled", "blue"] };
 // The provider's mark leads its group in the status bar: the company's, as on the panel's cards.
-const PROVIDERS = { claude: { title: "Claude", icon: "dotagents-claude" }, codex: { title: "OpenAI", icon: "dotagents-openai" } };
+const PROVIDERS = { claude: { title: "Claude", icon: "dotagents-claude" }, codex: { title: "ChatGPT", icon: "dotagents-openai" } };
 const providerOf = (p) => (p.provider || "claude") === "codex" ? "codex" : "claude";
 function parts(profile, state, now = Date.now()) {
   const out = [{ text: `$(${PROVIDERS[providerOf(profile)].icon}) ${profile.name}`, tone: "name" }];
@@ -125,7 +125,7 @@ function statusFor(view, now = Date.now()) {
 }
 
 // Every group of the status bar, one per provider, Claude first: Claude's even with no profile
-// (the brand and how to add one), Codex's only when there is a Codex profile.
+// (the brand and how to add one), ChatGPT's only when there is a ChatGPT profile.
 function groupsFor(data, now = Date.now()) {
   const ids = ["claude", ...providersOf(data).filter((id) => id !== "claude")];
   return ids.map((id) => statusFor(forProvider(data, id), now));

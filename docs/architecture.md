@@ -22,7 +22,7 @@ The host is named by workspace and protocol (`PROTOCOL` in `host.js`), not by th
 | `host.js` | The detached process that owns the agents and their screen copies |
 | `agent.js` | The agent, Claude Code: command, environment, conversation flags, newline key |
 | `sessions.js` | The session list: add, split, close, rename, colors, restore |
-| `accounts.js` | The Claude and Codex accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
+| `accounts.js` | The Claude and ChatGPT accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
 | `media/view.js`, `media/view.css` | The webview: a terminal per session, the list, the title strip |
 | `media/keys.js` | Which keys go to VS Code, worked out from the keybindings |
 | `shell/bash-cwd.sh` | Run by a terminal session's bash after `~/.bashrc`: reports the current folder (OSC 7) at each prompt |

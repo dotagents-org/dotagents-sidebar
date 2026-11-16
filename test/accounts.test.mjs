@@ -109,7 +109,7 @@ const both = {
   ],
 };
 
-test("with a Codex account the status bar has a second group, led by the OpenAI mark and reading the Codex current", () => {
+test("with a ChatGPT account the status bar has a second group, led by the OpenAI mark and reading the codex current", () => {
   const [claude, codex] = accounts.groupsFor(both, Date.parse("2026-11-12T12:00:00Z"));
   assert.equal(claude.parts[0].text, "$(dotagents-claude) personal");
   assert.equal(codex.parts[0].text, "$(dotagents-openai) hopper");
@@ -121,7 +121,7 @@ test("with a Codex account the status bar has a second group, led by the OpenAI 
   assert.doesNotMatch(claude.tooltip, /hopper/);
 });
 
-test("a Codex profile without a Codex current falls back to the first one, and with none there is no Codex group", () => {
+test("a ChatGPT profile without a codex current falls back to the first one, and with none there is no ChatGPT group", () => {
   const { current, ...rest } = both;
   const [, codex] = accounts.groupsFor({ ...rest, current: { claude: current.claude } });
   assert.equal(codex.parts[0].text, "$(dotagents-openai) hopper");
@@ -138,9 +138,9 @@ test("with no Claude profile the first group is the brand, and the Codex one sti
 test("the switch lists both providers' accounts, Claude first, the provider named and each current one marked", () => {
   const items = accounts.pickItems(both);
   assert.deepEqual(items.map((i) => [i.label, i.provider]), [["$(check) personal", "claude"], ["work", "claude"], ["$(check) hopper", "codex"], ["dijkstra", "codex"]]);
-  assert.equal(items[2].description, "OpenAI  5h 40%  7d 95%");
+  assert.equal(items[2].description, "ChatGPT  5h 40%  7d 95%");
   assert.equal(items[2].detail, "in the slot on WSL");
-  assert.equal(items[3].description, "OpenAI");
+  assert.equal(items[3].description, "ChatGPT");
   assert.equal(items[3].profile, "dijkstra", "the switch posts the profile, whichever the provider");
 });
 

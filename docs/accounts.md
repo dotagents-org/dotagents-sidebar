@@ -11,7 +11,7 @@ The accounts tab and the status bar appear when dotagents has profiles on the si
 The first tab in the list, marked with the accounts' dot. It never closes or splits. It shows:
 
 - the accounts grouped by provider, Claude first, when there are two: a header with the provider's mark (Claude, OpenAI), its name and its plan with the seats (*team  2 seats*) when every account of the group has the same known plan, else the count; with one provider there is no header;
-- every account in a card: its avatar, its name in its color, a button that opens its Claude Desktop app (Windows) on a Claude account, the OpenAI mark on a Codex one (not a button), and what its sessions are doing (*1 working*, *1 waiting on you*);
+- every account in a card: its avatar, its name in its color, a button that opens its Claude Desktop app (Windows) on a Claude account, the OpenAI mark on a ChatGPT one (not a button), and what its sessions are doing (*1 working*, *1 waiting on you*);
 - each window (5 hours, the week, the model's week) as a bar in text, its percentage in the level's color (green below 70%, amber from 70%, red from 90%), when it resets, and the projection to the reset (*at this pace, runs out 16:40*);
 - where the account is (*on WSL*, *on Windows and WSL*) and a `[ switch ]` that puts it on both sides of the machine; one side only is `dotagents switch <profile> --here`, in a terminal;
 - at the bottom, the sides and how old the numbers are, with ↻ to ask Anthropic now.
@@ -22,7 +22,7 @@ Each account has an avatar, in its color and shape; turing is a rounded square, 
 
 ## The status bar
 
-One group per provider, side by side: Claude's, and Codex's only when there is a Codex account. Each group shows the current account of its provider (the one in the slot, the worse of the two sides) as the statusLine shows it: the provider's mark (Claude's, or OpenAI's on a Codex account) and the name in its color, the state as the avatars' dot, and each window's bar and percentage, with ↻ and the time to the reset from 70% on (`personal ● 5h ━━━━━━── 79% ↻ 3h17m  7d ━━━───── 38%`). The tooltip of a group lists the accounts of its provider; a click lists the accounts of both providers, with the provider named, to switch. All the items share one priority, so no other extension's item lands between them.
+One group per provider, side by side: Claude's, and ChatGPT's only when there is a ChatGPT account. Each group shows the current account of its provider (the one in the slot, the worse of the two sides) as the statusLine shows it: the provider's mark (Claude's, or OpenAI's on a Codex account) and the name in its color, the state as the avatars' dot, and each window's bar and percentage, with ↻ and the time to the reset from 70% on (`personal ● 5h ━━━━━━── 79% ↻ 3h17m  7d ━━━───── 38%`). The tooltip of a group lists the accounts of its provider; a click lists the accounts of both providers, with the provider named, to switch. All the items share one priority, so no other extension's item lands between them.
 
 The marks are glyphs of `media/icons.woff`, which `scripts/vscode-icon.py` writes (the status bar takes icons only from fonts).
 

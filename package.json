@@ -238,7 +238,7 @@
         }
       },
       "dotagents-openai": {
-        "description": "The OpenAI mark, on a Codex account",
+        "description": "The OpenAI mark, on a ChatGPT account",
         "default": {
           "fontPath": "media/icons.woff",
           "fontCharacter": "\\E003"
