@@ -23,6 +23,7 @@ The host is named by workspace and protocol (`PROTOCOL` in `host.js`), not by th
 | `agent.js` | The agent, Claude Code: command, environment, conversation flags, newline key |
 | `sessions.js` | The session list: add, split, close, rename, colors, restore |
 | `accounts.js` | The Claude and ChatGPT accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
+| `providers.js` | The one table of the account providers (Claude, ChatGPT): name, tool, mark and status bar icon. `accounts.js` reads it and posts it to the panel with the usage; a provider the table lacks is skipped |
 | `media/view.js`, `media/view.css` | The webview: a terminal per session, the list, the title strip |
 | `media/keys.js` | Which keys go to VS Code, worked out from the keybindings |
 | `shell/bash-cwd.sh` | Run by a terminal session's bash after `~/.bashrc`: reports the current folder (OSC 7) at each prompt |
