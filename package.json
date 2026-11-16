@@ -1,7 +1,7 @@
 {
   "name": "dotagents-sidebar",
   "displayName": "dotagents-sidebar",
-  "description": "Claude Code in VS Code's secondary sidebar: several sessions, splits, and agents that keep working across window reloads, with your Claude accounts as the first tab.",
+  "description": "Claude Code and Codex in VS Code's secondary sidebar: several sessions, splits, and agents that keep working across window reloads, with your Claude accounts as the first tab.",
   "version": "0.0.0",
   "publisher": "gabrieldulolmarques",
   "license": "MIT",
@@ -19,7 +19,8 @@
     "terminal",
     "sidebar",
     "ai",
-    "agent"
+    "agent",
+    "codex"
   ],
   "categories": [
     "Other"
@@ -37,7 +38,8 @@
   ],
   "main": "./extension.js",
   "activationEvents": [
-    "onTerminalProfile:dotagentsSidebar.profile.claude"
+    "onTerminalProfile:dotagentsSidebar.profile.claude",
+    "onTerminalProfile:dotagentsSidebar.profile.codex"
   ],
   "contributes": {
     "viewsContainers": {
@@ -68,6 +70,14 @@
         }
       },
       {
+        "command": "dotagentsSidebar.new.codex",
+        "title": "dotagents-sidebar: New Codex Session",
+        "icon": {
+          "light": "media/codex-light.svg",
+          "dark": "media/codex-dark.svg"
+        }
+      },
+      {
         "command": "dotagentsSidebar.newTerminal",
         "title": "dotagents-sidebar: New Terminal",
         "icon": {
@@ -82,6 +92,10 @@
           "light": "media/split-light.svg",
           "dark": "media/split-dark.svg"
         }
+      },
+      {
+        "command": "dotagentsSidebar.split.codex",
+        "title": "dotagents-sidebar: Split With Codex Session"
       },
       {
         "command": "dotagentsSidebar.close",
@@ -120,24 +134,29 @@
           "group": "navigation@1"
         },
         {
-          "command": "dotagentsSidebar.newTerminal",
+          "command": "dotagentsSidebar.new.codex",
           "when": "view == dotagentsSidebar.view",
           "group": "navigation@2"
         },
         {
-          "command": "dotagentsSidebar.split",
+          "command": "dotagentsSidebar.newTerminal",
           "when": "view == dotagentsSidebar.view",
           "group": "navigation@3"
         },
         {
-          "command": "dotagentsSidebar.restart",
+          "command": "dotagentsSidebar.split",
           "when": "view == dotagentsSidebar.view",
           "group": "navigation@4"
         },
         {
-          "command": "dotagentsSidebar.close",
+          "command": "dotagentsSidebar.restart",
           "when": "view == dotagentsSidebar.view",
           "group": "navigation@5"
+        },
+        {
+          "command": "dotagentsSidebar.close",
+          "when": "view == dotagentsSidebar.view",
+          "group": "navigation@6"
         }
       ],
       "webview/context": [
@@ -168,6 +187,11 @@
         {
           "id": "dotagentsSidebar.profile.claude",
           "title": "Claude Code",
+          "icon": "sparkle"
+        },
+        {
+          "id": "dotagentsSidebar.profile.codex",
+          "title": "Codex",
           "icon": "sparkle"
         }
       ]

@@ -5,21 +5,33 @@ import path from "node:path";
 import { test } from "node:test";
 
 const require = createRequire(import.meta.url);
-const { AGENT } = require("../agent.js");
+const { AGENTS } = require("../agent.js");
 const root = path.join(import.meta.dirname, "..");
 const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 
-test("Claude Code has a terminal profile, its activation event and its icons", () => {
+test("each agent has a terminal profile, its activation event and its icons", () => {
   const profiles = pkg.contributes.terminal.profiles;
-  assert.equal(profiles.length, 1);
-  const [profile] = profiles;
-  assert.equal(profile.id, "dotagentsSidebar.profile.claude");
-  assert.equal(profile.title, AGENT.name);
-  // VS Code drops a contributed profile whose icon is a path (terminalExtensionPoints.ts), so
-  // the menu gets a codicon; the terminal's tab gets the agent's mark from the extension
-  assert.match(profile.icon, /^[a-z-]+$/);
-  assert.ok(pkg.activationEvents.includes("onTerminalProfile:dotagentsSidebar.profile.claude"));
-  for (const theme of ["light", "dark"]) assert.ok(fs.existsSync(path.join(root, "media", `claude-code-${theme}.svg`)), theme);
+  assert.deepEqual(profiles.map((p) => p.id), ["dotagentsSidebar.profile.claude", "dotagentsSidebar.profile.codex"]);
+  for (const profile of profiles) {
+    const agent = AGENTS[profile.id.split(".").pop()];
+    assert.equal(profile.title, agent.name);
+    // VS Code drops a contributed profile whose icon is a path (terminalExtensionPoints.ts), so
+    // the menu gets a codicon; the terminal's tab gets the agent's mark from the extension
+    assert.match(profile.icon, /^[a-z-]+$/);
+    assert.ok(pkg.activationEvents.includes(`onTerminalProfile:${profile.id}`));
+  }
+  for (const mark of ["claude-code", "codex"]) {
+    for (const theme of ["light", "dark"]) assert.ok(fs.existsSync(path.join(root, "media", `${mark}-${theme}.svg`)), `${mark}-${theme}`);
+  }
+});
+
+test("Codex has its own new and split commands; the new session button stays Claude Code's", () => {
+  const commands = pkg.contributes.commands.map((c) => c.command);
+  for (const name of ["new", "new.codex", "split", "split.codex"]) assert.ok(commands.includes(`dotagentsSidebar.${name}`), name);
+  const buttons = pkg.contributes.menus["view/title"];
+  assert.equal(buttons.find((b) => b.group === "navigation@1").command, "dotagentsSidebar.new");
+  assert.equal(buttons.filter((b) => b.command === "dotagentsSidebar.new.codex").length, 1);
+  assert.equal(new Set(buttons.map((b) => b.group)).size, buttons.length);
 });
 
 test("every command the menus use is declared", () => {

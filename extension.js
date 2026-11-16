@@ -6,7 +6,7 @@ const vscode = require("vscode");
 const { writer } = require("./log.js");
 const { spawn } = require("child_process");
 const host = require("./host");
-const { AGENT, TERMINAL, terminalCommand, newConversation, command, conversationArgs, env, newer } = require("./agent");
+const { AGENTS, agentOf, TERMINAL, terminalCommand, newConversation, command, conversationArgs, codexHome, readRollouts, findCodexSessions, env, newer } = require("./agent");
 const sessions = require("./sessions");
 const keys = require("./media/keys.js");
 
@@ -399,9 +399,10 @@ class SidebarView {
   // window reload, this is where the agents that kept running show up again
   async replay() {
     if (!this.state.sessions.length) {
-      this.state = sessions.add(this.state, AGENT.name);
+      this.state = sessions.add(this.state, AGENTS.claude.name);
       this.context.workspaceState.update("sessions", this.state);
     }
+    this.watchCodex(); // a Codex session found no conversation before the window reloaded
     const running = await this.snapshot();
     const screens = {};
     const sizes = {}; // what size each screen was drawn at (a host from before this field has none)
@@ -423,13 +424,20 @@ class SidebarView {
     const terminal = this.terminal(id);
     if (this.session(id).kind === "terminal") return this.startTerminal(id, terminal);
     // Open the session's conversation again; the first time, a new one with an id of our own
+    const agent = agentOf(this.session(id));
     let conversation = fresh ? undefined : this.session(id).conversation;
     const resume = !!conversation;
-    if (!conversation) conversation = newConversation();
     const startedAt = Date.now();
-    this.update(sessions.remember(this.state, id, { conversation, startedAt }));
+    if (agent.id === "codex") {
+      // Codex picks its own conversation id: a new one is looked for in its rollouts (watchCodex)
+      this.update(sessions.remember(this.state, id, resume ? { startedAt } : { conversation: undefined, startedAt, cwd: cwd() }));
+      if (!resume) this.watchCodex();
+    } else {
+      if (!conversation) conversation = newConversation();
+      this.update(sessions.remember(this.state, id, { conversation, startedAt }));
+    }
     Object.assign(terminal, { started: true, exited: false, resume, startedAt });
-    const { file, args } = command(process.platform, conversationArgs(conversation, resume));
+    const { file, args } = command(process.platform, agent, conversationArgs(agent, conversation, resume));
     this.post({ type: "clear", id });
     this.send({
       type: "create",
@@ -472,6 +480,7 @@ class SidebarView {
       this.send({ type: "note", id, data: `\r\n\x1b[2m[${TERMINAL.name} exited with code ${exitCode}. Press Enter to start it again.]\x1b[0m\r\n` });
       return;
     }
+    const agent = agentOf(this.session(id));
     // Leaving the agent closes its session, like a shell closes its terminal
     if (exitCode === 0) return this.close(id);
     // A conversation that can't be resumed (never saved, or deleted): start a new one
@@ -480,13 +489,14 @@ class SidebarView {
     // 127 is bash's "command not found"
     const reason =
       exitCode === 127
-        ? `${AGENT.command} was not found on the PATH set up by ~/.bashrc. ${AGENT.install}`
-        : `${AGENT.name} exited with code ${exitCode}`;
+        ? `${agent.command} was not found on the PATH set up by ~/.bashrc. ${agent.install}`
+        : `${agent.name} exited with code ${exitCode}`;
     this.send({ type: "note", id, data: `\r\n\x1b[2m[${reason}. Press Enter to start it again.]\x1b[0m\r\n` });
   }
 
-  open(action, kind) {
-    this.update(kind === "terminal" ? action(this.state, TERMINAL.name, "terminal") : action(this.state, AGENT.name));
+  // The agent of a new session: the one asked for, else Claude Code
+  open(action, kind, provider) {
+    this.update(kind === "terminal" ? action(this.state, TERMINAL.name, "terminal") : action(this.state, agentOf({ provider }).name, undefined, provider));
     vscode.commands.executeCommand("dotagentsSidebar.view.focus");
   }
 
@@ -495,6 +505,36 @@ class SidebarView {
     this.send({ type: "kill", id });
     this.terminals.delete(id);
     this.update(sessions.close(this.state, id));
+  }
+
+  // Codex tells nothing of its conversation, so the sessions still without one look for it in the
+  // rollouts every few seconds (a rollout may only appear once the first prompt is sent), until
+  // each has one
+  watchCodex() {
+    if (this.watching || !this.pendingCodex().length) return;
+    this.watching = setInterval(() => {
+      try {
+        const pending = this.pendingCodex();
+        if (pending.length) this.findConversations(pending);
+        if (this.pendingCodex().length) return;
+      } catch (err) {
+        this.log.error("Could not look for the Codex conversations", err);
+      }
+      clearInterval(this.watching);
+      this.watching = undefined;
+    }, 3000);
+  }
+
+  pendingCodex() {
+    return this.state.sessions.filter((s) => s.provider === "codex" && !s.conversation && s.startedAt && s.cwd);
+  }
+
+  findConversations(pending) {
+    const taken = new Set(this.state.sessions.map((s) => s.conversation));
+    const rollouts = readRollouts(codexHome(), Math.min(...pending.map((s) => s.startedAt))).filter((r) => !taken.has(r.id));
+    for (const [id, conversation] of Object.entries(findCodexSessions(pending, rollouts))) {
+      if (this.session(id)) this.update(sessions.remember(this.state, id, { conversation }));
+    }
   }
 
   // A new process in the same conversation
@@ -557,6 +597,7 @@ class SidebarView {
   // The window is reloading or closing: let go of the host, which keeps the agents running
   dispose() {
     this.disposed = true;
+    clearInterval(this.watching);
     this.log.dispose();
     this.hostReady?.then((channel) => channel.close()).catch(() => {});
   }
@@ -564,12 +605,14 @@ class SidebarView {
   html(webview) {
     const uri = (...p) => webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, ...p));
     const nonce = crypto.randomBytes(16).toString("base64");
-    const agent = { name: AGENT.name, newline: AGENT.newline, icon: String(uri("media", "claude-code-dark.svg")), terminal: { name: TERMINAL.name, icon: String(uri("media", "terminal.svg")) } };
+    const mark = (agent) => ({ name: agent.name, newline: agent.newline, icon: String(uri("media", `${agent.id === "codex" ? "codex" : "claude-code"}-dark.svg`)) });
+    const agents = { claude: mark(AGENTS.claude), codex: mark(AGENTS.codex) };
+    const terminal = { name: TERMINAL.name, icon: String(uri("media", "terminal.svg")) };
     const panel = (name) => String(webview.asWebviewUri(vscode.Uri.joinPath(this.accounts.api.panelRoot, name)));
     // The panel's scripts load only when its tab first opens (media/view.js), so nothing of it runs
     // while the agents are in use
     const accounts = this.accounts ? { icon: String(uri("media", "accounts.svg")), scripts: [panel("avatar.js"), panel("panel.js")], nonce } : null;
-    const settings = JSON.stringify({ ...terminalSettings(), agent, workspace: workspaceName(), home: os.homedir(), keys: this.keys, accounts }).replace(/</g, "\\u003c");
+    const settings = JSON.stringify({ ...terminalSettings(), agents, terminal, workspace: workspaceName(), home: os.homedir(), keys: this.keys, accounts }).replace(/</g, "\\u003c");
     return `<!doctype html>
 <html>
 <head>
@@ -600,15 +643,16 @@ ${accounts ? `<link rel="stylesheet" href="${panel("panel.css")}">` : ""}
   }
 }
 
-function terminalOptions(context) {
-  const { file, args } = command(process.platform);
+function terminalOptions(context, agent) {
+  const { file, args } = command(process.platform, agent);
+  const icon = agent.id === "codex" ? "codex" : "claude-code";
   return {
-    name: AGENT.name,
+    name: agent.name,
     shellPath: file,
     shellArgs: args,
     iconPath: {
-      light: vscode.Uri.joinPath(context.extensionUri, "media", "claude-code-light.svg"),
-      dark: vscode.Uri.joinPath(context.extensionUri, "media", "claude-code-dark.svg"),
+      light: vscode.Uri.joinPath(context.extensionUri, "media", `${icon}-light.svg`),
+      dark: vscode.Uri.joinPath(context.extensionUri, "media", `${icon}-dark.svg`),
     },
   };
 }
@@ -685,15 +729,24 @@ async function activate(context) {
     // The view reads the theme's colors when it loads
     vscode.window.onDidChangeActiveColorTheme(() => view.reload()),
     vscode.commands.registerCommand("dotagentsSidebar.new", () => view.open(sessions.add)),
+    vscode.commands.registerCommand("dotagentsSidebar.new.codex", () => view.open(sessions.add, undefined, "codex")),
     vscode.commands.registerCommand("dotagentsSidebar.newTerminal", () => view.open(sessions.add, "terminal")),
-    // A split is a session of the same kind as the active one: a terminal beside a terminal
-    vscode.commands.registerCommand("dotagentsSidebar.split", () => view.open(sessions.split, view.session(view.state.active)?.kind)),
+    // A split is a session of the same kind as the active one: a terminal beside a terminal, Codex
+    // beside Codex
+    vscode.commands.registerCommand("dotagentsSidebar.split", () => {
+      const active = view.session(view.state.active);
+      view.open(sessions.split, active?.kind, active?.provider);
+    }),
+    vscode.commands.registerCommand("dotagentsSidebar.split.codex", () => view.open(sessions.split, undefined, "codex")),
     onSession("close", (id) => view.close(id)),
     onSession("restart", (id) => view.restart(id)),
     onSession("rename", (id) => view.rename(id)),
     onSession("recolor", (id) => view.recolor(id)),
     vscode.window.registerTerminalProfileProvider("dotagentsSidebar.profile.claude", {
-      provideTerminalProfile: () => new vscode.TerminalProfile(terminalOptions(context)),
+      provideTerminalProfile: () => new vscode.TerminalProfile(terminalOptions(context, AGENTS.claude)),
+    }),
+    vscode.window.registerTerminalProfileProvider("dotagentsSidebar.profile.codex", {
+      provideTerminalProfile: () => new vscode.TerminalProfile(terminalOptions(context, AGENTS.codex)),
     })
   );
 }

@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<p align="center"><b>Claude Code in VS Code's secondary sidebar.<br>Your Claude accounts beside it, live, a click away from switching.</b></p>
+<p align="center"><b>Claude Code and Codex in VS Code's secondary sidebar.<br>Your Claude accounts beside it, live, a click away from switching.</b></p>
 
 <p align="center">
   <a href="#features">Features</a>&nbsp;&nbsp;&nbsp;
@@ -23,7 +23,7 @@
 </p>
 
 > [!NOTE]
-> **An unofficial community project**, not affiliated with or endorsed by Anthropic. It runs Claude Code only.
+> **An unofficial community project**, not affiliated with or endorsed by Anthropic. It runs Claude Code and Codex.
 
 Claude Code's official extension puts it in a chat panel or a terminal tab. This one gives it a view of its own in the secondary sidebar, laid out like VS Code's terminal panel: the agent's terminal UI on the left, the list of sessions on the right, and the agents keep working while the window reloads.
 
@@ -36,7 +36,8 @@ With [dotagents](https://github.com/dotagents-org/dotagents-core), it is also wh
 - **Sessions like terminals.** Each session is an agent in its own terminal; `+` opens one, and the list switches between them while the others keep running.
 - **Splits.** Side by side, joined in the list as the terminal panel's tabs are. Drag a session to reorder it (its split goes with it); with Shift, drop it on another to join that split, or below the last one to leave its split.
 - **Agents survive a reload.** They run in a small host process of their own, so **Developer: Reload Window** brings the view back with every screen as it was.
-- **Back to the conversation.** A session that starts again (a crash, a restart, the next day) opens its conversation with `--resume`.
+- **Claude Code and Codex.** `+` opens Claude Code, the Codex button opens Codex; each session shows its agent's mark.
+- **Back to the conversation.** A session that starts again (a crash, a restart, the next day) opens its conversation with `--resume` (`codex resume` for Codex).
 - **Like the integrated terminal.** Your terminal font and colors, VS Code's shortcuts while a session has focus, copy and paste, a click on a file path to open it, Shift+Enter for a newline, names and colors per session.
 
 **Your Claude accounts, with dotagents**

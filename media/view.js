@@ -1,7 +1,7 @@
 (function () {
   const vscode = acquireVsCodeApi();
   const settings = window.DOTAGENTS_SIDEBAR_SETTINGS;
-  const agent = settings.agent;
+  const agents = settings.agents; // by provider: claude, codex
   const css = getComputedStyle(document.documentElement);
   const color = (name, fallback) => css.getPropertyValue(`--vscode-${name}`).trim() || fallback;
 
@@ -187,9 +187,9 @@
       // image and the text never comes
       if (event.ctrlKey && key === "v") return false;
       // Shift+Enter inserts a newline, sent as the sequence the agent reads as one
-      if (session.kind !== "terminal" && agent.newline && event.shiftKey && !event.ctrlKey && !event.altKey && event.key === "Enter") {
+      if (session.kind !== "terminal" && kind(session).newline && event.shiftKey && !event.ctrlKey && !event.altKey && event.key === "Enter") {
         event.preventDefault();
-        vscode.postMessage({ type: "input", id: session.id, data: agent.newline });
+        vscode.postMessage({ type: "input", id: session.id, data: kind(session).newline });
         return false;
       }
       return true;
@@ -215,7 +215,7 @@
     let lastTitle;
     term.onTitleChange((raw) => {
       const clean = raw.replace(/^[^\p{L}\p{N}]+/u, "").trim();
-      const title = session.kind === "terminal" || clean === agent.name || clean === settings.workspace ? "" : clean;
+      const title = session.kind === "terminal" || clean === kind(session).name || clean === settings.workspace ? "" : clean;
       if (title === lastTitle) return; // a spinner changes only the mark
       lastTitle = title;
       vscode.postMessage({ type: "title", id: session.id, title });
@@ -445,7 +445,7 @@
 
   // What a session runs: the agent, or a terminal
   function kind(session) {
-    return session.kind === "terminal" ? agent.terminal : agent;
+    return session.kind === "terminal" ? settings.terminal : agents[session.provider === "codex" ? "codex" : "claude"];
   }
 
   // The session's name: the one given in the list, else the conversation's title from the agent

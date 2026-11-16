@@ -12,25 +12,26 @@ const EMPTY = { sessions: [], active: null, next: 1 };
 const COLORS = ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"];
 const ROTATION = ["blue", "green", "yellow", "magenta", "cyan", "red"];
 
-// A terminal session has kind "terminal"; an agent session has none
-function create(state, name, group, kind) {
+// A terminal session has kind "terminal"; an agent session has none. An agent session has the
+// provider "codex" or, when it has none, "claude" (the sessions saved before Codex)
+function create(state, name, group, kind, provider) {
   const id = `s${state.next}`;
   const uses = (c) => state.sessions.filter((s) => s.color === c).length;
   const color = ROTATION.reduce((best, c) => (uses(c) < uses(best) ? c : best));
-  const session = { id, name, color, group: group || id, ...(kind ? { kind } : {}) };
+  const session = { id, name, color, group: group || id, ...(kind ? { kind } : {}), ...(provider === "codex" ? { provider } : {}) };
   return { session, next: state.next + 1 };
 }
 
-function add(state, name, kind) {
-  const { session, next } = create(state, name, undefined, kind);
+function add(state, name, kind, provider) {
+  const { session, next } = create(state, name, undefined, kind, provider);
   return { sessions: [...state.sessions, session], active: session.id, next };
 }
 
 // The new session joins the active one's group, right after it
-function split(state, name, kind) {
+function split(state, name, kind, provider) {
   const at = state.sessions.findIndex((s) => s.id === state.active);
-  if (at < 0) return add(state, name, kind);
-  const { session, next } = create(state, name, state.sessions[at].group, kind);
+  if (at < 0) return add(state, name, kind, provider);
+  const { session, next } = create(state, name, state.sessions[at].group, kind, provider);
   const sessions = [...state.sessions.slice(0, at + 1), session, ...state.sessions.slice(at + 1)];
   return { sessions, active: session.id, next };
 }
