@@ -33,7 +33,8 @@ test("the + button opens Claude Code, and the menu beside it picks Claude Code, 
   // The ⌄ right after +, as in the terminal panel: a submenu, not one more button per agent.
   const menu = buttons.find((b) => b.group === "navigation@2");
   assert.equal(menu.submenu, "dotagentsSidebar.newMenu");
-  assert.ok(pkg.contributes.submenus.some((s) => s.id === menu.submenu && s.icon === "$(chevron-down)"));
+  const submenu = pkg.contributes.submenus.find((s) => s.id === menu.submenu);
+  for (const theme of ["light", "dark"]) assert.ok(fs.existsSync(path.join(root, submenu.icon[theme])), `the menu's own ${theme} icon`);
   assert.deepEqual(pkg.contributes.menus[menu.submenu].map((m) => m.command), ["dotagentsSidebar.new", "dotagentsSidebar.new.codex", "dotagentsSidebar.newTerminal"]);
   assert.equal(buttons.filter((b) => b.command === "dotagentsSidebar.new.codex").length, 0);
   assert.equal(new Set(buttons.map((b) => b.group)).size, buttons.length);

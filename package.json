@@ -273,7 +273,10 @@
       {
         "id": "dotagentsSidebar.newMenu",
         "label": "New Session",
-        "icon": "$(chevron-down)"
+        "icon": {
+          "light": "media/new-menu-light.svg",
+          "dark": "media/new-menu-dark.svg"
+        }
       }
     ]
   },
