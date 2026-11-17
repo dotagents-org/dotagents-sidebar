@@ -3,8 +3,8 @@
 ## Requirements
 
 - VS Code **1.106** or newer: the first version with the secondary sidebar's view containers.
-- [Claude Code](https://claude.com/claude-code) (`claude`) installed where the workspace runs, on the `PATH` that `~/.bashrc` sets up: the view starts it with `bash -ic claude` (on Windows, `powershell.exe -NoLogo -Command claude`).
-- For the accounts tab: [dotagents](https://github.com/dotagents-org/dotagents-core) 0.1.0 or later, with its profiles, on the same side as the window ([Accounts](accounts.md)). Without it, the view has the sessions only.
+- Install the agents you want to run where the workspace runs. The view looks for Claude Code (`claude`) and Codex (`codex`) on the `PATH` set by interactive Bash, or by PowerShell on Windows.
+- For the accounts tab, install [dotagents-core](https://github.com/dotagents-org/dotagents-core) with API 2 support (0.2.0) and set up profiles on the same side as the window. Agent sessions work independently. See [Accounts](accounts.md).
 
 ## Install
 
@@ -18,7 +18,7 @@ In a remote window (WSL, SSH, dev containers), install it while connected, so it
 
 ## The first session
 
-Open the secondary sidebar (**View: Toggle Secondary Side Bar Visibility**) and pick the **dotagents: Sidebar** view. `+` starts a Claude Code session in the first workspace folder, or in your home folder when no folder is open. With dotagents set up, the list starts with the accounts tab, and the view opens on it while there is no session yet.
+Open the secondary sidebar (**View: Toggle Secondary Side Bar Visibility**) and pick the **dotagents: Sidebar** view. The title strip has buttons for Claude Code, Codex and your shell. New sessions start in the first workspace folder, or your home folder when no folder is open. The view opens a Claude Code session when there are no saved sessions. With dotagents set up, **Accounts** is the first tab in the list.
 
 ## Updates
 

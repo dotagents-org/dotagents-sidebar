@@ -18,7 +18,7 @@ Codex picks its own conversation id, so the view finds it: the first rollout (`$
 
 ## The title
 
-The view is named after the active tab: the session's agent, or *Accounts* on the accounts tab. The strip on top shows the agent's mark, the workspace and the conversation's name, which Claude Code reports by itself (`/rename`, or the topic it picks). A name given in the list wins. The accounts tab has no strip: the panel starts with its own seal.
+The view is named after the active tab, using the session's agent or *Accounts*. The title strip shows the agent's mark, the workspace and the conversation's name when the agent reports one. Claude Code reports the name set with `/rename` or the topic it picks. A name given in the list wins. The strip above the accounts panel keeps the buttons for new sessions.
 
 ## Keys
 

@@ -36,7 +36,7 @@ With [dotagents](https://github.com/dotagents-org/dotagents-core), it is also wh
 - **Sessions like terminals.** Each session is an agent in its own terminal; the Claude Code or Codex button opens one, and the list switches between them while the others keep running.
 - **Splits.** Side by side, joined in the list as the terminal panel's tabs are. Drag a session to reorder it (its split goes with it); with Shift, drop it on another to join that split, or below the last one to leave its split.
 - **Agents survive a reload.** They run in a small host process of their own, so **Developer: Reload Window** brings the view back with every screen as it was.
-- **Claude Code and Codex.** the title bar has one button per agent, Claude Code and Codex, each with its mark, and one for a terminal; each session shows its agent's mark.
+- **Claude Code and Codex.** the title strip has one button per agent, Claude Code and Codex, each with its mark, and one for a terminal; each session shows its agent's mark.
 - **Back to the conversation.** A session that starts again (a crash, a restart, the next day) opens its conversation with `--resume` (`codex resume` for Codex).
 - **Like the integrated terminal.** Your terminal font and colors, VS Code's shortcuts while a session has focus, copy and paste, a click on a file path to open it, Shift+Enter for a newline, names and colors per session.
 
