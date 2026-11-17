@@ -15,7 +15,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 - **Own icons.** Every button on the title bar and every dotagents mark share one geometry (the face's square, a 1.9 line, the whole box used): a prompt (`>_`) in place of the eyes for the terminal, Claude Code's and Codex's marks for a new session of each, a line down the middle for split, a green circular arrow for restart and a red cross for close, instead of the `+` that now read as "new anything".
 - **File links.** File paths in a session are links, underlined under the mouse: a click opens the file at its line and column (`src/a.ts:41:7`, `(41,7)`, `", line 12"`), or a folder in the Explorer. Only paths that exist are links, tried from the sessions' folder and each workspace folder; a path with spaces needs double quotes. Links an agent marks itself (OSC 8) open too: web pages in the browser, `file://` in the editor.
 - **Sessions:** several Claude Code sessions side by side, with splits like the terminal panel, a session list, and agents that keep running across window reloads (a detached host process).
-- **Your Claude accounts, with [dotagents](https://github.com/dotagents-org/dotagents-core):** on a machine where dotagents has profiles, the list starts with a fixed *Accounts* tab: every account's usage, its state as an avatar, and a switch that puts it on both sides of the machine. The status bar shows the current account and its usage as in the statusLine; a click switches. The data comes from `dotagents start` (dotagents-core 0.1.0 or later), which the view starts in the background when none answers.
+- **Your Claude accounts, with [dotagents](https://github.com/dotagents-org/dotagents-core):** on a machine where dotagents has profiles, the list starts with a fixed *Accounts* tab: every account's usage, its state as an avatar, and a switch that puts it on both sides of the machine. The status bar shows the current account and its usage as in the statusLine; a click switches. The data comes from `dotagents start` (dotagents-core), which the view starts in the background when none answers.
 - **Claude Code only, for now:** OpenCode and Codex are switched off; their support stays in the code.
 
 ### Changed
@@ -55,4 +55,4 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Removed
 
-- **OpenCode and the old Codex support.** Their support, switched off since 0.1.0, is gone from the code. There is no `⌄` provider menu (New Session With..., Split Session With): each agent has its own button.
+- **OpenCode and the old Codex support.** Their support, switched off before, is gone from the code. There is no `⌄` provider menu (New Session With..., Split Session With): each agent has its own button.
