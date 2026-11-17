@@ -155,6 +155,13 @@ function pickItems(data) {
   });
 }
 
+// The status bar's current account may be in just one slot. Switching targets every side.
+function inEverySlot(data, { provider, profile }) {
+  const sides = data?.sides || [];
+  const slots = data?.slots?.[provider];
+  return sides.length > 0 && sides.every((side) => slots?.[side] === profile);
+}
+
 // How to start `dotagents start` on its own. On Windows, `dotagents` is a .cmd, and one started
 // from here would be tied to a console window: closing it, or VS Code, stops the server. So a
 // hidden PowerShell hands it to Start-Process, which runs it hidden and on its own.
@@ -270,7 +277,7 @@ function startAccounts(vscode, context) {
   async function switchAccount() {
     if (!data) return vscode.window.showWarningMessage(`dotagents: ${down}`);
     const pick = await vscode.window.showQuickPick(pickItems(data), { placeHolder: "Switch account, on every side" });
-    if (!pick || pick.profile === data.current?.[pick.provider]?.profile) return;
+    if (!pick || inEverySlot(data, pick)) return;
     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `dotagents: switching to ${pick.profile}` }, async () => {
       const result = await act("switch", { profile: pick.profile });
       const goOn = pick.provider === "claude" ? ". Open conversations go on in the new account when you type continue." : "";
@@ -299,4 +306,4 @@ function startAccounts(vscode, context) {
   };
 }
 
-module.exports = { API_VERSION, forProvider, groupsFor, startCommand, stateDir, hasAccounts, readServer, refusal, usageText, statusFor, toneColor, pickItems, known, panelProviders, startAccounts };
+module.exports = { API_VERSION, forProvider, groupsFor, startCommand, stateDir, hasAccounts, readServer, refusal, usageText, statusFor, toneColor, pickItems, inEverySlot, known, panelProviders, startAccounts };

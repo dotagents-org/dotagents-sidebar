@@ -144,6 +144,19 @@ test("the switch lists both providers' accounts, Claude first, the provider name
   assert.equal(items[3].profile, "dijkstra", "the switch posts the profile, whichever the provider");
 });
 
+test("a marked account can be switched until it is in every slot of its provider", () => {
+  const sides = ["WSL", "Windows"];
+  const slots = { ...both.slots, codex: { WSL: "hopper", Windows: "dijkstra" } };
+  const snapshot = { ...both, sides, slots };
+  const [claude, , codex] = accounts.pickItems(snapshot);
+  assert.equal(accounts.inEverySlot(snapshot, claude), false);
+  assert.equal(accounts.inEverySlot(snapshot, codex), false);
+  assert.equal(accounts.inEverySlot({ ...snapshot, slots: { ...slots, codex: { WSL: "hopper", Windows: "hopper" } } }, codex), true);
+  const peerOff = { ...snapshot, slots: both.slots, peer: { name: "Windows", up: false } };
+  assert.equal(accounts.inEverySlot(peerOff, codex), false, "the offline side's slot is unknown");
+  assert.equal(accounts.inEverySlot({ ...both, sides: ["WSL"] }, codex), true, "a standalone machine has one slot");
+});
+
 test("a provider's view takes its profiles, its slots and its current from an API 2 answer", () => {
   const codex = accounts.forProvider(both, "codex");
   assert.deepEqual(codex.profiles.map((p) => p.name), ["hopper", "dijkstra"]);
