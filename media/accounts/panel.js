@@ -147,9 +147,8 @@
               "div",
               { class: "line" },
               el("span", { class: "name", style: { color: nameColor(p.color) } }, p.name),
-              p.provider && p.provider !== "claude"
-                ? el("span", { class: "icon mark", style: { color: nameColor(p.color) }, title: `${p.name}: a ${provider.title} account for ${provider.agent}` }, icon([provider.mark]))
-                : el("button", { type: "button", class: "icon", style: { color: nameColor(p.color) }, title: `Open ${p.name}'s Claude Desktop`, "aria-label": `Open ${p.name}'s Claude Desktop`, onclick: run("desktop", { profile: p.name }, null) }, icon([provider.mark]))
+              // Every account has its Desktop app on Windows: Claude Desktop, or the ChatGPT app.
+              el("button", { type: "button", class: "icon", style: { color: nameColor(p.color) }, title: `Open ${p.name}'s ${provider.title} Desktop`, "aria-label": `Open ${p.name}'s ${provider.title} Desktop`, onclick: run("desktop", { profile: p.name }, null) }, icon([provider.mark]))
             ),
             status && el("span", { class: `status small ${p.avatar === "error" ? "high" : "muted"}` }, status)
           )

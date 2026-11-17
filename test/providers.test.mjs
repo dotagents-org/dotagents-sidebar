@@ -62,7 +62,9 @@ test("the extension and panel share account labels and marks, while sessions kee
     view.render(data);
     const nodes = flatten(view.host);
     assert.ok(nodes.includes("ChatGPT test"));
-    assert.ok(nodes.some((n) => n.attributes?.title === "codex: a ChatGPT test account for Codex"));
+    // Every account's mark opens its Desktop app, the ChatGPT app for a ChatGPT one.
+    assert.ok(nodes.some((n) => n.attributes?.title === "Open codex's ChatGPT test Desktop"));
+    assert.ok(nodes.some((n) => n.attributes?.title === "Open claude's Claude Desktop"));
     for (const p of Object.values(providers)) assert.ok(nodes.some((n) => n.attributes?.d === p.mark), p.title);
   } finally {
     providers.codex.title = saved;
