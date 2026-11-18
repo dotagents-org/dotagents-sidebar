@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { test } from "node:test";
 
-const { EMPTY, COLORS, ROTATION, add, split, close, drop, dropEnd, join, unsplit, rename, recolor, activate, visible, restore } = createRequire(import.meta.url)("../sessions.js");
+const { EMPTY, COLORS, ROTATION, add, split, close, drop, dropEnd, join, unsplit, resize, rename, recolor, activate, visible, restore } = createRequire(import.meta.url)("../sessions.js");
+const { leaves, shape, DEPTH } = createRequire(import.meta.url)("../media/layout.js");
 
 test("the colors are the terminal panel's, in its order; new sessions take turns among the bright ones", () => {
   assert.deepEqual(COLORS, ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]);
@@ -39,7 +40,7 @@ test("add opens a session in a group of its own and shows it", () => {
   assert.notEqual(two.sessions[0].group, two.sessions[1].group);
   assert.deepEqual(two.sessions[1], { id: "s2", name: "Claude Code", color: ROTATION[1], group: "s2" });
   assert.deepEqual(names(visible(two)), ["s2"]);
-  assert.deepEqual(EMPTY, { sessions: [], active: null, next: 1 });
+  assert.deepEqual(EMPTY, { sessions: [], active: null, next: 1, layouts: {} });
 });
 
 test("split opens a session next to the active one, in its group", () => {
@@ -235,4 +236,97 @@ test("a Codex session has the provider; a Claude Code one has none, so saved ses
   // A state saved before Codex restores as it was
   const saved = { sessions: [{ id: "s1", name: "Claude Code", color: "blue", group: "s1", conversation: "abc" }], active: "s1", next: 2 };
   assert.deepEqual(restore(saved).sessions, saved.sessions);
+});
+
+// The tree of the active session's group, and its leaves
+const tree = (state) => state.layouts[state.sessions.find((s) => s.id === state.active).group];
+
+test("a split goes to the side asked for: after the session in the list for right and down, before it for left and up", () => {
+  for (const [dir, axis, order] of [["right", "row", ["s1", "s2"]], ["down", "column", ["s1", "s2"]], ["left", "row", ["s2", "s1"]], ["up", "column", ["s2", "s1"]]]) {
+    const state = split(add(EMPTY, "A"), "A", undefined, undefined, dir);
+    assert.deepEqual(ids(state), order, dir);
+    assert.equal(tree(state).axis, axis, dir);
+    assert.deepEqual(leaves(tree(state)), order, dir);
+    assert.equal(state.active, "s2");
+  }
+});
+
+test("splits nest, the list following the tree's leaves", () => {
+  let state = add(add(EMPTY, "A"), "A"); // s1 | s2
+  state = split(activate(state, "s1"), "A", undefined, undefined, "down"); // s1 over s3
+  state = split(state, "A", undefined, undefined, "left", "s1"); // s4 left of s1, above s3
+  assert.deepEqual(ids(state), ["s4", "s1", "s3", "s2"]);
+  assert.deepEqual(tree(state), { axis: "column", ratio: 0.5, a: { axis: "row", ratio: 0.5, a: "s4", b: "s1" }, b: "s3" });
+  assert.equal(state.layouts.s2, undefined); // alone: no layout
+});
+
+test("closing a session in a nested split gives its space to its sibling and keeps the rest", () => {
+  let state = split(add(EMPTY, "A"), "A", undefined, undefined, "right"); // s1 | s2
+  state = split(state, "A", undefined, undefined, "down"); // s1 | (s2 over s3)
+  state = resize(state, "s1", shape(tree(state)), [], 0.3);
+  const closed = close(state, "s2");
+  assert.deepEqual(tree(closed), { axis: "row", ratio: 0.3, a: "s1", b: "s3" });
+  const alone = close(close(state, "s2"), "s3");
+  assert.deepEqual(alone.layouts, {}); // one session left: no layout
+});
+
+test("reordering a split in the list keeps its shape and ratios", () => {
+  let state = split(add(EMPTY, "A"), "A", undefined, undefined, "right"); // s1 | s2
+  state = split(state, "A", undefined, undefined, "down"); // s1 | (s2 over s3)
+  state = resize(state, "s1", shape(tree(state)), ["b"], 0.7);
+  const moved = drop(state, "s1", "s3"); // s2 s3 s1
+  assert.deepEqual(tree(moved), { axis: "row", ratio: 0.5, a: "s2", b: { axis: "column", ratio: 0.7, a: "s3", b: "s1" } });
+});
+
+test("joining and leaving a split change both trees", () => {
+  let state = split(add(EMPTY, "A"), "A"); // [s1 s2]
+  state = add(state, "A"); // s3 alone
+  const joined = join(state, "s2", "s3"); // s1 alone, [s3 s2]
+  assert.deepEqual(joined.layouts, { s3: { axis: "row", ratio: 0.5, a: "s3", b: "s2" } });
+  const left = unsplit(joined, "s2");
+  assert.deepEqual(left.layouts, {});
+});
+
+test("resize clamps the ratio and ignores a path to no split", () => {
+  const state = split(add(EMPTY, "A"), "A");
+  const was = shape(tree(state));
+  assert.equal(tree(resize(state, "s1", was, [], 0.99)).ratio, 0.9);
+  assert.equal(tree(resize(state, "s1", was, [], 0.01)).ratio, 0.1);
+  assert.equal(resize(state, "s1", was, ["a"], 0.3), state);
+  assert.equal(resize(state, "nope", was, [], 0.3), state);
+  assert.equal(resize(state, "constructor", "s1", [], 0.3), state); // only the state's own groups
+  assert.equal(resize(state, "s1", was, [], NaN), state);
+});
+
+test("a border dragged in a tree that has changed since does nothing", () => {
+  let state = split(add(EMPTY, "A"), "A", undefined, undefined, "right"); // s1 | s2
+  state = split(state, "A", undefined, undefined, "down"); // s1 | (s2 over s3)
+  const dragged = shape(tree(state)); // the inner border, at ["b"], is being dragged...
+  state = close(state, "s1"); // ...when s1 closes: ["b"] is now nothing, [] the other border
+  assert.equal(resize(state, "s1", dragged, [], 0.3), state);
+  assert.equal(resize(state, "s1", dragged, ["b"], 0.3), state);
+});
+
+test("a split that would sit deeper than DEPTH is refused", () => {
+  let state = add(EMPTY, "A");
+  for (let i = 0; i <= DEPTH; i++) state = split(state, "A", undefined, undefined, i % 2 ? "down" : "right");
+  assert.equal(state.sessions.length, DEPTH + 2);
+  const deepest = state.active;
+  assert.equal(split(state, "A", undefined, undefined, "right", deepest), state);
+  const other = add(state, "A");
+  assert.equal(join(other, other.active, deepest), other);
+  assert.notEqual(split(state, "A", undefined, undefined, "right", "s1"), state); // a shallower one still splits
+});
+
+test("restore keeps a saved tree that fits, and lays out an older split side by side in equal parts", () => {
+  const sessions = [{ id: "s1", group: "a" }, { id: "s2", group: "a" }, { id: "s3", group: "a" }, { id: "s4", group: "b" }];
+  const old = restore({ sessions, active: "s1", next: 5 });
+  assert.deepEqual(old.layouts, { a: { axis: "row", ratio: 1 / 3, a: "s1", b: { axis: "row", ratio: 0.5, a: "s2", b: "s3" } } });
+  assert.equal(restore({ sessions, active: "s1", next: 5, layouts: { b: { axis: "row", ratio: 0.5, a: "s4", b: "s4" } } }).layouts.b, undefined);
+  const saved = { axis: "column", ratio: 0.4, a: "s3", b: { axis: "row", ratio: 0.5, a: "s1", b: "s2" } };
+  const kept = restore({ sessions, active: "s1", next: 5, layouts: { a: saved } });
+  assert.deepEqual(kept.layouts.a, saved);
+  assert.deepEqual(ids(kept), ["s3", "s1", "s2", "s4"]); // the list follows the tree
+  const wrong = restore({ sessions, active: "s1", next: 5, layouts: { a: { axis: "row", ratio: 0.5, a: "s1", b: "s9" } } });
+  assert.deepEqual(wrong.layouts.a, old.layouts.a);
 });
