@@ -11,3 +11,4 @@ scripts/**
 assets/**
 .github/**
 docs/**
+webview/globals.d.ts

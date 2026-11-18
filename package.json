@@ -27,7 +27,7 @@
   ],
   "icon": "media/icon.png",
   "scripts": {
-    "test": "tsc -p . && node --test",
+    "test": "tsc -p . && tsc -p webview && node --test",
     "package": "npx --yes @vscode/vsce@3 package -o dotagents-sidebar.vsix"
   },
   "engines": {

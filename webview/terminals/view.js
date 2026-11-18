@@ -257,7 +257,7 @@
     for (const type of ["mousedown", "mouseup", "auxclick"]) {
       el.addEventListener(
         type,
-        (event) => {
+        (/** @type {MouseEvent} */ event) => {
           if (event.button === 2) event.stopPropagation();
           else if (type === "mousedown" && event.button === 0) terminal.selection++;
         },
@@ -353,7 +353,7 @@
     let target = null;
     const box = list.getBoundingClientRect();
     if (event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom) {
-      const row = document.elementFromPoint(event.clientX, event.clientY)?.closest(".item");
+      const row = /** @type {HTMLElement | null} */ (document.elementFromPoint(event.clientX, event.clientY)?.closest(".item"));
       if (!row) found = agentDrag.planEnd(state.sessions, drag.id, shift); // below the last session: the end
       else if (row.dataset.session) {
         target = row.dataset.session; // (the accounts tab takes nothing)
@@ -437,7 +437,7 @@
     } else if (event.key === "Shift") track(drag.last, event.type === "keydown");
   }
   list.addEventListener("pointerdown", (event) => {
-    const row = event.target.closest(".item[data-session]");
+    const row = /** @type {HTMLElement | null} */ (/** @type {Element} */ (event.target).closest(".item[data-session]"));
     if (event.button !== 0 || !row || drag) return;
     drag = { id: row.dataset.session, pointer: event.pointerId, x: event.clientX, y: event.clientY, last: event, active: false, shift: false };
     window.addEventListener("pointermove", onDragMove);

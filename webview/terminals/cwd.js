@@ -33,7 +33,7 @@ const agentCwd = (() => {
 
   // What the title shows, as the parts of a path. A Windows path is shown as Windows shows it
   // (C:\Users\me\work); on Linux, from ~ when the folder is in the home folder, else the whole path
-  function segments(path, { home } = {}) {
+  function segments(path, /** @type {{ home?: string }} */ { home } = {}) {
     const raw = String(path);
     const p = raw.replace(/\\/g, "/").replace(/(.)\/+$/, "$1");
     const parts = (rest) => rest.split("/").filter(Boolean);
