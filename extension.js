@@ -567,22 +567,22 @@ class SidebarView {
       dark: vscode.Uri.joinPath(this.context.extensionUri, "media", `${name}-dark.svg`),
     });
     const kinds = [
-      { kind: "claude", label: AGENTS.claude.name, iconPath: icon("claude-code") },
-      { kind: "codex", label: AGENTS.codex.name, iconPath: icon("codex") },
-      { kind: "terminal", label: TERMINAL.name, iconPath: icon("terminal") },
+      { agent: "claude", label: AGENTS.claude.name, iconPath: icon("claude-code") },
+      { agent: "codex", label: AGENTS.codex.name, iconPath: icon("codex") },
+      { agent: "terminal", label: TERMINAL.name, iconPath: icon("terminal") },
     ];
-    const ordered = [...kinds.filter((k) => k.kind === current), ...kinds.filter((k) => k.kind !== current)];
+    const ordered = [...kinds.filter((k) => k.agent === current), ...kinds.filter((k) => k.agent !== current)];
     const pick = await vscode.window.showQuickPick(
-      ordered.map((k) => ({ ...k, description: target && k.kind === current ? "the same as this session" : "" })),
+      ordered.map((k) => ({ ...k, description: target && k.agent === current ? "the same as this session" : "" })),
       { title: "Split Session", placeHolder: "Open what?" }
     );
     if (!pick) return;
-    if (!target) return this.open(sessions.add, pick.kind === "terminal" ? "terminal" : undefined, pick.kind);
+    if (!target) return this.open(sessions.add, pick.agent === "terminal" ? "terminal" : undefined, pick.agent);
     if (!this.session(id)) return; // closed while the lists were open
     if (!sessions.canSplit(this.state, id)) return this.tooDeep();
     this.context.globalState.update("splitDirection", dir);
     const action = (state, name, kind, provider) => sessions.split(state, name, kind, provider, dir, id);
-    this.open(action, pick.kind === "terminal" ? "terminal" : undefined, pick.kind);
+    this.open(action, pick.agent === "terminal" ? "terminal" : undefined, pick.agent);
   }
 
   tooDeep() {

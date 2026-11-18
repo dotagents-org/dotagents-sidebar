@@ -110,6 +110,7 @@ test("Split Session... asks the side, then the kind, the last side and the sessi
   await sidebar.split();
   assert.deepEqual(asked[0].items.map((i) => i.label), ["Right", "Down", "Left", "Up"]); // nothing used yet
   assert.deepEqual(asked[1].items.map((i) => i.label), ["Terminal", "Claude Code", "Codex"]); // the terminal's kind first
+  assert.ok(asked[1].items.every((i) => i.kind === undefined), "kind is VS Code's QuickPickItemKind (a separator or not)");
   assert.deepEqual(sidebar.state.sessions.map((s) => [s.id, s.provider]), [["s1", undefined], ["s2", "codex"]]);
   assert.equal(sidebar.state.layouts.s1.axis, "column");
   assert.equal(global.get("splitDirection"), "down");
