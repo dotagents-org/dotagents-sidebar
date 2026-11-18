@@ -108,7 +108,7 @@ test("an agent exit keeps the dim notice in the host's screen", async () => {
 test("Split Session... asks the side, then the kind, the last side and the session's kind first", async () => {
   const { view: sidebar, asked, global } = view("terminal", { picks: ["Down", "Codex"] });
   await sidebar.split();
-  assert.deepEqual(asked[0].items.map((i) => i.label), ["Right", "Left", "Down", "Up"]); // nothing used yet
+  assert.deepEqual(asked[0].items.map((i) => i.label), ["Right", "Down", "Left", "Up"]); // nothing used yet
   assert.deepEqual(asked[1].items.map((i) => i.label), ["Terminal", "Claude Code", "Codex"]); // the terminal's kind first
   assert.deepEqual(sidebar.state.sessions.map((s) => [s.id, s.provider]), [["s1", undefined], ["s2", "codex"]]);
   assert.equal(sidebar.state.layouts.s1.axis, "column");
@@ -117,7 +117,7 @@ test("Split Session... asks the side, then the kind, the last side and the sessi
   const again = view(undefined, { picks: ["Down", "Claude Code"] });
   again.global.set("splitDirection", "left");
   await again.view.split();
-  assert.deepEqual(again.asked[0].items.map((i) => i.label), ["Left", "Right", "Down", "Up"]);
+  assert.deepEqual(again.asked[0].items.map((i) => i.label), ["Left", "Right", "Down", "Up"]); // the last one first, the rest in order
   assert.deepEqual(again.asked[1].items.map((i) => i.label), ["Claude Code", "Codex", "Terminal"]);
 });
 

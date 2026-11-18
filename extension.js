@@ -125,8 +125,8 @@ function rightClick(terminal) {
 // The sides a split can open on, in the order Split Session... lists them after the last one used
 const DIRECTIONS = [
   { dir: "right", label: "Right", description: "beside it, on the right", icon: "split-horizontal" },
-  { dir: "left", label: "Left", description: "beside it, on the left", icon: "split-horizontal" },
   { dir: "down", label: "Down", description: "below it", icon: "split-vertical" },
+  { dir: "left", label: "Left", description: "beside it, on the left", icon: "split-horizontal" },
   { dir: "up", label: "Up", description: "above it", icon: "split-vertical" },
 ];
 
