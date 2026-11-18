@@ -76,7 +76,7 @@ The eyes and the dot in the corner say how each account is:
 
 You need VS Code 1.106+ and [Claude Code](https://claude.com/claude-code) on the `PATH` where the workspace runs.
 
-1. Download `dotagents-sidebar.vsix` from the [latest release](https://github.com/dotagents-org/dotagents-sidebar/releases/latest).
+1. In a clone of this repository: `npm install`, then `npm run package`, which writes `dotagents-sidebar.vsix`.
 2. Run **Extensions: Install from VSIX...** (in a remote window, while connected), then **Developer: Reload Window**.
 3. Open the secondary sidebar and pick **dotagents: Sidebar**; the Claude Code button starts a session.
 

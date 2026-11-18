@@ -8,9 +8,9 @@
 
 ## Install
 
-The extension is not on the Marketplace. Install the `.vsix` from a release:
+The extension is not on the Marketplace and has no release yet, so build the `.vsix` from the repository:
 
-1. Download `dotagents-sidebar.vsix` from the [latest release](https://github.com/dotagents-org/dotagents-sidebar/releases/latest).
+1. In a clone of this repository: `npm install`, then `npm run package`, which writes `dotagents-sidebar.vsix`.
 2. In VS Code, run **Extensions: Install from VSIX...** and pick the file, or run `code --install-extension dotagents-sidebar.vsix`.
 3. Run **Developer: Reload Window**.
 
@@ -22,4 +22,4 @@ Open the secondary sidebar (**View: Toggle Secondary Side Bar Visibility**) and 
 
 ## Updates
 
-VS Code can't update an extension installed from a `.vsix`, so once a day the extension looks for a newer GitHub release and offers to install it, show its notes or skip that version. The running agents survive the update when the host's messages didn't change ([Architecture](architecture.md#the-host)).
+VS Code can't update an extension installed from a `.vsix`. To update, pull the repository, build the `.vsix` again and install it the same way. The running agents survive the update when the host's messages didn't change ([Architecture](architecture.md#the-host)).

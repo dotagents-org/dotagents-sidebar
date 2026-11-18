@@ -55,4 +55,5 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Removed
 
+- **The daily update check.** It looked for a newer GitHub release to install; with no release published, build the `.vsix` from the repository instead (Getting started).
 - **OpenCode and the old Codex support.** Their support, switched off before, is gone from the code. There is no `⌄` provider menu (New Session With..., Split Session With): each agent has its own button.

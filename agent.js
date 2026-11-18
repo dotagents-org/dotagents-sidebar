@@ -73,11 +73,5 @@ function env(processEnv) {
   return result;
 }
 
-function newer(a, b) {
-  const x = a.split(".").map(Number);
-  const y = b.split(".").map(Number);
-  for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
-  return false;
-}
 
-module.exports = { AGENTS, agentOf, TERMINAL, terminalCommand, newConversation, command, conversationArgs, env, newer };
+module.exports = { AGENTS, agentOf, TERMINAL, terminalCommand, newConversation, command, conversationArgs, env };

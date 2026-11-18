@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { test } from "node:test";
 
 // Plain CommonJS, loaded as VS Code loads it
-const { AGENTS, agentOf, terminalCommand, newConversation, command, conversationArgs, env, newer } = createRequire(import.meta.url)("../agent.js");
+const { AGENTS, agentOf, terminalCommand, newConversation, command, conversationArgs, env } = createRequire(import.meta.url)("../agent.js");
 
 const { claude, codex } = AGENTS;
 
@@ -38,13 +38,6 @@ test("env describes the terminal and drops VS Code's own process variables", () 
   });
 });
 
-test("newer compares versions by number, not by text", () => {
-  assert.equal(newer("0.10.0", "0.9.0"), true);
-  assert.equal(newer("1.0.0", "0.9.9"), true);
-  assert.equal(newer("0.6.0", "0.6.0"), false);
-  assert.equal(newer("0.5.9", "0.6.0"), false);
-  assert.equal(newer("1.0", "1.0.0"), false);
-});
 
 test("Claude Code opens with an id the view chooses, and resumes with it", () => {
   const id = newConversation();
