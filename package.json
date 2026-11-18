@@ -90,7 +90,7 @@
       },
       {
         "command": "dotagentsSidebar.split",
-        "title": "Split Session",
+        "title": "Split Session...",
         "icon": {
           "light": "media/split-light.svg",
           "dark": "media/split-dark.svg"
@@ -98,13 +98,13 @@
         "category": "dotagents-sidebar"
       },
       {
-        "command": "dotagentsSidebar.split.claude",
-        "title": "Split With Claude Code Session",
+        "command": "dotagentsSidebar.copy",
+        "title": "Copy",
         "category": "dotagents-sidebar"
       },
       {
-        "command": "dotagentsSidebar.split.codex",
-        "title": "Split With Codex Session",
+        "command": "dotagentsSidebar.paste",
+        "title": "Paste",
         "category": "dotagents-sidebar"
       },
       {
@@ -142,26 +142,51 @@
       }
     ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "dotagentsSidebar.copy",
+          "when": "false"
+        },
+        {
+          "command": "dotagentsSidebar.paste",
+          "when": "false"
+        }
+      ],
       "webview/context": [
         {
+          "command": "dotagentsSidebar.split",
+          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection =~ /^(session|pane)$/",
+          "group": "0_split@1"
+        },
+        {
+          "command": "dotagentsSidebar.copy",
+          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection == 'pane'",
+          "group": "1_clipboard@1"
+        },
+        {
+          "command": "dotagentsSidebar.paste",
+          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection == 'pane'",
+          "group": "1_clipboard@2"
+        },
+        {
           "command": "dotagentsSidebar.rename",
-          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection == 'session'",
-          "group": "1_edit@1"
+          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection =~ /^(session|pane)$/",
+          "group": "2_edit@1"
         },
         {
           "command": "dotagentsSidebar.recolor",
-          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection == 'session'",
-          "group": "1_edit@2"
+          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection =~ /^(session|pane)$/",
+          "group": "2_edit@2"
         },
         {
           "command": "dotagentsSidebar.restart",
-          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection == 'session'",
-          "group": "2_run@1"
+          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection =~ /^(session|pane)$/",
+          "group": "3_run@1"
         },
         {
           "command": "dotagentsSidebar.close",
-          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection == 'session'",
-          "group": "2_run@2"
+          "when": "webviewId == 'dotagentsSidebar.view' && webviewSection =~ /^(session|pane)$/",
+          "group": "3_run@2"
         }
       ]
     },
@@ -194,6 +219,23 @@
             "DOM renderer. Font-drawn text, but an agent's panels may show hairlines between rows at fractional zoom levels."
           ],
           "description": "How the view draws the terminal. Independent of terminal.integrated.gpuAcceleration."
+        },
+        "dotagentsSidebar.rightClickBehavior": {
+          "type": "string",
+          "enum": [
+            "terminal",
+            "copyPaste",
+            "paste",
+            "menu"
+          ],
+          "default": "terminal",
+          "enumDescriptions": [
+            "As the integrated terminal does (terminal.integrated.rightClickBehavior): copyPaste and paste as below, its other behaviors open the pane's menu.",
+            "Copy the selection, or paste when there is none.",
+            "Always paste.",
+            "Open the pane's menu: Split Session..., Copy, Paste and the session's commands."
+          ],
+          "markdownDescription": "What a right click on a session's pane does. Shift + right click always opens the pane's menu."
         },
         "dotagentsSidebar.keysForVsCode": {
           "type": "array",

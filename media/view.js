@@ -25,8 +25,14 @@
 
   const header = document.getElementById("header");
   const panes = document.getElementById("panes");
+  // The panes of the groups not in view wait here, hidden, with their terminals alive
+  const stash = document.createElement("div");
+  stash.className = "stash";
+  panes.append(stash);
   const list = document.getElementById("list");
   const terminals = new Map(); // session id -> { el, term, fit, last }
+  let restoring = new Set(); // the sessions whose screen is being written back after a reload
+  let initialized = false; // init came: the state and the screens to draw
   let state = { sessions: [], active: null };
 
   // The keys VS Code keeps while a session has focus, worked out by the extension (media/keys.js);
@@ -125,7 +131,9 @@
   function open(session) {
     const el = document.createElement("div");
     el.className = "pane";
-    panes.appendChild(el);
+    // The pane's menu (Split Session..., Copy, Paste and the session's commands) is VS Code's own
+    el.dataset.vscodeContext = JSON.stringify({ webviewSection: "pane", sessionId: session.id, preventDefaultContextMenuItems: true });
+    stash.appendChild(el);
 
     const term = new Terminal({
       fontFamily: settings.fontFamily,
@@ -140,6 +148,9 @@
       allowProposedApi: true,
       // Claude Code writes its conversation to the normal screen, so the history lives in scrollback
       scrollback: settings.scrollback,
+      // A right click is the pane's (copy, paste or its menu), not a word selected first, as xterm
+      // does by default on macOS
+      rightClickSelectsWord: false,
     });
     const fit = new FitAddon.FitAddon();
     term.loadAddon(fit);
@@ -201,10 +212,11 @@
       navigator.clipboard.writeText(term.getSelection()).catch(() => {});
       term.clearSelection();
     }
-    // A right click, as terminal.integrated.rightClickBehavior says
+    // A right click, as dotagentsSidebar.rightClickBehavior says (the extension works it out):
+    // copyPaste and paste are handled here; with menu, or with Shift, VS Code opens the pane's menu
     el.addEventListener("contextmenu", (event) => {
       const behavior = settings.rightClickBehavior;
-      if (behavior !== "copyPaste" && behavior !== "paste") return;
+      if (event.shiftKey || (behavior !== "copyPaste" && behavior !== "paste")) return;
       event.preventDefault();
       event.stopPropagation();
       if (behavior === "copyPaste" && term.hasSelection()) return copy();
@@ -235,15 +247,43 @@
       if (state.active !== session.id) vscode.postMessage({ type: "activate", id: session.id });
     });
 
-    const terminal = { el, term, fit, last: "" };
+    // The selection's version: a Copy from the menu clears it only if it hasn't changed since
+    const terminal = { el, term, fit, last: "", selection: 0 };
+    term.onSelectionChange(() => terminal.selection++);
+    // A right click belongs to the pane (copy, paste or its menu): its press and release don't
+    // reach the terminal, where they would go to an agent that reads the mouse or open a link. The
+    // contextmenu event, which VS Code opens the menu on, still comes. A left press starts a new
+    // selection, so a Copy still on its way no longer clears it
+    for (const type of ["mousedown", "mouseup", "auxclick"]) {
+      el.addEventListener(
+        type,
+        (event) => {
+          if (event.button === 2) event.stopPropagation();
+          else if (type === "mousedown" && event.button === 0) terminal.selection++;
+        },
+        true
+      );
+    }
     new ResizeObserver(resizing).observe(el);
     return terminal;
   }
 
+  const MIN_PANE = 64; // px, either way: below it a pane is not fitted
   // Fit the terminal to its pane, then center the grid in the pixels the cells leave over
   function layout(id, terminal) {
     const { el, term, fit } = terminal;
     if (el.clientWidth === 0 || el.clientHeight === 0) return; // hidden; keep the last size
+    if (restoring.has(id)) return; // its screen is still being written at the host's size (init)
+    // Too small to show a terminal (a deep split, a narrow view): the agent keeps its last size.
+    // A pane that never reported one reports the terminal's own once, since that first size is
+    // what starts its agent (extension.js, resize)
+    if (el.clientWidth < MIN_PANE || el.clientHeight < MIN_PANE) {
+      if (!terminal.last) {
+        terminal.last = `${term.cols}x${term.rows}`;
+        vscode.postMessage({ type: "resize", id, cols: term.cols, rows: term.rows });
+      }
+      return;
+    }
     try {
       fit.fit();
     } catch {
@@ -489,7 +529,7 @@
     };
     el.append(
       button("close", "Close Session", { type: "close", id: session.id }),
-      button("split", "Split Session", { type: "command", command: "dotagentsSidebar.split" }),
+      button("split", "Split Session...", { type: "command", command: "dotagentsSidebar.split" }),
       button("restart", "Restart Session", { type: "command", command: "dotagentsSidebar.restart" })
     );
     return el;
@@ -561,19 +601,140 @@
     const active = state.sessions.find((s) => s.id === state.active);
     for (const session of state.sessions) {
       if (!terminals.has(session.id)) terminals.set(session.id, open(session));
-      const { el } = terminals.get(session.id);
-      el.classList.toggle("hidden", showAccounts || !active || session.group !== active.group);
-      el.style.setProperty("--session", theme[session.color] || null); // the line around the focused pane
-      panes.appendChild(el); // the panes follow the order of the list
+      terminals.get(session.id).el.style.setProperty("--session", theme[session.color] || null); // the line around the focused pane
     }
+    arrange(showAccounts || !active ? null : active.group);
     accountsPane?.classList.toggle("hidden", !showAccounts);
     if (showAccounts) loadAccounts();
     panes.classList.toggle("empty", !showAccounts && !state.sessions.length);
     list.replaceChildren(...(accounts ? [accountsItem()] : []), ...state.sessions.map(item));
     title(active);
     viewTitle(active);
-    layoutAll();
+    // While a border is dragged, a state that comes in (a title, a folder) waits for the drag to
+    // settle like the rest, instead of fitting the panes where the border is now
+    if (stopResize) resizing();
+    else layoutAll();
     focus();
+  }
+
+  // The active group's panes, laid out as its tree says (media/layout.js): each split a row or a
+  // column, its two halves sized by the ratio and a border between them that can be dragged. The
+  // panes are only moved, never rebuilt, and only when the shape of the tree or the group in view
+  // changes; a new ratio alone is set on the borders already there
+  let arranged = null; // what is drawn: the group and the tree's shape, as text
+  let root = null;
+  let borders = new Map(); // a split's path, as text -> its border (see build)
+  const resizes = new Map(); // the number of a ratio sent -> its border, until answered
+  let stopResize = null; // ends the border drag under way, without saving it
+  let nextResize = 0; // numbers the ratios sent, so each border knows when its own is answered
+  function arrange(group) {
+    const own = group !== null && state.layouts && Object.hasOwn(state.layouts, group);
+    const tree = group === null ? null : own ? state.layouts[group] : state.sessions.find((s) => s.group === group)?.id;
+    const key = JSON.stringify([group, tree && agentLayout.shape(tree)]);
+    if (key === arranged) {
+      if (tree) ratios(tree, []);
+      return;
+    }
+    arranged = key;
+    stopResize?.(); // its border is about to go
+    for (const { el } of terminals.values()) stash.appendChild(el);
+    root?.remove();
+    borders = new Map();
+    root = tree ? build(tree, group, []) : null;
+    if (root) panes.insertBefore(root, stash);
+  }
+
+  // The ratios the extension has, on the borders already drawn. A border being dragged keeps the
+  // drag; one whose drag was sent keeps that ratio until the extension answers that request
+  // (resized), whatever states come in between
+  function ratios(node, path) {
+    if (typeof node === "string") return;
+    const border = borders.get(path.join(""));
+    if (border) {
+      border.saved = node.ratio;
+      if (!border.dragging && border.pending === null) border.size(node.ratio);
+    }
+    ratios(node.a, [...path, "a"]);
+    ratios(node.b, [...path, "b"]);
+  }
+
+  // A pane sits in a cell of its own: the cell takes the share, with no padding of its own, and
+  // the pane fills it, so the terminal fits the same box it is centered in
+  function build(node, group, path) {
+    if (typeof node === "string") {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      const pane = terminals.get(node)?.el;
+      if (pane) cell.append(pane);
+      return cell;
+    }
+    const el = document.createElement("div");
+    el.className = `split ${node.axis}`;
+    const a = build(node.a, group, [...path, "a"]);
+    const b = build(node.b, group, [...path, "b"]);
+    // The first half takes its share of the split's box and the second the rest; the border takes
+    // no room (view.css), so the shares are exact
+    const border = {
+      saved: node.ratio, // what the extension has
+      pending: null, // the request of a dragged ratio sent and not yet answered
+      dragging: false,
+      size: (ratio) => {
+        a.style.flex = `0 0 ${ratio * 100}%`;
+        b.style.flex = "1 1 0";
+      },
+    };
+    borders.set(path.join(""), border);
+    border.size(node.ratio);
+    const sash = document.createElement("div");
+    sash.className = "sash";
+    sash.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0 || stopResize) return;
+      event.preventDefault();
+      sash.setPointerCapture(event.pointerId);
+      sash.classList.add("active");
+      document.body.classList.add("resizing", node.axis);
+      border.dragging = true;
+      const box = el.getBoundingClientRect();
+      const shape = agentLayout.shape(state.layouts[group]);
+      const from = border.pending?.ratio ?? border.saved;
+      let ratio = from;
+      const move = (e) => {
+        const r = node.axis === "row" ? (e.clientX - box.left) / box.width : (e.clientY - box.top) / box.height;
+        ratio = Math.min(agentLayout.MAX, Math.max(agentLayout.MIN, r));
+        border.size(ratio);
+      };
+      // Released: the ratio is sent. Cancelled, the capture lost or the border gone: only undone
+      const stop = () => {
+        sash.removeEventListener("pointermove", move);
+        sash.removeEventListener("pointerup", save);
+        sash.removeEventListener("pointercancel", cancel);
+        sash.removeEventListener("lostpointercapture", cancel);
+        sash.classList.remove("active");
+        document.body.classList.remove("resizing", node.axis);
+        border.dragging = false;
+        stopResize = null;
+      };
+      const cancel = () => {
+        stop();
+        border.size(border.pending?.ratio ?? border.saved);
+      };
+      const save = () => {
+        stop();
+        ratio = Math.round(ratio * 1000) / 1000;
+        border.size(ratio);
+        if (ratio === from) return;
+        border.pending = { request: ++nextResize, ratio };
+        resizes.set(border.pending.request, border);
+        vscode.postMessage({ type: "resizeSplit", group, shape, path, ratio, request: border.pending.request });
+      };
+      stopResize = cancel;
+      sash.addEventListener("pointermove", move);
+      sash.addEventListener("pointerup", save);
+      sash.addEventListener("pointercancel", cancel);
+      sash.addEventListener("lostpointercapture", cancel);
+    });
+    el.append(a, sash, b);
+    return el;
   }
 
   // The view's title follows the tab: "Accounts" on the accounts tab, the active session's agent on
@@ -628,24 +789,35 @@
   window.addEventListener("message", (event) => {
     const msg = event.data;
     if (msg.type === "init") {
+      initialized = true;
       state = msg.state;
+      // The panes with a screen to restore are not fitted (nor is the host told a size) until the
+      // screen is in: the first render would otherwise resize the agent before it is drawn
+      restoring = new Set(Object.keys(msg.screens).filter((id) => msg.screens[id] !== undefined));
       showAccounts = !!accounts && !state.sessions.length; // with no session yet, the accounts
       render();
       for (const [id, screen] of Object.entries(msg.screens)) {
         const terminal = terminals.get(id);
         if (!terminal) continue;
-        // A hidden pane can't be fitted, so its terminal is still 80x24: the screen, drawn at the
-        // host's size, would wrap wrong and stay that way when the pane shows. Give it that size
-        // first; a host from before it said so (it outlives an update) gets the size of a pane that
-        // is showing, which is what the panes had before the reload unless a split changed it
-        if (terminal.el.clientWidth === 0) {
-          const showing = [...terminals.values()].find((t) => t.el.clientWidth > 0);
-          const size = msg.sizes?.[id] || (showing && { cols: showing.term.cols, rows: showing.term.rows });
-          if (size) terminal.term.resize(size.cols, size.rows);
-        }
-        terminal.term.write(screen);
+        // The screen is written at the size the host drew it at, then the pane fits it to its own:
+        // written straight into another size, its lines would wrap wrong and stay that way. That
+        // goes for a hidden pane too, which can't be fitted and is still 80x24. A host from before
+        // it said its sizes (it outlives an update) leaves a showing pane as it is, and a hidden one
+        // takes the size of one that is showing, what the panes had before the reload
+        // (proposeDimensions only measures: nothing is resized, here or in the host)
+        const showing = [terminal, ...terminals.values()].find((t) => t.el.clientWidth > 0);
+        const size = msg.sizes?.[id] || showing?.fit.proposeDimensions();
+        if (size?.cols && size?.rows) terminal.term.resize(size.cols, size.rows);
+        terminal.term.write(screen, () => {
+          restoring.delete(id);
+          layout(id, terminal);
+        });
       }
     } else if (msg.type === "state") {
+      // Before init nothing is drawn: init brings the state as it is then, with the screens. A pane
+      // drawn earlier would report its size, and the extension, not yet knowing the agent runs,
+      // would start it again
+      if (!initialized) return;
       // Another session made active (a click, a new one) leaves the accounts tab
       if (msg.state.active !== state.active) showAccounts = false;
       state = msg.state;
@@ -656,6 +828,30 @@
       linkRequests.delete(msg.request);
     }
     else if (msg.type === "clear") terminals.get(msg.id)?.term.reset();
+    // Copy and Paste from a pane's menu: the selection goes to the extension, which has the clipboard
+    else if (msg.type === "copy") {
+      const terminal = terminals.get(msg.id);
+      const text = terminal?.term.hasSelection() ? terminal.term.getSelection() : "";
+      if (terminal) terminal.copying = { request: msg.request, selection: terminal.selection };
+      vscode.postMessage({ type: "copied", request: msg.request, text });
+    } else if (msg.type === "paste") terminals.get(msg.id)?.term.paste(msg.text);
+    else if (msg.type === "copiedDone") {
+      // Copied: the selection goes, as after Ctrl+C, when it is still the one that was copied
+      const terminal = terminals.get(msg.id);
+      if (terminal?.copying?.request === msg.request) {
+        if (terminal.copying.selection === terminal.selection) terminal.term.clearSelection();
+        terminal.copying = undefined;
+      }
+    } else if (msg.type === "resized") {
+      // The extension has a ratio sent from a border (or turned it down): the border shows what
+      // the extension has, unless it is being dragged again or another of its ratios is on the way
+      const border = resizes.get(msg.request);
+      resizes.delete(msg.request);
+      if (border && border.pending?.request === msg.request) {
+        border.pending = null;
+        if (!border.dragging) border.size(border.saved);
+      }
+    }
     else if (msg.type === "keys") vsCodeKeys = new Set(msg.keys);
   });
   window.addEventListener("focus", focus);

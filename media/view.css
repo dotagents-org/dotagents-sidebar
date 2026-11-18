@@ -176,7 +176,7 @@ body.vscode-high-contrast-light #header .window {
   flex-direction: column;
 }
 
-/* The active group's panes, side by side */
+/* The active group's panes, laid out by its tree (media/view.js, arrange) */
 #panes {
   flex: 1;
   min-width: 0;
@@ -222,12 +222,115 @@ body.vscode-high-contrast-light #header .window {
   content: none;
 }
 
-.pane.hidden {
+.pane.hidden,
+.stash {
   display: none;
 }
 
-.pane:not(.hidden) ~ .pane:not(.hidden) {
-  border-left: 1px solid var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border));
+/* A split: two halves side by side (row) or one over the other (column), sized by the view. Each
+   pane sits in a cell, which takes the share; the pane fills it */
+#panes > .cell,
+#panes > .split {
+  flex: 1 1 0;
+}
+
+.cell {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden; /* a pane narrower than its padding stays in its cell, and so do its clicks */
+}
+
+.split {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+
+.split.row {
+  flex-direction: row;
+}
+
+.split.column {
+  flex-direction: column;
+}
+
+/* The border between the halves takes no room: a line drawn over the edge of the second half,
+   with a wider band to grab, in the sash's colors */
+.sash {
+  flex: none;
+  position: relative;
+  z-index: 1;
+}
+
+.split.row > .sash {
+  width: 0;
+  cursor: ew-resize;
+}
+
+.split.column > .sash {
+  height: 0;
+  cursor: ns-resize;
+}
+
+.sash::after {
+  content: "";
+  position: absolute;
+  background: var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border));
+}
+
+.split.row > .sash::after {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+}
+
+.split.column > .sash::after {
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+}
+
+.sash::before {
+  content: "";
+  position: absolute;
+}
+
+.split.row > .sash::before {
+  top: 0;
+  bottom: 0;
+  left: -2px;
+  width: 5px;
+}
+
+.split.column > .sash::before {
+  left: 0;
+  right: 0;
+  top: -2px;
+  height: 5px;
+}
+
+.sash:hover::after,
+.sash.active::after {
+  background: var(--vscode-sash-hoverBorder, var(--vscode-focusBorder));
+}
+
+/* While a border is dragged, the cursor stays its own over the panes, and nothing gets selected */
+body.resizing {
+  user-select: none;
+}
+
+body.resizing.row,
+body.resizing.row * {
+  cursor: ew-resize !important;
+}
+
+body.resizing.column,
+body.resizing.column * {
+  cursor: ns-resize !important;
 }
 
 /* The sessions, as icons, like the terminal panel's list at its narrowest */

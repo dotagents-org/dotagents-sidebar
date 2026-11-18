@@ -27,7 +27,7 @@ test("each agent has a terminal profile, its activation event and its icons", ()
 
 test("the title strip opens Claude Code, Codex or a terminal, each from its own button with its mark", () => {
   const commands = pkg.contributes.commands.map((c) => c.command);
-  for (const name of ["new", "new.codex", "split", "split.claude", "split.codex"]) assert.ok(commands.includes(`dotagentsSidebar.${name}`), name);
+  for (const name of ["new", "new.codex", "split"]) assert.ok(commands.includes(`dotagentsSidebar.${name}`), name);
   // The view draws the buttons in its own strip (extension.js, TITLE_BUTTONS), so VS Code's title bar has none
   assert.equal(pkg.contributes.menus["view/title"], undefined);
   const source = fs.readFileSync(path.join(root, "extension.js"), "utf8");

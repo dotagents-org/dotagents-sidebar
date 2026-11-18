@@ -8,6 +8,7 @@ const { spawn } = require("child_process");
 const host = require("./host");
 const { AGENTS, agentOf, TERMINAL, terminalCommand, newConversation, command, conversationArgs, env } = require("./agent");
 const sessions = require("./sessions");
+const layout = require("./media/layout.js");
 const codexSessions = require("./codex-sessions");
 const keys = require("./media/keys.js");
 
@@ -104,14 +105,33 @@ function terminalSettings() {
     minimumContrastRatio: term.get("minimumContrastRatio") ?? 4.5,
     // For the agents that write their conversation to the normal screen
     scrollback: term.get("scrollback") ?? 1000,
-    // What a right click does, as in the integrated terminal: copyPaste (Windows' default) copies
-    // the selection or pastes, paste always pastes; anything else leaves the click alone
-    rightClickBehavior: term.get("rightClickBehavior") || "copyPaste",
+    rightClickBehavior: rightClick(term.get("rightClickBehavior")),
     // Not the terminal's gpuAcceleration: block and box characters only draw seamlessly
     // with the WebGL renderer (DOM leaves hairlines)
     renderer: vscode.workspace.getConfiguration("dotagentsSidebar").get("renderer") || "webgl",
   };
 }
+
+// What a right click on a pane does (dotagentsSidebar.rightClickBehavior): copyPaste copies the
+// selection or pastes, paste always pastes, menu opens the pane's menu. "terminal" (the default)
+// does what the integrated terminal does (copyPaste is Windows' default); its other behaviors
+// (default, selectWord, nothing) leave the click to VS Code, which opens the menu
+function rightClick(terminal) {
+  const own = vscode.workspace.getConfiguration("dotagentsSidebar").get("rightClickBehavior") || "terminal";
+  const behavior = own === "terminal" ? terminal || "copyPaste" : own;
+  return behavior === "copyPaste" || behavior === "paste" ? behavior : "menu";
+}
+
+// The sides a split can open on, in the order Split Session... lists them after the last one used
+const DIRECTIONS = [
+  { dir: "right", label: "Right", description: "beside it, on the right", icon: "split-horizontal" },
+  { dir: "left", label: "Left", description: "beside it, on the left", icon: "split-horizontal" },
+  { dir: "down", label: "Down", description: "below it", icon: "split-vertical" },
+  { dir: "up", label: "Up", description: "above it", icon: "split-vertical" },
+];
+
+// The most text the page may hand over for the clipboard (a selection copied from a pane)
+const MAX_COPY = 1 << 20;
 
 const notice = (text) => `\r\n\x1b[2m[${text}]\x1b[0m\r\n`;
 
@@ -354,7 +374,29 @@ class SidebarView {
         if (typeof msg.id === "string") this.update(sessions.unsplit(this.state, msg.id));
         break;
       case "join": // a session into another's group
-        if (typeof msg.id === "string" && typeof msg.target === "string") this.update(sessions.join(this.state, msg.id, msg.target));
+        if (typeof msg.id !== "string" || typeof msg.target !== "string") break;
+        if (!sessions.canSplit(this.state, msg.target)) this.tooDeep();
+        else this.update(sessions.join(this.state, msg.id, msg.target));
+        break;
+      case "resizeSplit": // a border between two panes dragged, in a tree of the shape it names
+        if (
+          typeof msg.group === "string" &&
+          typeof msg.shape === "string" &&
+          Array.isArray(msg.path) &&
+          msg.path.length <= layout.DEPTH &&
+          msg.path.every((side) => side === "a" || side === "b") &&
+          Number.isFinite(msg.ratio)
+        ) {
+          const next = sessions.resize(this.state, msg.group, msg.shape, msg.path, msg.ratio);
+          if (next !== this.state) this.update(next);
+        }
+        // Answered, taken or not: the border stops waiting and shows the state
+        if (Number.isSafeInteger(msg.request)) this.post({ type: "resized", request: msg.request });
+        break;
+      case "copied": // a pane's selection, the answer to the Copy asked for last (an older answer is ignored)
+        if (!this.copying || msg.request !== this.copying.request || typeof msg.text !== "string") break;
+        this.copied(this.copying.id, msg.request, msg.text);
+        this.copying = undefined;
         break;
       case "palette":
         this.palette = msg.colors;
@@ -503,6 +545,79 @@ class SidebarView {
     this.send({ type: "note", id, data: notice(`${reason}. Press Enter to start it again.`) });
   }
 
+  // Split Session...: which side, then what opens there. The last side used comes first, and the
+  // kind of the session being split, so Enter, Enter repeats the last split
+  async split(id = this.state.active) {
+    const target = this.session(id);
+    if (target && !sessions.canSplit(this.state, id)) return this.tooDeep();
+    const current = !target ? "claude" : target.kind === "terminal" ? "terminal" : target.provider === "codex" ? "codex" : "claude";
+    let dir;
+    if (target) {
+      const last = this.context.globalState.get("splitDirection");
+      const order = [...DIRECTIONS.filter((d) => d.dir === last), ...DIRECTIONS.filter((d) => d.dir !== last)];
+      const side = await vscode.window.showQuickPick(
+        order.map((d) => ({ label: d.label, description: d.description, iconPath: new vscode.ThemeIcon(d.icon), dir: d.dir })),
+        { title: "Split Session", placeHolder: "Which side?" }
+      );
+      if (!side) return;
+      dir = side.dir;
+    }
+    const icon = (name) => ({
+      light: vscode.Uri.joinPath(this.context.extensionUri, "media", `${name}-light.svg`),
+      dark: vscode.Uri.joinPath(this.context.extensionUri, "media", `${name}-dark.svg`),
+    });
+    const kinds = [
+      { kind: "claude", label: AGENTS.claude.name, iconPath: icon("claude-code") },
+      { kind: "codex", label: AGENTS.codex.name, iconPath: icon("codex") },
+      { kind: "terminal", label: TERMINAL.name, iconPath: icon("terminal") },
+    ];
+    const ordered = [...kinds.filter((k) => k.kind === current), ...kinds.filter((k) => k.kind !== current)];
+    const pick = await vscode.window.showQuickPick(
+      ordered.map((k) => ({ ...k, description: target && k.kind === current ? "the same as this session" : "" })),
+      { title: "Split Session", placeHolder: "Open what?" }
+    );
+    if (!pick) return;
+    if (!target) return this.open(sessions.add, pick.kind === "terminal" ? "terminal" : undefined, pick.kind);
+    if (!this.session(id)) return; // closed while the lists were open
+    if (!sessions.canSplit(this.state, id)) return this.tooDeep();
+    this.context.globalState.update("splitDirection", dir);
+    const action = (state, name, kind, provider) => sessions.split(state, name, kind, provider, dir, id);
+    this.open(action, pick.kind === "terminal" ? "terminal" : undefined, pick.kind);
+  }
+
+  tooDeep() {
+    vscode.window.showInformationMessage(`This pane can't be split again: a split goes at most ${layout.DEPTH} levels deep. Split a pane nearer the outside.`);
+  }
+
+  // Copy and Paste in a pane's menu: the page has the selection, VS Code the clipboard
+  copy(id = this.state.active) {
+    if (!this.session(id)) return;
+    this.copying = { id, request: crypto.randomBytes(8).toString("hex") }; // the one answer taken
+    this.post({ type: "copy", id, request: this.copying.request });
+  }
+
+  // The selection to the clipboard; once it is there, the page clears it
+  async copied(id, request, text) {
+    if (!text) return;
+    if (text.length > MAX_COPY) {
+      vscode.window.showWarningMessage(`The selection is too long to copy from the menu (over ${MAX_COPY / 1024} KiB). Use Ctrl+Shift+C.`);
+      return;
+    }
+    try {
+      await vscode.env.clipboard.writeText(text);
+    } catch (err) {
+      this.log.error("Could not copy the selection", err);
+      vscode.window.showWarningMessage("Could not copy the selection.");
+      return;
+    }
+    this.post({ type: "copiedDone", id, request });
+  }
+
+  async paste(id = this.state.active) {
+    const text = await vscode.env.clipboard.readText();
+    if (text && this.session(id)) this.post({ type: "paste", id, text });
+  }
+
   // The agent of a new session: the one asked for, else Claude Code
   open(action, kind, provider) {
     this.update(kind === "terminal" ? action(this.state, TERMINAL.name, "terminal") : action(this.state, agentOf({ provider }).name, undefined, provider));
@@ -640,6 +755,7 @@ ${accounts ? `<link rel="stylesheet" href="${panel("panel.css")}">` : ""}
 <script nonce="${nonce}" src="${uri("media", "links.js")}"></script>
 <script nonce="${nonce}" src="${uri("media", "cwd.js")}"></script>
 <script nonce="${nonce}" src="${uri("media", "drag.js")}"></script>
+<script nonce="${nonce}" src="${uri("media", "layout.js")}"></script>
 <script nonce="${nonce}" src="${uri("media", "view.js")}"></script>
 </body>
 </html>`;
@@ -686,14 +802,10 @@ async function activate(context) {
     vscode.commands.registerCommand("dotagentsSidebar.new", () => view.open(sessions.add)),
     vscode.commands.registerCommand("dotagentsSidebar.new.codex", () => view.open(sessions.add, undefined, "codex")),
     vscode.commands.registerCommand("dotagentsSidebar.newTerminal", () => view.open(sessions.add, "terminal")),
-    // A split is a session of the same kind as the active one: a terminal beside a terminal, Codex
-    // beside Codex
-    vscode.commands.registerCommand("dotagentsSidebar.split", () => {
-      const active = view.session(view.state.active);
-      view.open(sessions.split, active?.kind, active?.provider);
-    }),
-    vscode.commands.registerCommand("dotagentsSidebar.split.claude", () => view.open(sessions.split, undefined, "claude")),
-    vscode.commands.registerCommand("dotagentsSidebar.split.codex", () => view.open(sessions.split, undefined, "codex")),
+    // The same Split Session... from the amber button, the palette and the menus
+    onSession("split", (id) => view.split(id)),
+    onSession("copy", (id) => view.copy(id)),
+    onSession("paste", (id) => view.paste(id)),
     onSession("close", (id) => view.close(id)),
     onSession("restart", (id) => view.restart(id)),
     onSession("rename", (id) => view.rename(id)),
