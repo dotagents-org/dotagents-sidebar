@@ -7,9 +7,9 @@
 // Windows, file://) or relative, and a path with spaces only in double quotes. The place after it:
 // :12, :12:7, (12), (12,7), or ", line 12" with ", column 7".
 //
-// Shared by the extension's tests (CommonJS) and the view (a script that sets window.agentLinks).
+// Shared by the extension's tests (CommonJS) and the view (a script that declares agentLinks).
 
-(function (exports) {
+const agentLinks = (() => {
   const MAX_LINE = 2000; // longer lines are output, not something to click in
   const MAX_LINKS = 10; // per line, as VS Code
 
@@ -57,5 +57,6 @@
     return found.sort((a, b) => a.start - b.start).slice(0, MAX_LINKS);
   }
 
-  Object.assign(exports, { findPaths, MAX_LINE, MAX_LINKS });
-})(typeof module === "object" ? module.exports : (window.agentLinks = {}));
+  return { findPaths, MAX_LINE, MAX_LINKS };
+})();
+if (typeof module === "object") module.exports = { ...agentLinks };

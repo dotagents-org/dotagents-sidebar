@@ -9,10 +9,10 @@
 // leaves a group in the terminal panel (that is its Join and Unsplit commands); here that is a drop
 // with Shift: on a session to join its group, below the last one to leave the group it is in.
 //
-// Shared by the view (a script that sets window.agentDrag), the sessions' actions and the tests
+// Shared by the view (a script that declares agentDrag), the sessions' actions and the tests
 // (CommonJS).
 
-(function (exports) {
+const agentDrag = (() => {
   // The list as groups: runs of neighbors that share a group
   function groups(sessions) {
     const out = [];
@@ -102,5 +102,6 @@
     return { message: { type: "dropEnd", id }, mark };
   }
 
-  Object.assign(exports, { groups, dropOrder, endOrder, moving, plan, planEnd });
-})(typeof module === "object" ? module.exports : (window.agentDrag = {}));
+  return { groups, dropOrder, endOrder, moving, plan, planEnd };
+})();
+if (typeof module === "object") module.exports = { ...agentDrag };

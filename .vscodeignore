@@ -1,4 +1,5 @@
 *.vsix
+tsconfig*.json
 .gitignore
 **/*.map
 **/*.mjs

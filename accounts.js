@@ -165,6 +165,7 @@ function inEverySlot(data, { provider, profile }) {
 // How to start `dotagents start` on its own. On Windows, `dotagents` is a .cmd, and one started
 // from here would be tied to a console window: closing it, or VS Code, stops the server. So a
 // hidden PowerShell hands it to Start-Process, which runs it hidden and on its own.
+/** @returns {[string, string[]]} */
 function startCommand(platform) {
   if (platform !== "win32") return ["dotagents", ["start"]];
   return ["powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", "Start-Process -WindowStyle Hidden -FilePath dotagents.cmd -ArgumentList start"]];

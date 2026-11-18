@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "lib": ["es2023"],
+    "types": ["node", "vscode"],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "resolveJsonModule": true,
+    "skipLibCheck": true
+  },
+  "include": ["extension.js", "host.js", "accounts.js", "agent.js", "sessions.js", "codex-sessions.js", "log.js", "providers.js"]
+}

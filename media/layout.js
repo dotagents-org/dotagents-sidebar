@@ -7,10 +7,10 @@
 // new session right after (right, down) or before (left, up) the one it splits, and a reorder in
 // the list relabels the leaves without changing the shape.
 //
-// Shared by the view (a script that sets window.agentLayout), the sessions' actions and the tests
+// Shared by the view (a script that declares agentLayout), the sessions' actions and the tests
 // (CommonJS).
 
-(function (exports) {
+const agentLayout = (() => {
   const MIN = 0.1;
   const MAX = 0.9;
   // The deepest a split may sit: its path from the root has at most this many sides. A split that
@@ -102,5 +102,6 @@
     return fix(node);
   }
 
-  Object.assign(exports, { MIN, MAX, DEPTH, leaves, depth, shape, insert, remove, relabel, setRatio, row, valid });
-})(typeof module === "object" ? module.exports : (window.agentLayout = {}));
+  return { MIN, MAX, DEPTH, leaves, depth, shape, insert, remove, relabel, setRatio, row, valid };
+})();
+if (typeof module === "object") module.exports = { ...agentLayout };

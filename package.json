@@ -27,7 +27,7 @@
   ],
   "icon": "media/icon.png",
   "scripts": {
-    "test": "node --test",
+    "test": "tsc -p . && node --test",
     "package": "npx --yes @vscode/vsce@3 package -o dotagents-sidebar.vsix"
   },
   "engines": {
@@ -278,5 +278,10 @@
     "@xterm/addon-webgl": "0.19.0",
     "@xterm/headless": "6.0.0",
     "@xterm/xterm": "6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/vscode": "^1.106.0",
+    "typescript": "7.0"
   }
 }

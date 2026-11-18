@@ -2,9 +2,9 @@
 // The shell sends OSC 7 (bash, through shell/bash-cwd.sh: file://host/path) or, on Windows, OSC 9;9
 // (PowerShell: the path, which ConEmu and Windows Terminal also send quoted).
 //
-// Shared by the extension's tests (CommonJS) and the view (a script that sets window.agentCwd).
+// Shared by the extension's tests (CommonJS) and the view (a script that declares agentCwd).
 
-(function (exports) {
+const agentCwd = (() => {
   // The path an OSC 7 or OSC 9;9 payload carries, or null
   function fromOsc(ident, data) {
     let path;
@@ -50,5 +50,6 @@
     return all.length ? all : [p];
   }
 
-  Object.assign(exports, { fromOsc, segments, separator });
-})(typeof module === "object" ? module.exports : (window.agentCwd = {}));
+  return { fromOsc, segments, separator };
+})();
+if (typeof module === "object") module.exports = { ...agentCwd };

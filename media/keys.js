@@ -4,9 +4,9 @@
 // so this reads the bindings themselves and leaves the `when` conditions out, but for those that
 // need a focus the view never has.
 //
-// Shared by the extension (CommonJS) and the view (a script that sets window.agentKeys).
+// Shared by the extension (CommonJS) and the view (a script that declares agentKeys).
 
-(function (exports) {
+const agentKeys = (() => {
   // A JSON file with comments and trailing commas, as VS Code's keybindings files are
   function parseJsonc(text) {
     let out = "";
@@ -144,5 +144,6 @@
     return [...keys].sort();
   }
 
-  Object.assign(exports, { parseJsonc, normalize, eventCombo, skipCommands, keysForVsCode, FALLBACK });
-})(typeof module === "object" ? module.exports : (window.agentKeys = {}));
+  return { parseJsonc, normalize, eventCombo, skipCommands, keysForVsCode, FALLBACK };
+})();
+if (typeof module === "object") module.exports = { ...agentKeys };

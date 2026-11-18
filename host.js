@@ -97,13 +97,13 @@ function connect(socketPath, onMessage, onClose) {
 
 function listen(server, socketPath) {
   const once = () =>
-    new Promise((resolve, reject) => {
+    /** @type {Promise<void>} */ (new Promise((resolve, reject) => {
       server.once("error", reject);
       server.listen(socketPath, () => {
         server.off("error", reject);
         resolve();
       });
-    });
+    }));
   return once().catch(async (err) => {
     if (err.code !== "EADDRINUSE") throw err;
     const alive = await connect(socketPath, () => {}).then(
@@ -116,7 +116,10 @@ function listen(server, socketPath) {
   });
 }
 
+/** @typedef {{ spawn(file: string, args: string[], options: object): any }} Pty node-pty, or what stands in for it */
+
 // log(level, source, message): where its events go; host.log when it runs on its own (log.js)
+/** @param {{ pty: Pty, socketPath: string, grace?: number, onExit?: () => void, log?: (level: string, source: string, message: any) => void }} options */
 async function createHost({ pty, socketPath, grace = GRACE, onExit = () => {}, log = () => {} }) {
   const sessions = new Map(); // id -> { proc, screen, serializer, exitCode }
   const clients = new Set(); // { channel, queue }: while a snapshot is taken, its messages wait in queue
@@ -260,6 +263,7 @@ if (require.main === module) {
     log("error", "host", err);
     process.exit(1);
   });
+  /** @type {Pty} */
   let pty;
   try {
     pty = loadPty(appRoot);
