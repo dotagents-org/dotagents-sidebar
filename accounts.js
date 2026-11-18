@@ -112,7 +112,7 @@ const known = (data) => ({ ...data, profiles: data.profiles.filter((p) => provid
 
 // What the panel needs of the table (it runs in a webview and can't require): each provider's account
 // name, tool and mark.
-const panelProviders = Object.fromEntries(Object.entries(PROVIDERS).map(([id, { title, agent, mark }]) => [id, { title, agent, mark }]));
+const panelProviders = Object.fromEntries(Object.entries(PROVIDERS).map(([id, { title, agent, mark, plans }]) => [id, { title, agent, mark, plans }]));
 
 // The providers that have a profile, Claude first.
 const providersOf = (data) => Object.keys(PROVIDERS).filter((id) => data.profiles.some((p) => providerOf(p) === id));

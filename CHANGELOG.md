@@ -20,6 +20,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Changed
 
+- **Plans by the product's name.** The accounts panel's group header says *Team  2 seats* for Claude and *Business  2 seats* for ChatGPT (Claude Team and ChatGPT Business, which was ChatGPT Team), where it said the API's `team` for both.
 - **Claude and ChatGPT side by side.** In the accounts tab the windows' labels share one column across every card, so the bars of both providers line up, and a week's "projection from" says the day. `Split With Claude Code Session` joins `Split With Codex Session` in the command palette.
 
 - **The buttons in the title strip.** The view's buttons moved from VS Code's title bar to the strip with the session's title and path. At its left, three round buttons act on the active session in the identity's level colors: red closes it, amber splits it, green restarts it, each showing its sign under the pointer. At its right, round too, a new Claude Code, Codex or terminal session. The strip shows over the accounts tab and an empty view too, with the new-session buttons only.

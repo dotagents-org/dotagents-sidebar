@@ -10,7 +10,7 @@ The accounts tab and the status bar appear when dotagents has profiles on the si
 
 The first tab in the list, marked with the accounts' dot. It never closes or splits. It shows:
 
-- the accounts grouped by provider, Claude first, when there are two: a header with the provider's mark (Claude, OpenAI), its name and its plan with the seats (*team  2 seats*) when every account of the group has the same known plan, else the count; with one provider there is no header;
+- the accounts grouped by provider, Claude first, when there are two: a header with the provider's mark (Claude, OpenAI), its name and its plan, by the product's name, with the seats (*Team  2 seats* for Claude, *Business  2 seats* for ChatGPT, whose API still says `team`) when every account of the group has the same known plan, else the count; with one provider there is no header;
 - every account in a card with its avatar and name in its color. Click its mark to open Claude Desktop or the ChatGPT app on Windows, including from WSL when the Windows launcher is set up. Claude cards also show what their sessions are doing (*1 working*, *1 waiting on you*);
 - each usage window as a bar in text, with its percentage (green below 70%, amber from 70%, red from 90%), reset time and projection (*at this pace, runs out 16:40*). Both providers show the 5-hour and weekly windows. Claude also shows per-model windows when available;
 - where the account is (*on WSL*, *on Windows and WSL*) and a `[ switch ]` that puts it on both sides of the machine; one side only is `dotagents switch <profile> --here`, in a terminal;

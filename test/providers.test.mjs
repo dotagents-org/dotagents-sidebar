@@ -40,6 +40,16 @@ function panel() {
 
 const flatten = (node) => typeof node === "object" ? [node, ...node.children.flatMap(flatten)] : [node];
 
+test("each group names its plan as the product does: team is Claude Team and ChatGPT Business", () => {
+  const view = panel();
+  const profile = (name, provider) => ({ name, provider, plan: "team", color: "#123456", avatar: "asleep", state: "no-data", windows: [] });
+  view.render({ profiles: [profile("work", "claude"), profile("personal", "claude"), profile("hopper", "codex"), profile("dijkstra", "codex")], slots: {}, current: {}, sides: [] });
+  const nodes = flatten(view.host);
+  assert.ok(nodes.includes("Team  2 seats"), "Claude's group");
+  assert.ok(nodes.includes("Business  2 seats"), "ChatGPT's group");
+  assert.equal(nodes.includes("team  2 seats"), false);
+});
+
 test("the extension and panel share account labels and marks, while sessions keep their agent names", () => {
   const view = panel();
   assert.deepEqual(Object.keys(accounts.panelProviders), Object.keys(providers));

@@ -161,12 +161,15 @@
     // One group per provider, Claude first; a header names each one only when there are two.
     const groups = Object.keys(providers).map((id) => ({ id, profiles: data.profiles.filter((p) => (p.provider || "claude") === id) })).filter((g) => g.profiles.length);
     const cards = data.profiles.map(cardOf);
-    // A group's header says the plan with its seats ("team  2 seats") when every account of the
-    // group has the same known plan, else the count; two spaces, as in the CLI.
+    // A group's header says the plan, by the product's name, with its seats ("Team  2 seats",
+    // "Business  2 seats") when every account of the group has the same known plan, else the
+    // count; two spaces, as in the CLI.
     const summary = (g) => {
       const plans = new Set(g.profiles.map((p) => p.plan));
       const n = g.profiles.length;
-      return plans.size === 1 && g.profiles[0].plan ? `${g.profiles[0].plan}  ${n} seat${n === 1 ? "" : "s"}` : `${n} account${n === 1 ? "" : "s"}`;
+      const plan = g.profiles[0].plan;
+      const name = (providers[g.id].plans || {})[plan] || plan;
+      return plans.size === 1 && plan ? `${name}  ${n} seat${n === 1 ? "" : "s"}` : `${n} account${n === 1 ? "" : "s"}`;
     };
     const blocks = groups.length > 1
       ? groups.flatMap((g) => [
