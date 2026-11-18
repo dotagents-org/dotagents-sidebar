@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { test } from "node:test";
 
 // Plain CommonJS, loaded as VS Code loads it
-const { AGENTS, agentOf, terminalCommand, newConversation, command, conversationArgs, env } = createRequire(import.meta.url)("../agent.js");
+const { AGENTS, agentOf, terminalCommand, newConversation, command, conversationArgs, env } = createRequire(import.meta.url)("../../src/sessions/agent.js");
 
 const { claude, codex } = AGENTS;
 

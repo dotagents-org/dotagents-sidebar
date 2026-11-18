@@ -3,7 +3,7 @@
 #                     in line, as media/accounts.svg
 #   claude    U+E002  $(dotagents-claude)    the Claude mark
 #   openai    U+E003  $(dotagents-openai)    the OpenAI mark
-# The two marks are LobeHub's (MIT), read from the paths in media/accounts/panel.js, so the panel
+# The two marks are LobeHub's (MIT), read from the paths in webview/accounts/panel.js, so the panel
 # and the status bar draw the same shape.
 #   uv run --with fonttools --with skia-pathops python scripts/vscode-icon.py
 import pathlib
@@ -52,7 +52,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 def mark(name):
     # A filled path of the 24-unit box, drawn with the even-odd rule: simplify turns it into
     # contours the font's non-zero rule fills the same way.
-    d = re.search(rf'const {name} = "([^"]+)"', (ROOT / "media" / "accounts" / "panel.js").read_text()).group(1)
+    d = re.search(rf'const {name} = "([^"]+)"', (ROOT / "webview" / "accounts" / "panel.js").read_text()).group(1)
     path = pathops.Path()
     parse_path(d, path.getPen())
     path.fillType = pathops.FillType.EVEN_ODD

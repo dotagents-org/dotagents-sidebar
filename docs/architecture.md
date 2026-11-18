@@ -6,35 +6,37 @@ VS Code's API only lets extensions put terminals in the terminal panel or the ed
 
 ## The host
 
-The agents don't run in the extension. On first use, the extension starts `host.js` as a detached process, one per workspace, and talks to it over a socket in a folder only you can open (0700). The host runs each agent through **node-pty** (the copy that ships inside VS Code, loaded from `vscode.env.appRoot`) and keeps a headless copy of each screen ([`@xterm/headless`](https://www.npmjs.com/package/@xterm/headless)). After a reload, the extension connects again and the view redraws every screen from those copies. With no extension connected for a minute, the host stops the agents and exits. Agents run with VS Code's own `ELECTRON_*` and `VSCODE_*` variables removed from their environment, as in the integrated terminal.
+The agents don't run in the extension. On first use, the extension starts `src/host/host.js` as a detached process, one per workspace, and talks to it over a socket in a folder only you can open (0700). The host runs each agent through **node-pty** (the copy that ships inside VS Code, loaded from `vscode.env.appRoot`) and keeps a headless copy of each screen ([`@xterm/headless`](https://www.npmjs.com/package/@xterm/headless)). After a reload, the extension connects again and the view redraws every screen from those copies. With no extension connected for a minute, the host stops the agents and exits. Agents run with VS Code's own `ELECTRON_*` and `VSCODE_*` variables removed from their environment, as in the integrated terminal.
 
-The host is named by workspace and protocol (`PROTOCOL` in `host.js`), not by the extension's version, so an update reaches the host the old version started and the agents keep running. A change to the messages between the two raises the protocol and starts a new host.
+The host is named by workspace and protocol (`PROTOCOL` in `src/host/host.js`), not by the extension's version, so an update reaches the host the old version started and the agents keep running. A change to the messages between the two raises the protocol and starts a new host.
 
 ## The accounts
 
-`accounts.js` talks to `dotagents start` (the address and token in `start.json`), shows the status bar and the switch, and gives the view what the accounts tab needs: the panel's folder, what the panel is told and when it changes, and its actions. The rules (the states, the projections, the switch itself) live in dotagents; the extension only shows them ([Accounts](accounts.md)).
+`src/accounts/accounts.js` talks to `dotagents start` (the address and token in `start.json`), shows the status bar and the switch, and gives the view what the accounts tab needs: the panel's folder, what the panel is told and when it changes, and its actions. The rules (the states, the projections, the switch itself) live in dotagents; the extension only shows them ([Accounts](accounts.md)).
 
 ## Files
 
+The extension's own code is in `src/`, by area: `host/`, `sessions/`, `accounts/`, and `shared/` for the pure modules the webview also loads. The webview's pages are in `webview/`, `media/` holds only icons, and the tests in `test/` follow the same folders.
+
 | File | Role |
 |---|---|
-| `extension.js` | The view provider, the sessions, the commands, the connection to the host, the updates |
-| `host.js` | The detached process that owns the agents and their screen copies |
-| `agent.js` | The table of the session agents (Claude Code, Codex) and the terminal: commands, environment, conversation flags, newline keys |
-| `codex-sessions.js` | Finds the conversation a Codex session started: reads the rollouts in `$CODEX_HOME/sessions/` and gives each pending session the first one in its folder no other session took. Pure apart from the reading, so it is tested without VS Code |
-| `sessions.js` | The session list: add, split, close, rename, colors, restore, and each split's layout |
-| `accounts.js` | The Claude and ChatGPT accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
-| `log.js` | The sidebar's logs, `sidebar.log` and `host.log`, in the format of the core's `docs/logs.md` (a copy of its writer) |
-| `providers.js` | The one table of the account providers (Claude, ChatGPT): name, tool, mark and status bar icon. `accounts.js` reads it and posts it to the panel with the usage; a provider the table lacks is skipped |
-| `media/view.js`, `media/view.css` | The webview: a terminal per session, the list, the title strip |
-| `media/drag.js` | What dragging a session in the list does, worked out as the terminal panel's tabs do it |
-| `media/layout.js` | How a split's panes share the view: a tree of halves side by side or one over the other, with their ratios, as herdr lays out its panes |
-| `media/keys.js` | Which keys go to VS Code, worked out from the keybindings |
+| `src/extension.js` | The view provider, the sessions, the commands, the connection to the host, the updates |
+| `src/host/host.js` | The detached process that owns the agents and their screen copies |
+| `src/sessions/agent.js` | The table of the session agents (Claude Code, Codex) and the terminal: commands, environment, conversation flags, newline keys |
+| `src/sessions/codex-sessions.js` | Finds the conversation a Codex session started: reads the rollouts in `$CODEX_HOME/sessions/` and gives each pending session the first one in its folder no other session took. Pure apart from the reading, so it is tested without VS Code |
+| `src/sessions/sessions.js` | The session list: add, split, close, rename, colors, restore, and each split's layout |
+| `src/accounts/accounts.js` | The Claude and ChatGPT accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
+| `src/log.js` | The sidebar's logs, `sidebar.log` and `host.log`, in the format of the core's `docs/logs.md` (a copy of its writer) |
+| `src/accounts/providers.js` | The one table of the account providers (Claude, ChatGPT): name, tool, mark and status bar icon. `src/accounts/accounts.js` reads it and posts it to the panel with the usage; a provider the table lacks is skipped |
+| `webview/terminals/view.js`, `webview/terminals/view.css` | The webview: a terminal per session, the list, the title strip |
+| `src/shared/drag.js` | What dragging a session in the list does, worked out as the terminal panel's tabs do it |
+| `src/shared/layout.js` | How a split's panes share the view: a tree of halves side by side or one over the other, with their ratios, as herdr lays out its panes |
+| `src/shared/keys.js` | Which keys go to VS Code, worked out from the keybindings |
 | `shell/bash-cwd.sh` | Run by a terminal session's bash after `~/.bashrc`: reports the current folder (OSC 7) at each prompt |
-| `media/cwd.js` | The folder a terminal reports (OSC 7, OSC 9;9) and the path its title shows |
-| `media/links.js` | The file paths in a terminal line, as candidates for links; the extension says which exist and opens them |
-| `media/accounts/` | The accounts tab: the panel (`panel.js`, `panel.css`) and the avatars, drawn live (`avatar.js`) |
-| `skip-shell.json` | VS Code's default commands that skip the shell, copied from its source |
+| `webview/terminals/cwd.js` | The folder a terminal reports (OSC 7, OSC 9;9) and the path its title shows |
+| `webview/terminals/links.js` | The file paths in a terminal line, as candidates for links; the extension says which exist and opens them |
+| `webview/accounts/` | The accounts tab: the panel (`panel.js`, `panel.css`) and the avatars, drawn live (`avatar.js`) |
+| `src/skip-shell.json` | VS Code's default commands that skip the shell, copied from its source |
 | `scripts/avatars/generate.mjs` | The avatars as still pictures and strips, for documents (`assets/avatars/`); the same rules as `avatar.js` |
 | `scripts/readme/generate.mjs` | The README's pictures of the avatars (`assets/readme/`) |
 | `scripts/vscode-icon.py` | The status bar's marks (accounts, Claude, OpenAI), glyphs of `media/icons.woff` |

@@ -16,7 +16,7 @@ Each session is an agent running in its own terminal. The list on the right show
 
 Each session remembers its agent's conversation. When its agent starts again (after a crash, a restart, the next day), it opens that conversation: `claude --resume`, or `codex resume`.
 
-Codex picks its own conversation id, so the view finds it: the first rollout (`$CODEX_HOME/sessions/YYYY/MM/DD/rollout-<time>-<id>.jsonl`, `~/.codex` by default) created in the session's folder after the session started (`codex-sessions.js`). Codex may write it only when the first prompt is sent, so the view looks every few seconds until it finds one. A Codex session with no conversation found yet starts a new one when it restarts. A Codex session uses the account in the Codex slot of dotagents.
+Codex picks its own conversation id, so the view finds it: the first rollout (`$CODEX_HOME/sessions/YYYY/MM/DD/rollout-<time>-<id>.jsonl`, `~/.codex` by default) created in the session's folder after the session started (`src/sessions/codex-sessions.js`). Codex may write it only when the first prompt is sent, so the view looks every few seconds until it finds one. A Codex session with no conversation found yet starts a new one when it restarts. A Codex session uses the account in the Codex slot of dotagents.
 
 ## The title
 

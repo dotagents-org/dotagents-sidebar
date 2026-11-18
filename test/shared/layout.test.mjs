@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { test } from "node:test";
 
-const { DEPTH, leaves, depth, shape, insert, remove, relabel, setRatio, row, valid } = createRequire(import.meta.url)("../media/layout.js");
+const { DEPTH, leaves, depth, shape, insert, remove, relabel, setRatio, row, valid } = createRequire(import.meta.url)("../../src/shared/layout.js");
 
 test("insert splits a session in two, the new one on the side asked for", () => {
   assert.deepEqual(insert("s1", "s1", "s2", "right"), { axis: "row", ratio: 0.5, a: "s1", b: "s2" });

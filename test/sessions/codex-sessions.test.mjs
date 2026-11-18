@@ -5,7 +5,7 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { test } from "node:test";
 
-const { codexHome, readRollouts, findCodexSessions, pending, find, discover } = createRequire(import.meta.url)("../codex-sessions.js");
+const { codexHome, readRollouts, findCodexSessions, pending, find, discover } = createRequire(import.meta.url)("../../src/sessions/codex-sessions.js");
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "codex-home-"));
 

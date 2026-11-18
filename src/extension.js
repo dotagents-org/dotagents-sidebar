@@ -5,25 +5,25 @@ const path = require("path");
 const vscode = require("vscode");
 const { writer } = require("./log.js");
 const { spawn } = require("child_process");
-const host = require("./host");
-const { AGENTS, agentOf, TERMINAL, terminalCommand, newConversation, command, conversationArgs, env } = require("./agent");
-const sessions = require("./sessions");
-const layout = require("./media/layout.js");
-const codexSessions = require("./codex-sessions");
-const keys = require("./media/keys.js");
+const host = require("./host/host.js");
+const { AGENTS, agentOf, TERMINAL, terminalCommand, newConversation, command, conversationArgs, env } = require("./sessions/agent.js");
+const sessions = require("./sessions/sessions.js");
+const layout = require("./shared/layout.js");
+const codexSessions = require("./sessions/codex-sessions.js");
+const keys = require("./shared/keys.js");
 
-const { startAccounts } = require("./accounts");
+const { startAccounts } = require("./accounts/accounts.js");
 const SKIP_SHELL = require("./skip-shell.json");
-const { contributes } = require("./package.json");
+const { contributes } = require("../package.json");
 
 // The buttons at the right of the title strip, in order, with the icon each command declares
-// (media/view.js draws them; the strip replaces VS Code's title bar buttons)
+// (webview/terminals/view.js draws them; the strip replaces VS Code's title bar buttons)
 const TITLE_BUTTONS = ["dotagentsSidebar.new", "dotagentsSidebar.new.codex", "dotagentsSidebar.newTerminal"];
 // The round buttons at its left, for the active session: red closes it (a message of its own), amber
 // splits it, green restarts it
 const SESSION_BUTTONS = ["dotagentsSidebar.split", "dotagentsSidebar.restart"];
 
-// One host per workspace and protocol (host.js), not per version of the extension: an update
+// One host per workspace and protocol (src/host/host.js), not per version of the extension: an update
 // reaches the host the old version started, and its agents keep running. An empty window has
 // nothing to come back to, so its host is its own
 function hostKey() {
@@ -146,7 +146,7 @@ class SidebarView {
     this.hostReady = undefined;
     this.disposed = false;
     this.keys = undefined; // the keys VS Code keeps, once worked out
-    // The output channel, and sidebar.log for when the window is gone (log.js)
+    // The output channel, and sidebar.log for when the window is gone (src/log.js)
     const channel = vscode.window.createOutputChannel("dotagents-sidebar");
     const file = writer("sidebar");
     this.log = {
@@ -160,11 +160,11 @@ class SidebarView {
       },
       dispose: () => channel.dispose(),
     };
-    this.accounts = undefined; // the accounts (accounts.js), when dotagents is set up here
+    this.accounts = undefined; // the accounts (src/accounts/accounts.js), when dotagents is set up here
   }
 
   // With dotagents set up on this side, the accounts are a fixed tab, the first in the list:
-  // accounts.js talks to the server, this view draws the panel and passes the messages both ways.
+  // src/accounts/accounts.js talks to the server, this view draws the panel and passes the messages both ways.
   connectAccounts() {
     const api = startAccounts(vscode, this.context);
     this.accounts = api ? { api, subscription: api.onDidChange((message) => this.post(message)) } : undefined;
@@ -178,7 +178,7 @@ class SidebarView {
     else if (m.type === "action") this.post({ type: "result", id: m.id, result: await api.act(m.action, m.body) });
   }
 
-  // The keys that go to VS Code while a session has focus (media/keys.js): the terminal's rule,
+  // The keys that go to VS Code while a session has focus (src/shared/keys.js): the terminal's rule,
   // from VS Code's default bindings and the user's when they can be read
   async workOutKeys() {
     const read = async (uri) => {
@@ -224,9 +224,8 @@ class SidebarView {
   // Build the page, or rebuild it with the new settings; the running agents are kept and replayed
   reload() {
     if (!this.view) return;
-    const media = vscode.Uri.joinPath(this.context.extensionUri, "media");
-    const modules = vscode.Uri.joinPath(this.context.extensionUri, "node_modules");
-    this.view.webview.options = { enableScripts: true, localResourceRoots: [media, modules, ...(this.accounts ? [this.accounts.api.panelRoot] : [])] };
+    const roots = [["media"], ["webview"], ["src", "shared"], ["node_modules"]].map((p) => vscode.Uri.joinPath(this.context.extensionUri, ...p));
+    this.view.webview.options = { enableScripts: true, localResourceRoots: roots };
     this.view.webview.html = this.html(this.view.webview);
   }
 
@@ -286,7 +285,7 @@ class SidebarView {
     }
     // Detached, so it outlives the extension; ELECTRON_RUN_AS_NODE makes VS Code's own
     // executable run it as plain Node on the desktop
-    const child = spawn(process.execPath, [path.join(__dirname, "host.js"), socket, vscode.env.appRoot], {
+    const child = spawn(process.execPath, [path.join(__dirname, "host", "host.js"), socket, vscode.env.appRoot], {
       detached: true,
       stdio: "ignore",
       cwd: os.homedir(),
@@ -363,7 +362,7 @@ class SidebarView {
       case "activate":
         this.update(sessions.activate(this.state, msg.id));
         break;
-      // What dragging in the list does (media/drag.js says which)
+      // What dragging in the list does (src/shared/drag.js says which)
       case "drop": // a session dropped on another
         if (typeof msg.id === "string" && typeof msg.target === "string") this.update(sessions.drop(this.state, msg.id, msg.target));
         break;
@@ -727,7 +726,7 @@ class SidebarView {
       return { command: name, title, light: String(uri(icon.light)), dark: String(uri(icon.dark)) };
     });
     const panel = (name) => String(webview.asWebviewUri(vscode.Uri.joinPath(this.accounts.api.panelRoot, name)));
-    // The panel's scripts load only when its tab first opens (media/view.js), so nothing of it runs
+    // The panel's scripts load only when its tab first opens (webview/terminals/view.js), so nothing of it runs
     // while the agents are in use
     const accounts = this.accounts ? { icon: String(uri("media", "accounts.svg")), scripts: [panel("avatar.js"), panel("panel.js")], nonce } : null;
     const settings = JSON.stringify({ ...terminalSettings(), agents, terminal, buttons, workspace: workspaceName(), home: os.homedir(), keys: this.keys, accounts }).replace(/</g, "\\u003c");
@@ -738,7 +737,7 @@ class SidebarView {
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; font-src ${webview.cspSource}; img-src ${webview.cspSource};">
 <link rel="stylesheet" href="${uri("node_modules", "@xterm", "xterm", "css", "xterm.css")}">
 ${accounts ? `<link rel="stylesheet" href="${panel("panel.css")}">` : ""}
-<link rel="stylesheet" href="${uri("media", "view.css")}">
+<link rel="stylesheet" href="${uri("webview", "terminals", "view.css")}">
 </head>
 <body>
 <div id="main">
@@ -751,12 +750,12 @@ ${accounts ? `<link rel="stylesheet" href="${panel("panel.css")}">` : ""}
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-fit", "lib", "addon-fit.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-webgl", "lib", "addon-webgl.js")}"></script>
 <script nonce="${nonce}" src="${uri("node_modules", "@xterm", "addon-web-links", "lib", "addon-web-links.js")}"></script>
-<script nonce="${nonce}" src="${uri("media", "keys.js")}"></script>
-<script nonce="${nonce}" src="${uri("media", "links.js")}"></script>
-<script nonce="${nonce}" src="${uri("media", "cwd.js")}"></script>
-<script nonce="${nonce}" src="${uri("media", "drag.js")}"></script>
-<script nonce="${nonce}" src="${uri("media", "layout.js")}"></script>
-<script nonce="${nonce}" src="${uri("media", "view.js")}"></script>
+<script nonce="${nonce}" src="${uri("src", "shared", "keys.js")}"></script>
+<script nonce="${nonce}" src="${uri("webview", "terminals", "links.js")}"></script>
+<script nonce="${nonce}" src="${uri("webview", "terminals", "cwd.js")}"></script>
+<script nonce="${nonce}" src="${uri("src", "shared", "drag.js")}"></script>
+<script nonce="${nonce}" src="${uri("src", "shared", "layout.js")}"></script>
+<script nonce="${nonce}" src="${uri("webview", "terminals", "view.js")}"></script>
 </body>
 </html>`;
   }

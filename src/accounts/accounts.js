@@ -69,7 +69,7 @@ const level = (pct) => (pct >= 90 ? "high" : pct >= 70 ? "warn" : "ok");
 // blue is asleep; a ring (limit, waiting) is the other state of the same color.
 const DOTS = { error: ["circle-filled", "red"], limit: ["target", "red"], waiting: ["target", "amber"], warn: ["circle-filled", "amber"], ok: ["circle-filled", "green"], asleep: ["circle-filled", "blue"] };
 // The provider's mark leads its group in the status bar: the company's, as on the panel's cards.
-const { PROVIDERS } = require("./providers");
+const { PROVIDERS } = require("./providers.js");
 // A profile's provider id (claude when the field is missing), or "" for one the table doesn't know.
 const providerOf = (p) => { const id = p.provider || "claude"; return PROVIDERS[id] ? id : ""; };
 function parts(profile, state, now = Date.now()) {
@@ -297,7 +297,7 @@ function startAccounts(vscode, context) {
   );
   refresh();
   return {
-    panelRoot: vscode.Uri.joinPath(context.extensionUri, "media", "accounts"),
+    panelRoot: vscode.Uri.joinPath(context.extensionUri, "webview", "accounts"),
     message,
     onDidChange(listener) {
       listeners.add(listener);

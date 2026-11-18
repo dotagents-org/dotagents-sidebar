@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { test } from "node:test";
 
 // The same file the view loads as a script: the paths in a terminal line
-const { findPaths, MAX_LINE, MAX_LINKS } = createRequire(import.meta.url)("../media/links.js");
+const { findPaths, MAX_LINE, MAX_LINKS } = createRequire(import.meta.url)("../../webview/terminals/links.js");
 
 // [the text of the link, the path, the line, the column] for each candidate
 const found = (text) => findPaths(text).map((f) => [text.slice(f.start, f.end), f.path, f.line, f.column]);

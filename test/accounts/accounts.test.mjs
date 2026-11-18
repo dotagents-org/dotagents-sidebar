@@ -5,8 +5,8 @@ import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 
-// Plain CommonJS, loaded as VS Code loads it: what accounts.js decides without VS Code
-const accounts = createRequire(import.meta.url)("../accounts.js");
+// Plain CommonJS, loaded as VS Code loads it: what src/accounts/accounts.js decides without VS Code
+const accounts = createRequire(import.meta.url)("../../src/accounts/accounts.js");
 
 // One provider, an API 2 answer: what the sidebar showed before Codex.
 const data = {
@@ -166,7 +166,7 @@ test("a provider's view takes its profiles, its slots and its current from an AP
   assert.deepEqual(accounts.forProvider({ ...data, slots: undefined }, "codex").slots, {});
 });
 
-// What the sidebar shows of the table comes from providers.js, whatever the API's profiles say.
+// What the sidebar shows of the table comes from src/accounts/providers.js, whatever the API's profiles say.
 const withUnknown = { ...both, profiles: [...both.profiles, { name: "ghost", provider: "gemini", state: "ok", avatar: "ok", windows: [{ kind: "session", pct: 1 }] }] };
 
 test("both providers: the panel is told each one's name, tool and mark, and the status bar and the pick list use the same table", () => {

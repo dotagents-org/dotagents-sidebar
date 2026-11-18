@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { test } from "node:test";
 
 // The same file the view loads as a script
-const { groups, dropOrder, endOrder, moving, plan, planEnd } = createRequire(import.meta.url)("../media/drag.js");
+const { groups, dropOrder, endOrder, moving, plan, planEnd } = createRequire(import.meta.url)("../../src/shared/drag.js");
 
 // s1 [s2 s3] s4 [s5 s6]: s2+s3 and s5+s6 are splits
 const sessions = [

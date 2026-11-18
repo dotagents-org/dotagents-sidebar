@@ -12,5 +12,5 @@
     "resolveJsonModule": true,
     "skipLibCheck": true
   },
-  "include": ["extension.js", "host.js", "accounts.js", "agent.js", "sessions.js", "codex-sessions.js", "log.js", "providers.js"]
+  "include": ["src/**/*.js"]
 }

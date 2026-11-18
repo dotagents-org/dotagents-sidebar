@@ -1,10 +1,10 @@
 // The sessions of the view: which agents are open, how they are grouped and which one shows.
 // Every action takes a state and returns the new one; the state is what gets saved and drawn.
-// A group of more than one session (a split) has a layout (media/layout.js): how its panes share
+// A group of more than one session (a split) has a layout (src/shared/layout.js): how its panes share
 // the view. Its leaves are always the group's sessions in the order of the list
 
-const drag = require("./media/drag.js");
-const layout = require("./media/layout.js");
+const drag = require("../shared/drag.js");
+const layout = require("../shared/layout.js");
 
 const EMPTY = { sessions: [], active: null, next: 1, layouts: {} };
 
@@ -100,7 +100,7 @@ function remember(state, id, fields) {
 }
 
 // Dropping a session on another, or below the last one, as the terminal panel's tabs do it
-// (media/drag.js): its group moves next to the other's group, or inside its own group the
+// (src/shared/drag.js): its group moves next to the other's group, or inside its own group the
 // session is reordered. The session that was moved becomes the active one, as there
 function drop(state, id, targetId) {
   const sessions = drag.dropOrder(state.sessions, id, targetId);

@@ -118,7 +118,7 @@ function listen(server, socketPath) {
 
 /** @typedef {{ spawn(file: string, args: string[], options: object): any }} Pty node-pty, or what stands in for it */
 
-// log(level, source, message): where its events go; host.log when it runs on its own (log.js)
+// log(level, source, message): where its events go; host.log when it runs on its own (src/log.js)
 /** @param {{ pty: Pty, socketPath: string, grace?: number, onExit?: () => void, log?: (level: string, source: string, message: any) => void }} options */
 async function createHost({ pty, socketPath, grace = GRACE, onExit = () => {}, log = () => {} }) {
   const sessions = new Map(); // id -> { proc, screen, serializer, exitCode }
@@ -252,11 +252,11 @@ async function createHost({ pty, socketPath, grace = GRACE, onExit = () => {}, l
 
 module.exports = { GRACE, PROTOCOL, connect, createHost, loadPty, socketDir, socketPath };
 
-// Started by the extension: node host.js <socket> <VS Code's appRoot>
+// Started by the extension: node src/host/host.js <socket> <VS Code's appRoot>
 if (require.main === module) {
   const [socket, appRoot] = process.argv.slice(2);
   // It runs on its own, its output thrown away: what it does and how it ends go to host.log
-  const log = require("./log.js").writer("host");
+  const log = require("../log.js").writer("host");
   log("info", "host", `started, pid ${process.pid}, node ${process.version} (${process.execPath}), socket ${socket}`);
   process.on("exit", (code) => log("info", "host", `stopped, pid ${process.pid}, exit ${code}`));
   process.on("uncaughtException", (err) => {

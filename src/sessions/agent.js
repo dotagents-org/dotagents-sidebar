@@ -51,12 +51,12 @@ function command(platform, agent, args = []) {
 // The user's shell, run as a terminal session: a login-less interactive one, like the integrated terminal's default
 const TERMINAL = { name: "Terminal" };
 
-// Bash and PowerShell also report the folder they are in at each prompt (media/cwd.js reads it)
+// Bash and PowerShell also report the folder they are in at each prompt (webview/terminals/cwd.js reads it)
 const POWERSHELL_CWD =
   "$global:__dotagentsPrompt = $function:prompt; function global:prompt { " +
   "if ($PWD.Provider.Name -eq 'FileSystem') { [Console]::Write([char]27 + ']9;9;' + $PWD.ProviderPath + [char]7) }; & $global:__dotagentsPrompt }";
 
-function terminalCommand(platform, processEnv = {}, root = __dirname) {
+function terminalCommand(platform, processEnv = {}, root = path.join(__dirname, "..", "..")) {
   if (platform === "win32") return { file: "powershell.exe", args: ["-NoLogo", "-NoExit", "-Command", POWERSHELL_CWD] };
   const file = processEnv.SHELL || "bash";
   if (path.basename(file) === "bash") return { file, args: ["--rcfile", path.join(root, "shell", "bash-cwd.sh"), "-i"] };

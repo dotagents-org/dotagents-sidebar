@@ -1,6 +1,6 @@
 // Generates the dotagents avatars: the brand (the `..` face) and one per account, in each state.
 //
-// The accounts tab draws the avatars live (media/accounts/avatar.js), so this script only makes
+// The accounts tab draws the avatars live (webview/accounts/avatar.js), so this script only makes
 // pictures of them, for documents:
 //   still/<who>-<state>.svg   one frame
 //   strip/<who>-working.svg   24 frames of 3 s side by side

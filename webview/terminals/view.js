@@ -35,12 +35,12 @@
   let initialized = false; // init came: the state and the screens to draw
   let state = { sessions: [], active: null };
 
-  // The keys VS Code keeps while a session has focus, worked out by the extension (media/keys.js);
+  // The keys VS Code keeps while a session has focus, worked out by the extension (src/shared/keys.js);
   // the built-in list until it has
   let vsCodeKeys = new Set(settings.keys || agentKeys.FALLBACK);
   const forVsCode = (event) => vsCodeKeys.has(agentKeys.eventCombo(event));
 
-  // File links (media/links.js finds the paths; the extension says which exist and opens them).
+  // File links (webview/terminals/links.js finds the paths; the extension says which exist and opens them).
   // A request per hovered line, answered by id; the answers are cached there for a few seconds
   const linkRequests = new Map();
   let nextLinkRequest = 0;
@@ -276,7 +276,7 @@
     if (restoring.has(id)) return; // its screen is still being written at the host's size (init)
     // Too small to show a terminal (a deep split, a narrow view): the agent keeps its last size.
     // A pane that never reported one reports the terminal's own once, since that first size is
-    // what starts its agent (extension.js, resize)
+    // what starts its agent (src/extension.js, resize)
     if (el.clientWidth < MIN_PANE || el.clientHeight < MIN_PANE) {
       if (!terminal.last) {
         terminal.last = `${term.cols}x${term.rows}`;
@@ -332,7 +332,7 @@
 
   // Dragging in the list. Pointer events rather than the browser's drag and drop, so it works the
   // same in every webview, scrolls the list near its edges and is cancelled by Escape. What a drop
-  // does is media/drag.js, as the terminal panel's tabs do it: a session's whole group goes next
+  // does is src/shared/drag.js, as the terminal panel's tabs do it: a session's whole group goes next
   // to the group of the row under the pointer (inside its own group, the session is reordered),
   // and below the last row it goes to the end. With Shift the session joins the group of the row
   // instead, or, below the last row, leaves its group. A line (or a box, for joining) shows where it
@@ -617,7 +617,7 @@
     focus();
   }
 
-  // The active group's panes, laid out as its tree says (media/layout.js): each split a row or a
+  // The active group's panes, laid out as its tree says (src/shared/layout.js): each split a row or a
   // column, its two halves sized by the ratio and a border between them that can be dragged. The
   // panes are only moved, never rebuilt, and only when the shape of the tree or the group in view
   // changes; a new ratio alone is set on the borders already there

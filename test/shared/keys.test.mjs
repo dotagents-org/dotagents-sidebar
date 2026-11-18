@@ -3,8 +3,8 @@ import { createRequire } from "node:module";
 import { test } from "node:test";
 
 const require = createRequire(import.meta.url);
-const { parseJsonc, normalize, eventCombo, skipCommands, keysForVsCode, FALLBACK } = require("../media/keys.js");
-const SKIP = require("../skip-shell.json");
+const { parseJsonc, normalize, eventCombo, skipCommands, keysForVsCode, FALLBACK } = require("../../src/shared/keys.js");
+const SKIP = require("../../src/skip-shell.json");
 
 test("the copied skip list is VS Code's, with the commands that matter here", () => {
   assert.ok(SKIP.commands.length > 100);

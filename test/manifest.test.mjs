@@ -5,7 +5,7 @@ import path from "node:path";
 import { test } from "node:test";
 
 const require = createRequire(import.meta.url);
-const { AGENTS } = require("../agent.js");
+const { AGENTS } = require("../src/sessions/agent.js");
 const root = path.join(import.meta.dirname, "..");
 const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 
@@ -28,9 +28,9 @@ test("each agent has a terminal profile, its activation event and its icons", ()
 test("the title strip opens Claude Code, Codex or a terminal, each from its own button with its mark", () => {
   const commands = pkg.contributes.commands.map((c) => c.command);
   for (const name of ["new", "new.codex", "split"]) assert.ok(commands.includes(`dotagentsSidebar.${name}`), name);
-  // The view draws the buttons in its own strip (extension.js, TITLE_BUTTONS), so VS Code's title bar has none
+  // The view draws the buttons in its own strip (src/extension.js, TITLE_BUTTONS), so VS Code's title bar has none
   assert.equal(pkg.contributes.menus["view/title"], undefined);
-  const source = fs.readFileSync(path.join(root, "extension.js"), "utf8");
+  const source = fs.readFileSync(path.join(root, "src/extension.js"), "utf8");
   const buttons = JSON.parse(source.match(/const TITLE_BUTTONS = (\[.*\]);/)[1]);
   assert.deepEqual(buttons.slice(0, 3), ["dotagentsSidebar.new", "dotagentsSidebar.new.codex", "dotagentsSidebar.newTerminal"]);
   for (const name of buttons) assert.ok(pkg.contributes.commands.find((c) => c.command === name)?.icon?.dark, name);
@@ -51,7 +51,7 @@ test("every command and submenu the menus use is declared", () => {
 });
 
 test("every declared command is registered by the extension", () => {
-  const source = ["extension.js", "accounts.js"].map((f) => fs.readFileSync(path.join(root, f), "utf8")).join("\n");
+  const source = ["src/extension.js", "src/accounts/accounts.js"].map((f) => fs.readFileSync(path.join(root, f), "utf8")).join("\n");
   for (const { command } of pkg.contributes.commands) {
     const name = command.replace("dotagentsSidebar.", "");
     assert.ok(source.includes(`"${command}"`) || source.includes(`onSession("${name}"`), command);

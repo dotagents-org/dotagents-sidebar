@@ -7,7 +7,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
-const { stateDir } = require("./accounts.js");
+const { stateDir } = require("./accounts/accounts.js");
 
 // Past this size a file becomes <name>.log.1, replacing the one before, and starts again.
 const ROTATE_AT = 1024 * 1024;

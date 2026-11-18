@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { after, test } from "node:test";
 
-const host = createRequire(import.meta.url)("../host.js");
+const host = createRequire(import.meta.url)("../../src/host/host.js");
 const { connect, socketDir } = host;
 
 // Every host a test starts is closed at the end, even when the test fails halfway

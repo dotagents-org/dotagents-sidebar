@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 
-const { mask, format, writer } = createRequire(import.meta.url)("../log.js");
+const { mask, format, writer } = createRequire(import.meta.url)("../src/log.js");
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "sidebar-logs-"));
 const SECRETS = ["sk-ant-oat01-AbCdEf_123-xyz", "sk-ant-ort01-QRSTUV987", "eyJhbGciOiJSUzI1NiJ9.payload.sig", "Zm9vYmFyYmF6cXV4MTIzNDU2Nzg5MA"];

@@ -6,9 +6,9 @@ import { test } from "node:test";
 import vm from "node:vm";
 
 const require = createRequire(import.meta.url);
-const { PROVIDERS: providers } = require("../providers.js");
-const accounts = require("../accounts.js");
-const root = path.join(import.meta.dirname, "..");
+const { PROVIDERS: providers } = require("../../src/accounts/providers.js");
+const accounts = require("../../src/accounts/accounts.js");
+const root = path.join(import.meta.dirname, "..", "..");
 const source = (name) => fs.readFileSync(path.join(root, name), "utf8");
 
 // The panel's DOM operations, with avatars left to their own renderer.
@@ -34,7 +34,7 @@ function panel() {
     acquireVsCodeApi: () => ({ postMessage() {} }),
     addEventListener: (name, listener) => { if (name === "message") message = listener; },
   });
-  vm.runInContext(source("media/accounts/panel.js"), context);
+  vm.runInContext(source("webview/accounts/panel.js"), context);
   return { host, context, render: (data) => message({ data: { type: "usage", data, providers: accounts.panelProviders } }) };
 }
 
@@ -54,7 +54,7 @@ test("the extension and panel share account labels and marks, while sessions kee
   const view = panel();
   assert.deepEqual(Object.keys(accounts.panelProviders), Object.keys(providers));
   assert.deepEqual(Object.values(providers).map((p) => p.title), ["Claude", "ChatGPT"]);
-  const { AGENTS } = require("../agent.js");
+  const { AGENTS } = require("../../src/sessions/agent.js");
   assert.deepEqual(Object.values(AGENTS).map((a) => a.name), ["Claude Code", "Codex"]);
 
   const saved = providers.codex.title;
@@ -83,5 +83,5 @@ test("the extension and panel share account labels and marks, while sessions kee
 });
 
 test("the webview receives the shared provider table with usage", () => {
-  assert.match(source("accounts.js"), /providers: panelProviders/);
+  assert.match(source("src/accounts/accounts.js"), /providers: panelProviders/);
 });

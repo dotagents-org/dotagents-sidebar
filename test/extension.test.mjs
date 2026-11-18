@@ -5,8 +5,8 @@ import path from "node:path";
 import { test } from "node:test";
 
 const require = createRequire(import.meta.url);
-const sessions = require("../sessions.js");
-const { AGENTS, command, conversationArgs, env, terminalCommand } = require("../agent.js");
+const sessions = require("../src/sessions/sessions.js");
+const { AGENTS, command, conversationArgs, env, terminalCommand } = require("../src/sessions/agent.js");
 
 // Load the real view with VS Code and logging replaced; keep its class private in production.
 function view(kind, { picks = [], config = {} } = {}) {
@@ -39,7 +39,7 @@ function view(kind, { picks = [], config = {} } = {}) {
     Uri: { joinPath: (...parts) => parts.join("/") },
     env: { clipboard: { writeText: async (text) => clipboard.push(text), readText: async () => "pasted" } },
   };
-  const file = path.join(import.meta.dirname, "..", "extension.js");
+  const file = path.join(import.meta.dirname, "..", "src/extension.js");
   const extension = new Module(file);
   const localRequire = createRequire(file);
   extension.require = (id) => id === "vscode" ? vscode : id === "./log.js" ? { writer: () => () => {} } : localRequire(id);
@@ -220,7 +220,7 @@ test("a Copy the clipboard refuses says so and leaves the selection", async () =
 });
 
 test("a pane too deep to split says so, before asking anything and without changing the last side", async () => {
-  const { DEPTH } = require("../media/layout.js");
+  const { DEPTH } = require("../src/shared/layout.js");
   const { view: sidebar, asked, told, global } = view(undefined, { picks: ["Right", "Claude Code"] });
   for (let i = 0; i <= DEPTH; i++) sidebar.state = sessions.split(sidebar.state, "A", undefined, undefined, i % 2 ? "down" : "right");
   const state = sidebar.state;

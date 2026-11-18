@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { test } from "node:test";
 
-const { EMPTY, COLORS, ROTATION, add, split, close, drop, dropEnd, join, unsplit, resize, rename, recolor, activate, visible, restore } = createRequire(import.meta.url)("../sessions.js");
-const { leaves, shape, DEPTH } = createRequire(import.meta.url)("../media/layout.js");
+const { EMPTY, COLORS, ROTATION, add, split, close, drop, dropEnd, join, unsplit, resize, rename, recolor, activate, visible, restore } = createRequire(import.meta.url)("../../src/sessions/sessions.js");
+const { leaves, shape, DEPTH } = createRequire(import.meta.url)("../../src/shared/layout.js");
 
 test("the colors are the terminal panel's, in its order; new sessions take turns among the bright ones", () => {
   assert.deepEqual(COLORS, ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]);
@@ -92,7 +92,7 @@ test("restore keeps a saved state, and shows the first session when the active o
 });
 
 test("remember keeps facts about one session's agent, and they survive a restore", () => {
-  const { remember } = createRequire(import.meta.url)("../sessions.js");
+  const { remember } = createRequire(import.meta.url)("../../src/sessions/sessions.js");
   const state = remember(add(add(EMPTY, "Claude Code"), "Claude Code"), "s1", { conversation: "abc", startedAt: 5 });
   assert.equal(state.sessions[0].conversation, "abc");
   assert.equal(state.sessions[0].startedAt, 5);

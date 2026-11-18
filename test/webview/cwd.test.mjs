@@ -6,8 +6,8 @@ import path from "node:path";
 import { test } from "node:test";
 
 // The same file the view loads as a script
-const { fromOsc, segments, separator } = createRequire(import.meta.url)("../media/cwd.js");
-const { terminalCommand } = createRequire(import.meta.url)("../agent.js");
+const { fromOsc, segments, separator } = createRequire(import.meta.url)("../../webview/terminals/cwd.js");
+const { terminalCommand } = createRequire(import.meta.url)("../../src/sessions/agent.js");
 
 test("OSC 7 carries a file URL; OSC 9;9 the path, quoted or not", () => {
   assert.equal(fromOsc(7, "file://host/home/me/my%20project"), "/home/me/my project");

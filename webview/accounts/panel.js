@@ -1,5 +1,5 @@
 // The accounts tab's panel: draws the usage JSON of `dotagents start` (every profile, the account
-// in each side's slot), which the extension (accounts.js) posts, and asks it for the actions.
+// in each side's slot), which the extension (src/accounts/accounts.js) posts, and asks it for the actions.
 "use strict";
 
 (() => {

@@ -12,4 +12,4 @@
 - **VS Code internals.** node-pty is not a public API. If a VS Code update moves it, the view shows an error listing the paths it tried.
 - **Shortcuts without `when`.** The extension can't ask VS Code which command a key runs at the moment, so it leaves the `when` conditions out (but for bindings that need a focus the view never has). Your own `keybindings.json` is only read in a local window; in a remote one, add your keys with `dotagentsSidebar.keysForVsCode`.
 - **Pasting images.** Ctrl+V pastes text only.
-- **An update that changes the host's messages stops the agents.** Most updates reach the running host and the agents keep working; when the messages between the extension and the host change (`PROTOCOL` in `host.js`), the new version starts a new host and the sessions reopen their conversations.
+- **An update that changes the host's messages stops the agents.** Most updates reach the running host and the agents keep working; when the messages between the extension and the host change (`PROTOCOL` in `src/host/host.js`), the new version starts a new host and the sessions reopen their conversations.
