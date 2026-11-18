@@ -257,7 +257,8 @@ body.vscode-high-contrast-light #header .window {
 }
 
 /* The border between the halves takes no room: a line drawn over the edge of the second half,
-   with a wider band to grab, in the sash's colors */
+   with a wider band to grab. It keeps the divider's color under the pointer and while dragged:
+   the resize cursor is the only sign */
 .sash {
   flex: none;
   position: relative;
@@ -313,10 +314,6 @@ body.vscode-high-contrast-light #header .window {
   height: 5px;
 }
 
-.sash:hover::after,
-.sash.active::after {
-  background: var(--vscode-sash-hoverBorder, var(--vscode-focusBorder));
-}
 
 /* While a border is dragged, the cursor stays its own over the panes, and nothing gets selected */
 body.resizing {
