@@ -229,7 +229,7 @@
     // than the agent's or the workspace's name
     let lastTitle;
     term.onTitleChange((raw) => {
-      const clean = session.provider === "codex" ? agentTitle.codex(raw, settings.workspace) : agentTitle.strip(raw);
+      const clean = session.provider === "codex" ? agentTitle.codex(raw, [session.cwd && agentCwd.segments(session.cwd).at(-1), settings.workspace]) : agentTitle.strip(raw);
       const title = session.kind === "terminal" || clean === kind(session).name || clean === settings.workspace ? "" : clean;
       if (title === lastTitle) return; // a spinner changes only the mark
       lastTitle = title;
