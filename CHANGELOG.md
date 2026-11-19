@@ -47,6 +47,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Fixed
 
+- **Terminals draw their letters at full size again.** Since VS Code 1.147, Chromium ignores a canvas font that starts with a space and falls back to 10px sans-serif; xterm's WebGL renderer sets such a font for its glyphs, so letters came out small and thin, spread apart in their cells. The view now trims that space, as VS Code does for its own terminal. `"dotagentsSidebar.renderer": "dom"` is the way around a rendering problem like this one until a fix comes.
 - **The accounts start their server on Windows.** The extension started `dotagents start` through a detached PowerShell, which on Windows has no console and exits without running anything, so the accounts stayed on "Starting the dotagents server..." until it was started by hand.
 - **The side and kind lists stay open while the agents work.** Every redraw of the view, even for a title or a folder that changed, focused the active terminal, which could close Split Session's lists (and Join Session's) before you picked. The terminal now takes the focus only when the session in view changes.
 - **Split Session no longer misuses the list's `kind`.** The list of what to open passed the agent in the field VS Code reserves for separators (`QuickPickItemKind`); it worked only because VS Code ignored the unknown value.

@@ -1,6 +1,8 @@
 (function () {
   const vscode = acquireVsCodeApi();
   const settings = window.DOTAGENTS_SIDEBAR_SETTINGS;
+  // Before any terminal draws its glyph atlas (canvas-font.js)
+  agentCanvasFont.trimLeadingWhitespace(window);
   const agents = settings.agents; // by provider: claude, codex
   const css = getComputedStyle(document.documentElement);
   const color = (name, fallback) => css.getPropertyValue(`--vscode-${name}`).trim() || fallback;

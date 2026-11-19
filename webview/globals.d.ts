@@ -6,6 +6,7 @@ declare const agentDrag: typeof import("../src/shared/drag.js");
 declare const agentKeys: typeof import("../src/shared/keys.js");
 declare const agentLinks: typeof import("./terminals/links.js");
 declare const agentCwd: typeof import("./terminals/cwd.js");
+declare const agentCanvasFont: typeof import("./terminals/canvas-font.js");
 
 declare const Terminal: typeof import("@xterm/xterm").Terminal;
 declare const FitAddon: typeof import("@xterm/addon-fit");
