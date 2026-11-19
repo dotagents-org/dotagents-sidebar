@@ -238,6 +238,18 @@ test("dropping a session on another to join it asks the side first, the last one
   assert.equal(sidebar.state, before);
 });
 
+// A session that closes on its own while a list is open (its agent or shell exited cleanly) puts
+// another in view, and the view focuses it: with a list of VS Code's open, that would close it
+test("while a list is open, the view is told to leave the focus alone", async () => {
+  let during;
+  const { view: sidebar, messages } = view(undefined, { picks: [() => ((during = messages.filter((m) => m.type === "picking").at(-1)), undefined)] });
+  sidebar.state = sessions.add(sidebar.state, "A");
+  const [first, second] = sidebar.state.sessions.map((s) => s.id);
+  await sidebar.onMessage({ type: "join", id: second, target: first });
+  assert.deepEqual(during, { type: "picking", on: true });
+  assert.deepEqual(messages.filter((m) => m.type === "picking").at(-1), { type: "picking", on: false });
+});
+
 test("a join whose target got too deep while the list was open says so and keeps the last side", async () => {
   const { DEPTH } = require("../src/shared/layout.js");
   let sidebar;

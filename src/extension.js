@@ -563,7 +563,7 @@ class SidebarView {
       { agent: "terminal", label: TERMINAL.name, iconPath: icon("terminal") },
     ];
     const ordered = [...kinds.filter((k) => k.agent === current), ...kinds.filter((k) => k.agent !== current)];
-    const pick = await vscode.window.showQuickPick(
+    const pick = await this.quickPick(
       ordered.map((k) => ({ ...k, description: target && k.agent === current ? "the same as this session" : "" })),
       { title: "Split Session", placeHolder: "Open what?" }
     );
@@ -580,7 +580,7 @@ class SidebarView {
   async pickSide(title) {
     const last = this.context.globalState.get("splitDirection");
     const order = [...DIRECTIONS.filter((d) => d.dir === last), ...DIRECTIONS.filter((d) => d.dir !== last)];
-    const side = await vscode.window.showQuickPick(
+    const side = await this.quickPick(
       order.map((d) => ({ label: d.label, description: d.description, iconPath: new vscode.ThemeIcon(d.icon), dir: d.dir })),
       { title, placeHolder: "Which side?" }
     );
@@ -692,7 +692,7 @@ class SidebarView {
       { label: "", kind: vscode.QuickPickItemKind.Separator },
       { label: "Reset to default", color: null },
     ];
-    const pick = await vscode.window.showQuickPick(items, { placeHolder: "Session color" });
+    const pick = await this.quickPick(items, { placeHolder: "Session color" });
     if (pick && this.session(id)) this.update(sessions.recolor(this.state, id, pick.color));
   }
 
@@ -716,6 +716,23 @@ class SidebarView {
       dots[name] = file;
     }
     return dots;
+  }
+
+  // One of VS Code's lists, over the view. While it is open the view leaves the focus alone even when
+  // another session comes into view (one whose agent exited cleanly closes), which would close the list
+  /**
+   * @template {import("vscode").QuickPickItem} T
+   * @param {readonly T[]} items
+   * @param {import("vscode").QuickPickOptions} options
+   * @returns {Promise<T | undefined>}
+   */
+  async quickPick(items, options) {
+    this.post({ type: "picking", on: true });
+    try {
+      return await vscode.window.showQuickPick(items, options);
+    } finally {
+      this.post({ type: "picking", on: false });
+    }
   }
 
   post(msg) {

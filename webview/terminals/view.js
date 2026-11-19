@@ -114,6 +114,7 @@
   const accountsPane = document.getElementById("accounts");
   let showAccounts = false;
   let shownLast; // what was in view at the last redraw: a session's id, "accounts" or null
+  let picking = false; // one of VS Code's lists is open over the view (src/extension.js, quickPick)
   window.acquireVsCodeApi = () => ({ postMessage: (message) => vscode.postMessage({ type: "accounts", message }) });
   let accountsLoaded = false;
   function loadAccounts() {
@@ -619,9 +620,9 @@
     // The terminal takes the focus when what is in view changes (another session, or the accounts
     // tab opened or closed), and on any redraw while the view has the focus (a drag, Restart, a
     // neighbor pane that closed and moved it). With one of VS Code's lists open over the view
-    // (Split Session's, Join Session's), a redraw for a title or a folder leaves the focus there.
+    // (Split Session's, Join Session's), the focus stays there, even when another session comes in.
     const shown = showAccounts ? "accounts" : state.active;
-    if (shown !== shownLast || document.hasFocus()) focus();
+    if (!picking && (shown !== shownLast || document.hasFocus())) focus();
     shownLast = shown;
   }
 
@@ -861,6 +862,7 @@
       }
     }
     else if (msg.type === "keys") vsCodeKeys = new Set(msg.keys);
+    else if (msg.type === "picking") picking = msg.on;
   });
   window.addEventListener("focus", focus);
 
