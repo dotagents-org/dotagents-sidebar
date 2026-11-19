@@ -849,6 +849,7 @@ ${accounts ? `<link rel="stylesheet" href="${panel("panel.css")}">` : ""}
 <script nonce="${nonce}" src="${uri("src", "shared", "keys.js")}"></script>
 <script nonce="${nonce}" src="${uri("webview", "terminals", "links.js")}"></script>
 <script nonce="${nonce}" src="${uri("webview", "terminals", "cwd.js")}"></script>
+<script nonce="${nonce}" src="${uri("webview", "terminals", "title.js")}"></script>
 <script nonce="${nonce}" src="${uri("src", "shared", "drag.js")}"></script>
 <script nonce="${nonce}" src="${uri("src", "shared", "layout.js")}"></script>
 <script nonce="${nonce}" src="${uri("webview", "terminals", "view.js")}"></script>
