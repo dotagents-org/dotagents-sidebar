@@ -36,6 +36,7 @@ The extension's own code is in `src/`, by area: `host/`, `sessions/`, `accounts/
 | `shell/bash-cwd.sh` | Run by a terminal session's bash after `~/.bashrc`: reports the current folder (OSC 7) at each prompt |
 | `webview/terminals/cwd.js` | The folder a terminal reports (OSC 7, OSC 9;9) and the path its title shows |
 | `webview/terminals/links.js` | The file paths in a terminal line, as candidates for links; the extension says which exist and opens them |
+| `webview/terminals/title.js` | What an agent's window title says about its conversation: the status mark dropped, and for Codex the project part, wherever its title puts it |
 | `webview/accounts/` | The accounts tab: the panel (`panel.js`, `panel.css`) and the avatars, drawn live (`avatar.js`) |
 | `src/skip-shell.json` | VS Code's default commands that skip the shell, copied from its source |
 | `scripts/avatars/generate.mjs` | The avatars as still pictures and strips, for documents (`assets/avatars/`); the same rules as `avatar.js` |
