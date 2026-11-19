@@ -28,10 +28,12 @@ function view(kind, { picks = [], config = {} } = {}) {
       createOutputChannel: () => ({ appendLine() {}, dispose() { disposed++; } }),
       showInformationMessage: (text) => told.push(text),
       showWarningMessage: (text) => warned.push(text),
-      // Each list answers with the item whose label the test gave, in order (undefined: Escape)
+      // Each list answers with the item whose label the test gave, in order (undefined: Escape); a
+      // function stands for what happens while the list is open, and returns the label
       showQuickPick: async (items, options) => {
         asked.push({ items, options });
-        const label = picks.shift();
+        const pick = picks.shift();
+        const label = typeof pick === "function" ? pick() : pick;
         return items.find((i) => i.label === label);
       },
     },
@@ -234,6 +236,25 @@ test("dropping a session on another to join it asks the side first, the last one
   const before = sidebar.state;
   await sidebar.onMessage({ type: "join", id: third, target: first }); // Escape on the list
   assert.equal(sidebar.state, before);
+});
+
+test("a join whose target got too deep while the list was open says so and keeps the last side", async () => {
+  const { DEPTH } = require("../src/shared/layout.js");
+  let sidebar;
+  let first;
+  const tooDeepNow = () => {
+    for (let i = 0; i <= DEPTH; i++) sidebar.state = sessions.split(sidebar.state, "A", undefined, undefined, i % 2 ? "down" : "right", first);
+    return "Up";
+  };
+  const made = view(undefined, { picks: [tooDeepNow] });
+  sidebar = made.view;
+  sidebar.state = sessions.add(sidebar.state, "A");
+  [first] = sidebar.state.sessions.map((s) => s.id);
+  const second = sidebar.state.sessions[1].id;
+  await sidebar.onMessage({ type: "join", id: second, target: first });
+  assert.equal(made.told.length, 1);
+  assert.notEqual(sidebar.session(second).group, sidebar.session(first).group);
+  assert.equal(made.global.get("splitDirection"), undefined);
 });
 
 test("a pane too deep to split says so, before asking anything and without changing the last side", async () => {

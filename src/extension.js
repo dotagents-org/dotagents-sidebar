@@ -595,6 +595,7 @@ class SidebarView {
     if (!sessions.canSplit(this.state, targetId)) return this.tooDeep();
     const dir = await this.pickSide("Join Session");
     if (!dir || !this.session(id) || !this.session(targetId)) return; // Escape, or one closed while the list was open
+    if (!sessions.canSplit(this.state, targetId)) return this.tooDeep(); // moved deeper while the list was open
     this.context.globalState.update("splitDirection", dir);
     this.update(sessions.join(this.state, id, targetId, dir));
   }
