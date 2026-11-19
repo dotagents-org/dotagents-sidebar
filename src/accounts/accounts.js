@@ -13,7 +13,7 @@ const os = require("node:os");
 const path = require("node:path");
 
 // The format of what `dotagents start` says (its docs/commands.md); another one is refused.
-const API_VERSION = 2;
+const API_VERSION = 3;
 
 // The same folder as dotagents' stateDir.
 function stateDir(env = process.env, home = os.homedir()) {
@@ -103,7 +103,7 @@ function toneColor(tone, account, dark) {
   return `#${mix(1)}${mix(3)}${mix(5)}`;
 }
 
-// One provider's part of an API 2 answer, as the functions below take it: its profiles, its slots
+// One provider's part of an API 3 answer, as the functions below take it: its profiles, its slots
 // ({ WSL: "work" }) and its current account.
 const forProvider = (data, id) => ({ ...data, profiles: data.profiles.filter((p) => providerOf(p) === id), slots: (data.slots && data.slots[id]) || {}, current: data.current && data.current[id] });
 

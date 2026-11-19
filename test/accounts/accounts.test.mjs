@@ -8,7 +8,7 @@ import { test } from "node:test";
 // Plain CommonJS, loaded as VS Code loads it: what src/accounts/accounts.js decides without VS Code
 const accounts = createRequire(import.meta.url)("../../src/accounts/accounts.js");
 
-// One provider, an API 2 answer: what the sidebar showed before Codex.
+// One provider, an API 3 answer: what the sidebar showed before Codex.
 const data = {
   current: { claude: { profile: "personal", state: "warn" } },
   slots: { claude: { WSL: "personal", Windows: "work" } },
@@ -37,9 +37,9 @@ test("the accounts show where dotagents has profiles, and the server is found wh
 });
 
 test("an answer in another API version is refused with what to update, and an error is passed on", () => {
-  assert.equal(accounts.refusal({ apiVersion: 2, profiles: [] }), "");
+  assert.equal(accounts.refusal({ apiVersion: 3, profiles: [] }), "");
   assert.match(accounts.refusal({ apiVersion: 1, profiles: [] }), /run dotagents update/, "version 1 is from before the providers");
-  assert.equal(accounts.refusal({ apiVersion: 2, error: "profiles.json is not valid JSON" }), "dotagents: profiles.json is not valid JSON");
+  assert.equal(accounts.refusal({ apiVersion: 3, error: "profiles.json is not valid JSON" }), "dotagents: profiles.json is not valid JSON");
   assert.match(accounts.refusal({ apiVersion: 3 }), /update dotagents-sidebar/);
   assert.match(accounts.refusal({ version: 1, profiles: [] }), /run dotagents update/, "a server from before the API had a version");
 });
@@ -97,7 +97,7 @@ test("dotagents start runs on its own: directly on Linux and macOS, through a hi
   assert.match(args.at(-1), /^Start-Process -WindowStyle Hidden -FilePath dotagents\.cmd -ArgumentList start$/);
 });
 
-// Two providers, an API 2 answer: Claude's pair and a ChatGPT seat in one slot.
+// Two providers, an API 3 answer: Claude's pair and a ChatGPT seat in one slot.
 const both = {
   ...data,
   current: { claude: data.current.claude, chatgpt: { profile: "hopper", state: "asleep" } },
@@ -157,7 +157,7 @@ test("a marked account can be switched until it is in every slot of its provider
   assert.equal(accounts.inEverySlot({ ...both, sides: ["WSL"] }, codex), true, "a standalone machine has one slot");
 });
 
-test("a provider's view takes its profiles, its slots and its current from an API 2 answer", () => {
+test("a provider's view takes its profiles, its slots and its current from an API 3 answer", () => {
   const codex = accounts.forProvider(both, "chatgpt");
   assert.deepEqual(codex.profiles.map((p) => p.name), ["hopper", "dijkstra"]);
   assert.deepEqual(codex.slots, { WSL: "hopper" });

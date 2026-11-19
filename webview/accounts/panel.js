@@ -106,7 +106,7 @@
     shown = { root, data, act, providers };
     const redraw = () => render(shown.root, shown.data, shown);
     const now = Date.now();
-    // The slots per provider (apiVersion 2): { claude: { WSL: "work" }, chatgpt: { ... } }.
+    // The slots per provider (apiVersion 3): { claude: { WSL: "work" }, chatgpt: { ... } }.
     const slotsOf = (p) => (data.slots && data.slots[p.provider || "claude"]) || {};
     const sides = data.sides || [];
     // key: which button shows the action under way; one action at a time.

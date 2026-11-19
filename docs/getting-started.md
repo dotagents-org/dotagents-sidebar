@@ -4,7 +4,7 @@
 
 - VS Code **1.106** or newer: the first version with the secondary sidebar's view containers.
 - Install the agents you want to run where the workspace runs. The view looks for Claude Code (`claude`) and Codex (`codex`) on the `PATH` set by interactive Bash, or by PowerShell on Windows.
-- For the accounts tab, install [dotagents-core](https://github.com/dotagents-org/dotagents-core) with API 2 support and set up profiles on the same side as the window. Agent sessions work independently. See [Accounts](accounts.md).
+- For the accounts tab, install [dotagents-core](https://github.com/dotagents-org/dotagents-core) with API 3 support and set up profiles on the same side as the window. Agent sessions work independently. See [Accounts](accounts.md).
 
 ## Install
 
