@@ -20,6 +20,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Changed
 
+- **What to do after a switch, as the core says it.** The switch list's notification and the accounts panel show the line `dotagents switch` ends with, from the core's answer (`next`): for Claude, open conversations go on after `continue`; for ChatGPT, Codex sessions already open keep the old account until you restart them. The notification had Claude's line written in the sidebar, and nothing for ChatGPT; the panel said nothing.
 - **Plans by the product's name.** The accounts panel's group header says *Team  2 seats* for Claude and *Business  2 seats* for ChatGPT (Claude Team and ChatGPT Business, which was ChatGPT Team), where it said the API's `team` for both.
 - **Claude and ChatGPT side by side.** In the accounts tab the windows' labels share one column across every card, so the bars of both providers line up, and a week's "projection from" says the day. `Split With Claude Code Session` joins `Split With Codex Session` in the command palette.
 
@@ -45,6 +46,9 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 - **Session colors.** A new session takes a color no open session has, or the least used one, instead of the next in a fixed rotation that could repeat an open session's color after others closed.
 
 ### Fixed
+
+- **A Codex session's title without the project.** Codex puts its items in the window title joined by ` | ` (the thread's name, then the project): the title strip keeps the thread's name and drops the part that only repeats the workspace, as it does for Claude Code.
+- **The right conversation after /clear, /resume or two Codex sessions at once.** Each agent session starts with a `SessionStart` hook on its own command line (never in your settings) that writes the conversation it is in to the session's file in the extension's storage, and the view resumes that one. A Claude Code session resumed the conversation it started with even after `/clear` or `/resume`, and two Codex sessions started together in one folder could swap conversations. Codex runs the hook once you trust it (it asks once); until then the view still guesses from the rollouts.
 
 - **Switching an account already in use on one side.** The status bar's switch list now lets you pick the current account when another side still needs to switch to it.
 - **Reloading the window no longer fails while letting go of the host.** The view's `dispose()` called a `dispose` its log didn't have, so it threw before closing the host's channel and left the output channel behind; the host's channel now closes first, then the log's.

@@ -218,7 +218,8 @@ function startAccounts(vscode, context) {
     let result;
     try {
       const { ok, json } = await api("POST", `/api/${action}`, body || {});
-      result = json.apiVersion !== API_VERSION ? { ok: false, detail: refusal(json) } : { ok, detail: json.detail || json.error || "" };
+      // next: what to do after a switch, in the core's words (the switch command's last line)
+      result = json.apiVersion !== API_VERSION ? { ok: false, detail: refusal(json) } : { ok, detail: json.detail || json.error || "", ...(ok && json.next ? { next: json.next } : {}) };
     } catch (err) {
       result = { ok: false, detail: err.message };
     }
@@ -280,8 +281,9 @@ function startAccounts(vscode, context) {
     if (!pick || inEverySlot(data, pick)) return;
     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `dotagents: switching to ${pick.profile}` }, async () => {
       const result = await act("switch", { profile: pick.profile });
-      const goOn = pick.provider === "claude" ? ". Open conversations go on in the new account when you type continue." : "";
-      if (result.ok) vscode.window.showInformationMessage(`dotagents: ${result.detail || `now ${pick.profile}`}${goOn}`);
+      // A dotagents start from before next had Claude's line only in the sidebar
+      const next = result.next || (pick.provider === "claude" ? "Open conversations go on in the new account when you type continue." : "");
+      if (result.ok) vscode.window.showInformationMessage(`dotagents: ${result.detail || `now ${pick.profile}`}${next ? `. ${next}` : ""}`);
       else vscode.window.showErrorMessage(`dotagents: ${result.detail || "the switch failed"}`);
     });
   }

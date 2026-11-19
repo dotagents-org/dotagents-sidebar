@@ -39,8 +39,15 @@ function conversationArgs(agent, id, resume) {
   return [resume ? "--resume" : "--session-id", id];
 }
 
+// An argument goes into the shell line as is when it is plain, else in single quotes, which
+// neither bash nor PowerShell expands
+function quote(platform, arg) {
+  if (/^[A-Za-z0-9_\-.,:=@+/]+$/.test(arg)) return arg;
+  return platform === "win32" ? `'${arg.replace(/'/g, "''")}'` : `'${arg.replace(/'/g, `'\\''`)}'`;
+}
+
 function command(platform, agent, args = []) {
-  const line = [agent.command, ...args].join(" ");
+  const line = [agent.command, ...args.map((arg) => quote(platform, arg))].join(" ");
   if (platform === "win32") {
     return { file: "powershell.exe", args: ["-NoLogo", "-Command", line] };
   }
@@ -74,4 +81,4 @@ function env(processEnv) {
 }
 
 
-module.exports = { AGENTS, agentOf, TERMINAL, terminalCommand, newConversation, command, conversationArgs, env };
+module.exports = { AGENTS, agentOf, TERMINAL, terminalCommand, newConversation, quote, command, conversationArgs, env };

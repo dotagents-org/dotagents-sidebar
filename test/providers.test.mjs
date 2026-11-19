@@ -18,9 +18,10 @@ function panel() {
     append(child) { this.children.push(child); },
     replaceChildren(...children) { this.children = children; },
     setAttribute(key, value) { this.attributes[key] = value; },
-    addEventListener() {},
+    addEventListener(name, listener) { this.listeners = { ...this.listeners, [name]: listener }; },
   });
   const host = node();
+  const posted = [];
   let message;
   const context = vm.createContext({
     window: { dotagentsAvatar: { mount() {} } },
@@ -31,11 +32,11 @@ function panel() {
       createElementNS: node,
     },
     getComputedStyle: () => ({ getPropertyValue: () => "56" }),
-    acquireVsCodeApi: () => ({ postMessage() {} }),
+    acquireVsCodeApi: () => ({ postMessage: (msg) => posted.push(msg) }),
     addEventListener: (name, listener) => { if (name === "message") message = listener; },
   });
   vm.runInContext(source("media/accounts/panel.js"), context);
-  return { host, context, render: (data) => message({ data: { type: "usage", data, providers: accounts.panelProviders } }) };
+  return { host, context, posted, send: (data) => message({ data }), render: (data) => message({ data: { type: "usage", data, providers: accounts.panelProviders } }) };
 }
 
 const flatten = (node) => typeof node === "object" ? [node, ...node.children.flatMap(flatten)] : [node];
@@ -84,4 +85,19 @@ test("the extension and panel share account labels and marks, while sessions kee
 
 test("the webview receives the shared provider table with usage", () => {
   assert.match(source("accounts.js"), /providers: panelProviders/);
+});
+
+test("after a switch the panel shows what to do next, in the core's words, until the next action", async () => {
+  const view = panel();
+  const profile = (name) => ({ name, provider: "codex", plan: "team", color: "#123456", avatar: "asleep", state: "no-data", windows: [] });
+  view.render({ profiles: [profile("hopper"), profile("dijkstra")], slots: { codex: { WSL: "hopper" } }, current: {}, sides: ["WSL"] });
+  const button = flatten(view.host).find((n) => typeof n === "object" && n.listeners?.click && n.children.includes("switch"));
+  button.listeners.click();
+  const { id } = view.posted.at(-1);
+  const next = "Codex sessions already open stay on the old account until you restart them.";
+  view.send({ type: "result", id, result: { ok: true, detail: "now dijkstra", next } });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.ok(flatten(view.host).includes(next));
+  button.listeners.click();
+  assert.equal(flatten(view.host).includes(next), false);
 });

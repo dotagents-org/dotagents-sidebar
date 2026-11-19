@@ -21,7 +21,8 @@ The host is named by workspace and protocol (`PROTOCOL` in `host.js`), not by th
 | `extension.js` | The view provider, the sessions, the commands, the connection to the host, the updates |
 | `host.js` | The detached process that owns the agents and their screen copies |
 | `agent.js` | The table of the session agents (Claude Code, Codex) and the terminal: commands, environment, conversation flags, newline keys |
-| `codex-sessions.js` | Finds the conversation a Codex session started: reads the rollouts in `$CODEX_HOME/sessions/` and gives each pending session the first one in its folder no other session took. Pure apart from the reading, so it is tested without VS Code |
+| `session-hook.js` | The `SessionStart` hook each agent session starts with (the settings for Claude Code, the `-c` override for Codex, per platform) and the reading of the file it writes: the conversation the agent is in |
+| `codex-sessions.js` | Guesses the conversation a Codex session started when its hook told nothing: reads the rollouts in `$CODEX_HOME/sessions/` and gives each pending session the first one in its folder no other session took. Pure apart from the reading, so it is tested without VS Code |
 | `sessions.js` | The session list: add, split, close, rename, colors, restore |
 | `accounts.js` | The Claude and ChatGPT accounts: the server of `dotagents start`, the status bar, the switch, what the accounts tab is told |
 | `log.js` | The sidebar's logs, `sidebar.log` and `host.log`, in the format of the core's `docs/logs.md` (a copy of its writer) |

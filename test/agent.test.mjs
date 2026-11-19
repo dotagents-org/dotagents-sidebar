@@ -68,3 +68,9 @@ test("a terminal runs the user's own shell, interactive; bash and PowerShell rep
   assert.deepEqual(win.args.slice(0, 3), ["-NoLogo", "-NoExit", "-Command"]);
   assert.match(win.args[3], /\]9;9;/);
 });
+
+test("command quotes an argument that isn't plain, for bash and for PowerShell", () => {
+  assert.deepEqual(command("linux", claude, ["--settings", "/home/a b/it's.json"]).args, ["-ic", `claude --settings '/home/a b/it'\\''s.json'`]);
+  assert.deepEqual(command("win32", claude, ["--settings", "C:\\Users\\a b\\it's.json"]).args, ["-NoLogo", "-Command", `claude --settings 'C:\\Users\\a b\\it''s.json'`]);
+  assert.deepEqual(command("linux", codex, ["-c", "a=[1]"]).args, ["-ic", "codex -c 'a=[1]'"]);
+});
