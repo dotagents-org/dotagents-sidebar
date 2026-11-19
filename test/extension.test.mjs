@@ -409,6 +409,42 @@ test("a Codex session that moved on after /clear keeps its new conversation from
     }
   }));
 
+test("a guess that took a rollout before its own session's hook told it is dropped, and never resumed", () =>
+  withStorage(async (storage) => {
+    const codexHome = fs.mkdtempSync(path.join(storage, "codex-"));
+    const before = process.env.CODEX_HOME;
+    process.env.CODEX_HOME = codexHome;
+    try {
+      const { view: sidebar, messages } = view(undefined, { storage });
+      sidebar.state = sessions.add(sessions.add(sessions.EMPTY, "Codex", undefined, "codex"), "Codex", undefined, "codex");
+      const [a, b] = sidebar.state.sessions.map((s) => s.id);
+      sidebar.start(a);
+      sidebar.start(b);
+      tell(storage, a, "old-a", "startup");
+      sidebar.findCodex();
+      // /clear in a: the rollout comes first, the guess gives it to b, then a's hook tells it
+      const day = new Date();
+      const dir = path.join(codexHome, "sessions", String(day.getFullYear()), String(day.getMonth() + 1).padStart(2, "0"), String(day.getDate()).padStart(2, "0"));
+      fs.mkdirSync(dir, { recursive: true });
+      const meta = { type: "session_meta", payload: { id: "new-a", cwd: sidebar.session(b).cwd, timestamp: new Date(sidebar.session(b).startedAt + 1).toISOString() } };
+      fs.writeFileSync(path.join(dir, "rollout-new-a.jsonl"), JSON.stringify(meta) + "\n");
+      sidebar.findCodex();
+      assert.equal(sidebar.session(b).conversation, "new-a"); // the guess, wrong for now
+      tell(storage, a, "new-a", "clear");
+      sidebar.restart(b);
+      await Promise.resolve();
+      assert.doesNotMatch(messages.at(-1).args.join(" "), /new-a/, "b doesn't resume a's conversation");
+      assert.equal(sidebar.session(b).conversation, undefined);
+      sidebar.findCodex();
+      assert.equal(sidebar.session(a).conversation, "new-a");
+      assert.equal(sidebar.session(b).conversation, undefined);
+      sidebar.dispose();
+    } finally {
+      if (before === undefined) delete process.env.CODEX_HOME;
+      else process.env.CODEX_HOME = before;
+    }
+  }));
+
 test("a window with no folder gives its agents no hook: its session ids would meet another window's", () =>
   withStorage(async (storage) => {
     const { view: sidebar, messages } = view(undefined, { storage, folder: false });

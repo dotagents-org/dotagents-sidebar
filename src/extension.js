@@ -488,7 +488,8 @@ class SidebarView {
     // Open the session's conversation again; the first time, a new one with an id of our own
     const agent = agentOf(this.session(id));
     const told = this.told(id, fresh);
-    if (told && told.conversation !== this.session(id).conversation) this.update(sessions.remember(this.state, id, { conversation: told.conversation }));
+    if (told && told.conversation !== this.session(id).conversation) this.update(sessions.remember(this.state, id, { conversation: told.conversation, guessed: false }));
+    if (agent.id === "codex" && !fresh) this.dropClaimedGuesses(); // never resume another session's conversation
     let conversation = fresh ? undefined : this.session(id).conversation;
     const resume = !!conversation;
     const startedAt = Date.now();
@@ -705,6 +706,21 @@ class SidebarView {
     }, 3000);
   }
 
+  // A guess may have taken a rollout before the hook of the session it belongs to said so (Codex
+  // writes the rollout of a /clear first, then runs the hook): a guess another session's hook
+  // claims is dropped, and its session waits for its own conversation again
+  dropClaimedGuesses() {
+    const told = new Map();
+    for (const s of this.state.sessions) {
+      const t = s.provider === "codex" && this.told(s.id);
+      if (t) told.set(t.conversation, s.id);
+    }
+    for (const s of this.state.sessions) {
+      const owner = s.guessed && told.get(s.conversation);
+      if (owner && owner !== s.id) this.update(sessions.remember(this.state, s.id, { conversation: undefined, guessed: false }));
+    }
+  }
+
   // One look for the Codex sessions' conversations; true while one still has none
   findCodex() {
     try {
@@ -713,10 +729,11 @@ class SidebarView {
       // and time are a guess
       for (const s of this.state.sessions.filter((s) => s.provider === "codex")) {
         const told = this.told(s.id);
-        if (told && told.conversation !== s.conversation) this.update(sessions.remember(this.state, s.id, { conversation: told.conversation }));
+        if (told && (told.conversation !== s.conversation || s.guessed)) this.update(sessions.remember(this.state, s.id, { conversation: told.conversation, guessed: false }));
       }
+      this.dropClaimedGuesses();
       for (const [id, conversation] of Object.entries(codexSessions.discover(this.state.sessions))) {
-        if (this.session(id)) this.update(sessions.remember(this.state, id, { conversation }));
+        if (this.session(id)) this.update(sessions.remember(this.state, id, { conversation, guessed: true }));
       }
       return codexSessions.pending(this.state.sessions).length > 0;
     } catch (err) {
