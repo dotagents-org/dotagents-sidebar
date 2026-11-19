@@ -113,6 +113,7 @@
   const accounts = settings.accounts;
   const accountsPane = document.getElementById("accounts");
   let showAccounts = false;
+  let shownLast; // what was in view at the last redraw: a session's id, "accounts" or null
   window.acquireVsCodeApi = () => ({ postMessage: (message) => vscode.postMessage({ type: "accounts", message }) });
   let accountsLoaded = false;
   function loadAccounts() {
@@ -473,6 +474,7 @@
         render();
       }
       vscode.postMessage({ type: "activate", id: session.id });
+      if (session.id === state.active) focus(); // another one takes it when the new state comes in
     });
 
     const icon = document.createElement("span");
@@ -614,7 +616,14 @@
     // settle like the rest, instead of fitting the panes where the border is now
     if (stopResize) resizing();
     else layoutAll();
-    focus();
+    // The terminal takes the focus only when what is in view changes (another session, or the
+    // accounts tab opened or closed), never on a redraw for a title or a folder: that would pull the
+    // focus out of one of VS Code's lists open over the view (Split Session's, Join Session's)
+    const shown = showAccounts ? "accounts" : state.active;
+    if (shown !== shownLast) {
+      shownLast = shown;
+      focus();
+    }
   }
 
   // The active group's panes, laid out as its tree says (src/shared/layout.js): each split a row or a

@@ -47,6 +47,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Fixed
 
+- **The side and kind lists stay open while the agents work.** Every redraw of the view, even for a title or a folder that changed, focused the active terminal, which could close Split Session's lists (and Join Session's) before you picked. The terminal now takes the focus only when the session in view changes.
 - **Split Session no longer misuses the list's `kind`.** The list of what to open passed the agent in the field VS Code reserves for separators (`QuickPickItemKind`); it worked only because VS Code ignored the unknown value.
 - **Switching an account already in use on one side.** The status bar's switch list now lets you pick the current account when another side still needs to switch to it.
 - **Reloading the window no longer fails while letting go of the host.** The view's `dispose()` called a `dispose` its log didn't have, so it threw before closing the host's channel and left the output channel behind; the host's channel now closes first, then the log's.
