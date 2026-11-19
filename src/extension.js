@@ -493,11 +493,15 @@ class SidebarView {
     // Open the session's conversation again; the first time, a new one with an id of our own
     const agent = agentOf(this.session(id));
     const told = this.told(id, fresh);
-    if (told && told.conversation !== this.session(id).conversation) this.update(sessions.remember(this.state, id, { conversation: told.conversation, guessed: false }));
+    // Told by the hook: confirmed, also when it is the conversation a guess had found
+    if (told && (told.conversation !== this.session(id).conversation || this.session(id).guessed !== false)) this.update(sessions.remember(this.state, id, { conversation: told.conversation, guessed: false }));
+    if (this.hookFile(id)) sessionHook.forget(this.hookFile(id));
+    this.update(sessions.remember(this.state, id, { launch: crypto.randomBytes(4).toString("hex") }));
     if (agent.id === "codex" && !fresh) this.dropClaimedGuesses(); // never resume another session's conversation
     // A Codex conversation only guessed from the rollouts is never resumed on its own: Codex's own
     // list of the folder's conversations asks which one, and its hook then tells the view
-    const guessed = agent.id === "codex" && !fresh && this.session(id).guessed && this.session(id).conversation;
+    // A conversation from before the hook (saved with no guessed at all) counts as a guess too
+    const guessed = agent.id === "codex" && !fresh && this.session(id).guessed !== false && this.session(id).conversation;
     if (guessed) this.update(sessions.remember(this.state, id, { conversation: undefined, guessed: false }));
     let conversation = fresh ? undefined : this.session(id).conversation;
     const resume = !!conversation;
@@ -526,8 +530,11 @@ class SidebarView {
     return id;
   }
 
+  // Each launch of a session's agent writes a file of its own (the session's launch, set as it
+  // starts): a hook the process before it runs late writes to that one's, which is never read again
   hookFile(id) {
-    return this.hookFolder && path.join(this.hookFolder, `${id}.json`);
+    const launch = this.session(id)?.launch;
+    return this.hookFolder && path.join(this.hookFolder, /^[0-9a-f]{8}$/.test(launch || "") ? `${id}-${launch}.json` : `${id}.json`);
   }
 
   // The conversation the session's agent said it was in last, which wins over the one the view
@@ -709,7 +716,14 @@ class SidebarView {
     if (!this.session(id)) return;
     this.send({ type: "kill", id });
     this.terminals.delete(id);
-    if (this.hookFile(id)) sessionHook.forget(this.hookFile(id));
+    // Every launch's file, a late one's too
+    let names = [];
+    try {
+      names = this.hookFolder ? fs.readdirSync(this.hookFolder) : [];
+    } catch {
+      // none written yet
+    }
+    for (const name of names) if (name === `${id}.json` || name.startsWith(`${id}-`)) sessionHook.forget(path.join(this.hookFolder, name));
     this.update(sessions.close(this.state, id));
   }
 

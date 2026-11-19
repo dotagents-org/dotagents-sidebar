@@ -308,8 +308,8 @@ function withStorage(run) {
   return Promise.resolve(run(storage)).finally(() => fs.rmSync(storage, { recursive: true, force: true }));
 }
 
-const hookFile = (storage, id) => path.join(storage, "workspace", `session-hook-${sessionHook.FORMAT}`, `${id}.json`);
-const tell = (storage, id, conversation, source) => fs.writeFileSync(hookFile(storage, id), JSON.stringify({ session_id: conversation, source }));
+// What a session's agent would write through its hook: to the file its launch was given
+const tell = (sidebar, id, conversation, source) => fs.writeFileSync(sidebar.hookFile(id), JSON.stringify({ session_id: conversation, source }));
 
 test("an agent starts with the session hook and the file it writes to", () =>
   withStorage(async (storage) => {
@@ -321,7 +321,9 @@ test("an agent starts with the session hook and the file it writes to", () =>
     assert.deepEqual(JSON.parse(fs.readFileSync(settings, "utf8")), sessionHook.claudeSettings(process.platform));
     const create = messages.at(-1);
     assert.deepEqual(create.args, command(process.platform, AGENTS.claude, ["--settings", settings, "--session-id", sidebar.session(id).conversation]).args);
-    assert.equal(create.env[sessionHook.VARIABLE], hookFile(storage, id));
+    assert.equal(create.env[sessionHook.VARIABLE], sidebar.hookFile(id));
+    assert.match(path.basename(sidebar.hookFile(id)), new RegExp(`^${id}-[0-9a-f]{8}\\.json$`));
+    assert.equal(path.dirname(sidebar.hookFile(id)), path.join(storage, "workspace", `session-hook-${sessionHook.FORMAT}`));
     sidebar.dispose();
   }));
 
@@ -332,15 +334,23 @@ test("Claude Code resumes the conversation its hook told last, as after /clear, 
     sidebar.start(id);
     await Promise.resolve();
     const first = sidebar.session(id).conversation;
-    tell(storage, id, "cleared-1", "clear");
+    tell(sidebar, id, "cleared-1", "clear");
     sidebar.restart(id);
     await Promise.resolve();
     assert.equal(sidebar.session(id).conversation, "cleared-1");
     assert.match(messages.at(-1).args.at(-1), /--resume cleared-1$/);
     assert.notEqual(first, "cleared-1");
+    // The process before writes late, after the restart: its file is never read again
+    const before = sidebar.hookFile(id);
+    sidebar.restart(id);
+    await Promise.resolve();
+    fs.writeFileSync(before, JSON.stringify({ session_id: "stale-1", source: "startup" }));
+    sidebar.restart(id);
+    await Promise.resolve();
+    assert.equal(sidebar.session(id).conversation, "cleared-1");
     sidebar.start(id, true);
     await Promise.resolve();
-    assert.equal(fs.existsSync(hookFile(storage, id)), false);
+    assert.equal(fs.existsSync(sidebar.hookFile(id)), false);
     assert.notEqual(sidebar.session(id).conversation, "cleared-1");
     sidebar.close(id);
     sidebar.dispose();
@@ -366,8 +376,8 @@ test("two Codex sessions started together in one folder take the conversations t
         const meta = { type: "session_meta", payload: { id: conversation, cwd: "/work/project", timestamp: new Date(at).toISOString() } };
         fs.writeFileSync(path.join(dir, `rollout-${conversation}.jsonl`), JSON.stringify(meta) + "\n");
       }
-      tell(storage, a, "conv-a", "startup");
-      tell(storage, b, "conv-b", "startup");
+      tell(sidebar, a, "conv-a", "startup");
+      tell(sidebar, b, "conv-b", "startup");
       assert.equal(sidebar.findCodex(), false);
       assert.equal(sidebar.session(a).conversation, "conv-a");
       assert.equal(sidebar.session(b).conversation, "conv-b");
@@ -389,7 +399,7 @@ test("a Codex session that moved on after /clear keeps its new conversation from
       const [a, b] = sidebar.state.sessions.map((s) => s.id);
       sidebar.start(a);
       sidebar.start(b);
-      tell(storage, a, "old-a", "startup");
+      tell(sidebar, a, "old-a", "startup");
       assert.equal(sidebar.findCodex(), true); // a has its conversation, b waits for a first prompt
       assert.equal(sidebar.session(a).conversation, "old-a");
       // /clear in a: Codex writes a new rollout in the folder, after b started, and a's hook tells it
@@ -401,7 +411,7 @@ test("a Codex session that moved on after /clear keeps its new conversation from
       fs.writeFileSync(rollout, JSON.stringify(meta) + "\n");
       // The file clock may run a few ms behind Date.now(): written after b started, as Codex would
       fs.utimesSync(rollout, new Date(sidebar.session(b).startedAt + 1000), new Date(sidebar.session(b).startedAt + 1000));
-      tell(storage, a, "new-a", "clear");
+      tell(sidebar, a, "new-a", "clear");
       sidebar.findCodex();
       assert.equal(sidebar.session(a).conversation, "new-a");
       assert.equal(sidebar.session(b).conversation, undefined);
@@ -423,7 +433,7 @@ test("a guess that took a rollout before its own session's hook told it is dropp
       const [a, b] = sidebar.state.sessions.map((s) => s.id);
       sidebar.start(a);
       sidebar.start(b);
-      tell(storage, a, "old-a", "startup");
+      tell(sidebar, a, "old-a", "startup");
       sidebar.findCodex();
       // /clear in a: the rollout comes first, the guess gives it to b, then a's hook tells it
       const day = new Date();
@@ -436,7 +446,7 @@ test("a guess that took a rollout before its own session's hook told it is dropp
       fs.utimesSync(rollout, new Date(sidebar.session(b).startedAt + 1000), new Date(sidebar.session(b).startedAt + 1000));
       sidebar.findCodex();
       assert.equal(sidebar.session(b).conversation, "new-a"); // the guess, wrong for now
-      tell(storage, a, "new-a", "clear");
+      tell(sidebar, a, "new-a", "clear");
       sidebar.restart(b);
       await Promise.resolve();
       assert.doesNotMatch(messages.at(-1).args.join(" "), /new-a/, "b doesn't resume a's conversation");
@@ -487,6 +497,25 @@ test("a Codex conversation only guessed is never resumed on its own: Codex's lis
     }
   }));
 
+test("a Codex conversation saved before the hook counts as a guess: Codex's list asks, once its hook confirms it no longer", () =>
+  withStorage(async (storage) => {
+    const { view: sidebar, messages } = view(undefined, { storage });
+    // As main saved it: a conversation, no guessed at all
+    sidebar.state = { ...sessions.add(sessions.EMPTY, "Codex", undefined, "codex") };
+    const [a] = sidebar.state.sessions.map((s) => s.id);
+    sidebar.state = sessions.remember(sidebar.state, a, { conversation: "019a0000-0000-7000-8000-000000000001", cwd: "/work", startedAt: 1 });
+    sidebar.start(a);
+    await Promise.resolve();
+    assert.match(messages.at(-1).args.join(" "), / resume$/);
+    // Its hook then tells one, the same a guess had found: confirmed
+    sidebar.state = sessions.remember(sidebar.state, a, { conversation: "019a0000-0000-7000-8000-000000000002", guessed: true });
+    tell(sidebar, a, "019a0000-0000-7000-8000-000000000002", "resume");
+    sidebar.restart(a);
+    await Promise.resolve();
+    assert.match(messages.at(-1).args.join(" "), /resume 019a0000-0000-7000-8000-000000000002$/);
+    sidebar.dispose();
+  }));
+
 test("an empty window's host is found again after a reload by the id the window keeps, and is another window's own", () => {
   const workspace = new Map();
   const key = (made) => {
@@ -506,7 +535,7 @@ test("a window with no folder keeps its agents' hook files apart from another su
       await Promise.resolve();
       const file = made.messages.at(-1).env[sessionHook.VARIABLE];
       made.view.dispose();
-      return file;
+      return path.dirname(file); // the window's folder; each launch has its own file in it
     };
     const workspace = new Map();
     const first = await fileOf(view(undefined, { storage, folder: false, workspace }));
