@@ -397,7 +397,10 @@ test("a Codex session that moved on after /clear keeps its new conversation from
       const dir = path.join(codexHome, "sessions", String(day.getFullYear()), String(day.getMonth() + 1).padStart(2, "0"), String(day.getDate()).padStart(2, "0"));
       fs.mkdirSync(dir, { recursive: true });
       const meta = { type: "session_meta", payload: { id: "new-a", cwd: sidebar.session(b).cwd, timestamp: new Date(sidebar.session(b).startedAt + 1).toISOString() } };
-      fs.writeFileSync(path.join(dir, "rollout-new-a.jsonl"), JSON.stringify(meta) + "\n");
+      const rollout = path.join(dir, "rollout-new-a.jsonl");
+      fs.writeFileSync(rollout, JSON.stringify(meta) + "\n");
+      // The file clock may run a few ms behind Date.now(): written after b started, as Codex would
+      fs.utimesSync(rollout, new Date(sidebar.session(b).startedAt + 1000), new Date(sidebar.session(b).startedAt + 1000));
       tell(storage, a, "new-a", "clear");
       sidebar.findCodex();
       assert.equal(sidebar.session(a).conversation, "new-a");
@@ -427,7 +430,10 @@ test("a guess that took a rollout before its own session's hook told it is dropp
       const dir = path.join(codexHome, "sessions", String(day.getFullYear()), String(day.getMonth() + 1).padStart(2, "0"), String(day.getDate()).padStart(2, "0"));
       fs.mkdirSync(dir, { recursive: true });
       const meta = { type: "session_meta", payload: { id: "new-a", cwd: sidebar.session(b).cwd, timestamp: new Date(sidebar.session(b).startedAt + 1).toISOString() } };
-      fs.writeFileSync(path.join(dir, "rollout-new-a.jsonl"), JSON.stringify(meta) + "\n");
+      const rollout = path.join(dir, "rollout-new-a.jsonl");
+      fs.writeFileSync(rollout, JSON.stringify(meta) + "\n");
+      // The file clock may run a few ms behind Date.now(): written after b started, as Codex would
+      fs.utimesSync(rollout, new Date(sidebar.session(b).startedAt + 1000), new Date(sidebar.session(b).startedAt + 1000));
       sidebar.findCodex();
       assert.equal(sidebar.session(b).conversation, "new-a"); // the guess, wrong for now
       tell(storage, a, "new-a", "clear");
