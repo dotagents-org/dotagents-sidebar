@@ -11,18 +11,22 @@ const agentTitle = (() => {
   // The status mark in front (a spinner, ✳) goes
   const strip = (text) => text.replace(/^[^\p{L}\p{N}]+/u, "").trim();
 
-  // The project as Codex writes it: whole up to 24 characters, else 21 and "..."
+  // The project as Codex writes it: whole up to 24 graphemes (a letter and its accents count as
+  // one), else 21 and "..."
+  const graphemes = (text) => (typeof Intl === "object" && Intl.Segmenter ? [...new Intl.Segmenter().segment(text)].map((g) => g.segment) : [...text]);
   const asCodex = (name) => {
-    const chars = [...name];
+    const chars = graphemes(name);
     return chars.length > 24 ? `${chars.slice(0, 21).join("")}...` : name;
   };
 
-  // names: what the project may be called (the session's folder's name, the workspace's)
+  // names: what the project may be called (the session's folder's name, the workspace's). Exactly
+  // one part may go: when none or several match (a thread named as its project), it stays whole
   function codex(raw, names) {
     const parts = raw.split(" | ");
     if (parts.length < 2) return strip(raw);
     const project = names.filter(Boolean).flatMap((name) => [name, asCodex(name)]);
-    return strip(parts.filter((part) => !project.includes(strip(part))).join(" | "));
+    const matches = parts.filter((part) => project.includes(strip(part)));
+    return strip(matches.length === 1 ? parts.filter((part) => part !== matches[0]).join(" | ") : raw);
   }
 
   return { strip, codex };

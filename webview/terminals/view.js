@@ -229,7 +229,9 @@
     // than the agent's or the workspace's name
     let lastTitle;
     term.onTitleChange((raw) => {
-      const clean = session.provider === "codex" ? agentTitle.codex(raw, [session.cwd && agentCwd.segments(session.cwd).at(-1), settings.workspace]) : agentTitle.strip(raw);
+      // The session as it is now: its folder may be known only after the terminal opened
+      const now = state.sessions.find((s) => s.id === session.id) || session;
+      const clean = session.provider === "codex" ? agentTitle.codex(raw, [now.cwd && agentCwd.segments(now.cwd).at(-1), settings.workspace]) : agentTitle.strip(raw);
       const title = session.kind === "terminal" || clean === kind(session).name || clean === settings.workspace ? "" : clean;
       if (title === lastTitle) return; // a spinner changes only the mark
       lastTitle = title;
