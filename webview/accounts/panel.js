@@ -93,9 +93,11 @@
 
   // An action under way and the last failure live here, outside the drawing, so a redraw (new
   // data comes in the middle of a switch) keeps them. No text while it runs: the button clicked
-  // pulses, the result shows in the data, and only a failure is written, until the next action.
+  // pulses, the result shows in the data, and only a failure, or what to do after a switch, is
+  // written, until the next action.
   let pending = null;
   let failure = "";
+  let note = ""; // after a switch, what to do next, in the core's words
   let shown = null;
 
   // root: where to draw; data: the usage JSON; act(action, body): runs an action, resolves to
@@ -112,10 +114,12 @@
       if (pending) return;
       pending = key;
       failure = "";
+      note = "";
       redraw();
       const res = await act(action, body).catch((err) => ({ ok: false, detail: String(err) }));
       pending = null;
       failure = res.ok ? "" : res.detail || "it failed";
+      note = (res.ok && res.next) || "";
       redraw();
     };
     const busy = (key) => (pending && pending === key ? " busy" : "");
@@ -192,7 +196,8 @@
         el("span", { class: "line" }, age, el("button", { type: "button", class: `icon${busy("refresh")}`, title: "Ask for fresh numbers now", "aria-label": "Refresh", onclick: run("refresh", {}, "refresh") }, icon(["M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8", "M21 3v5h-5"], true)))
       ),
       ...blocks,
-      failure && el("p", { class: "message high" }, failure)
+      failure && el("p", { class: "message high" }, failure),
+      note && el("p", { class: "message" }, note)
     );
     // The windows' labels in one column for every card, as wide as the longest (5h, 7d, Fable), as
     // in the CLI's usage, so the bars of Claude's and ChatGPT's accounts line up.

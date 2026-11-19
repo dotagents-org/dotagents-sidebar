@@ -23,6 +23,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Changed
 
+- **What to do after a switch, as the core says it.** The switch list's notification and the accounts panel show the line `dotagents switch` ends with, from the core's answer (`next`): for Claude, open conversations go on after `continue`; for ChatGPT, Codex sessions already open keep the old account until you restart them. The notification had Claude's line written in the sidebar, and nothing for ChatGPT; the panel said nothing.
 - **Plans by the product's name.** The accounts panel's group header says *Team  2 seats* for Claude and *Business  2 seats* for ChatGPT (Claude Team and ChatGPT Business, which was ChatGPT Team), where it said the API's `team` for both.
 - **Claude and ChatGPT side by side.** In the accounts tab the windows' labels share one column across every card, so the bars of both providers line up, and a week's "projection from" says the day.
 
