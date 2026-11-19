@@ -22,4 +22,9 @@ test("a Codex title keeps the thread's name and drops the project where Codex pu
   const accented = "proje\u0301to-com-um-nome-longo-demais";
   assert.equal(codex(`fix login | proje\u0301to-com-um-nome-l...`, [accented]), "fix login");
   assert.equal(strip("✳ fix login"), "fix login");
+  assert.equal(strip("⠋ fix login"), "fix login");
+  // Only status marks go: punctuation is part of a name
+  assert.equal(strip("[RFC] api"), "[RFC] api");
+  assert.equal(codex("Fix login | .private", [".private"]), "Fix login", "a dot in the folder's name is kept to compare");
+  assert.equal(codex("[RFC] api | repo", ["repo"]), "[RFC] api");
 });

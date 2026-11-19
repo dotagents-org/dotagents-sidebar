@@ -10,8 +10,10 @@
 // Shared by the extension's tests (CommonJS) and the view (a script that declares agentTitle).
 
 const agentTitle = (() => {
-  // The status mark in front (a spinner, ✳) goes
-  const strip = (text) => text.replace(/^[^\p{L}\p{N}]+/u, "").trim();
+  // The status mark in front goes: Codex's braille spinner and Claude Code's ✳ family, and the dots and
+  // bullets of an idle state. Nothing else: a title may start with "[RFC]" or end in ".private"
+  const MARKS = /^[\u2800-\u28FF\u2733\u2734\u2735\u2736\u2737\u2738\u2739\u273A\u273B\u273C\u273D\u2722\u2723\u2724\u2725\u00B7\u2022\u25CF\u25CB\u25CC\u25D0-\u25D3*]+\s*/u;
+  const strip = (text) => text.replace(MARKS, "").trim();
 
   // The project as Codex writes it: whole up to 24 graphemes (a letter and its accents count as
   // one), else 21 and "..."
