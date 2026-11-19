@@ -232,7 +232,8 @@
       // The session as it is now: its folder may be known only after the terminal opened
       const now = state.sessions.find((s) => s.id === session.id) || session;
       const clean = session.provider === "codex" ? agentTitle.codex(raw, [now.cwd && agentCwd.segments(now.cwd).at(-1)]) : agentTitle.strip(raw);
-      const title = session.kind === "terminal" || clean === kind(session).name || clean === settings.workspace ? "" : clean;
+      // Claude Code's title may only name the folder; Codex's names the thread, kept even when it is the window's name
+      const title = session.kind === "terminal" || clean === kind(session).name || (session.provider !== "codex" && clean === settings.workspace) ? "" : clean;
       if (title === lastTitle) return; // a spinner changes only the mark
       lastTitle = title;
       vscode.postMessage({ type: "title", id: session.id, title });

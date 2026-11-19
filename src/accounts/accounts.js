@@ -282,8 +282,7 @@ function startAccounts(vscode, context) {
     if (!pick || inEverySlot(data, pick)) return;
     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `dotagents: switching to ${pick.profile}` }, async () => {
       const result = await act("switch", { profile: pick.profile });
-      // A dotagents start from before next had Claude's line only in the sidebar
-      const next = result.next || (pick.provider === "claude" ? "Open conversations go on in the new account when you type continue." : "");
+      const next = result.next || ""; // only when a slot changed
       if (result.ok) vscode.window.showInformationMessage(`dotagents: ${result.detail || `now ${pick.profile}`}${next ? `. ${next}` : ""}`);
       // A switch can change this side's slot and then fail on the other: the next step still holds here
       else vscode.window.showErrorMessage(`dotagents: ${result.detail || "the switch failed"}${result.next ? `. ${result.next}` : ""}`);

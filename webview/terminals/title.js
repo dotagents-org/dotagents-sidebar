@@ -2,9 +2,10 @@
 // " | ", by default the thread's name and then the project, but tui.terminal_title in its
 // config.toml may put them in any order. The project is the name of the folder Codex runs in (or of
 // its project root), cut to 24 characters ("..." in the last 3) when longer: the one part that is
-// the session's folder's name is dropped wherever it is. The workspace's name is no proof (a thread
-// may be named so), and a project root above the folder isn't known here: then the title stays
-// whole, since better the project shown than the thread's name lost.
+// the session's folder's name is dropped when it is the last part, where Codex puts the project by
+// default. Anywhere else it may be the thread's own name, and the workspace's name is no proof (a
+// thread may be named so), and a project root above the folder isn't known here: then the title
+// stays whole, since better the project shown than the thread's name lost.
 //
 // Shared by the extension's tests (CommonJS) and the view (a script that declares agentTitle).
 
@@ -27,7 +28,8 @@ const agentTitle = (() => {
     if (parts.length < 2) return strip(raw);
     const project = names.filter(Boolean).flatMap((name) => [name, asCodex(name)]);
     const matches = parts.filter((part) => project.includes(strip(part)));
-    return strip(matches.length === 1 ? parts.filter((part) => part !== matches[0]).join(" | ") : raw);
+    // Only the last part, where Codex puts the project by default: a thread may be named as the folder
+    return strip(matches.length === 1 && matches[0] === parts.at(-1) ? parts.slice(0, -1).join(" | ") : raw);
   }
 
   return { strip, codex };
