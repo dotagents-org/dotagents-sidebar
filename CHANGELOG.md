@@ -50,6 +50,8 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Fixed
 
+- **Codex titles keep their punctuation and braille text.** The sidebar removes only the delimited spinner and recording marker at the start of the title, and compares the remaining project segment as written.
+
 - **The side and kind lists stay open while the agents work.** Every redraw of the view, even for a title or a folder that changed, focused the active terminal, which could close Split Session's lists (and Join Session's) before you picked. The terminal now takes the focus only when the session in view changes.
 - **Split Session no longer misuses the list's `kind`.** The list of what to open passed the agent in the field VS Code reserves for separators (`QuickPickItemKind`); it worked only because VS Code ignored the unknown value.
 - **A Codex session's title without the project.** Codex puts its items in the window title joined by ` | ` (the thread's name, then the project, in the order `tui.terminal_title` gives): the title strip keeps the thread's name and drops the last part when it is the name of the session's folder, whole or cut as Codex cuts it. Otherwise the title stays whole, since in another order that part may be the thread's own name.

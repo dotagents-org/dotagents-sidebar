@@ -31,3 +31,17 @@ test("a Codex title keeps the thread's name and drops the project where Codex pu
   assert.equal(codex("Fix login | *repo", ["repo"]), "Fix login | *repo", "a project written with an asterisk isn't the folder's name");
   assert.equal(strip("*RFC* api"), "*RFC* api");
 });
+
+test("Codex removes only its delimited activity and recording prefix", () => {
+  for (const frame of "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏") {
+    assert.equal(codex(`${frame} Fix login | repo`, ["repo"]), "Fix login");
+    assert.equal(codex(`● ${frame} Fix login | repo`, ["repo"]), "Fix login");
+  }
+  assert.equal(codex("● Fix login | repo", ["repo"]), "Fix login");
+  assert.equal(codex("● ⠋", ["repo"]), "");
+  assert.equal(codex("⠿⠗ notas | repo", ["repo"]), "⠿⠗ notas");
+  assert.equal(codex("⠋notas | repo", ["repo"]), "⠋notas");
+  assert.equal(codex("●notas | repo", ["repo"]), "●notas");
+  assert.equal(codex("Fix login | ⠋ repo", ["repo"]), "Fix login | ⠋ repo");
+  assert.equal(codex("Fix login | ⠋ repo", ["⠋ repo"]), "Fix login");
+});
