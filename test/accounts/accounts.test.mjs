@@ -100,12 +100,12 @@ test("dotagents start runs on its own: directly on Linux and macOS, through a hi
 // Two providers, an API 2 answer: Claude's pair and a ChatGPT seat in one slot.
 const both = {
   ...data,
-  current: { claude: data.current.claude, codex: { profile: "hopper", state: "asleep" } },
-  slots: { claude: data.slots.claude, codex: { WSL: "hopper" } },
+  current: { claude: data.current.claude, chatgpt: { profile: "hopper", state: "asleep" } },
+  slots: { claude: data.slots.claude, chatgpt: { WSL: "hopper" } },
   profiles: [
     ...data.profiles,
-    { name: "hopper", provider: "codex", plan: "team", color: "#7B61A8", state: "ok", avatar: "ok", windows: [{ kind: "session", pct: 40 }, { kind: "week", pct: 95 }] },
-    { name: "dijkstra", provider: "codex", plan: "team", color: "#B8862B", state: "no-data", avatar: "asleep", windows: [] },
+    { name: "hopper", provider: "chatgpt", plan: "team", color: "#7B61A8", state: "ok", avatar: "ok", windows: [{ kind: "session", pct: 40 }, { kind: "week", pct: 95 }] },
+    { name: "dijkstra", provider: "chatgpt", plan: "team", color: "#B8862B", state: "no-data", avatar: "asleep", windows: [] },
   ],
 };
 
@@ -129,7 +129,7 @@ test("a ChatGPT profile without a codex current falls back to the first one, and
 });
 
 test("with no Claude profile the first group is the brand, and the ChatGPT one still shows", () => {
-  const onlyCodex = { ...both, profiles: both.profiles.filter((p) => p.provider === "codex"), current: { claude: { profile: "dotagents", state: "asleep" }, codex: both.current.codex } };
+  const onlyCodex = { ...both, profiles: both.profiles.filter((p) => p.provider === "chatgpt"), current: { claude: { profile: "dotagents", state: "asleep" }, codex: both.current.codex } };
   const [brand, codex] = accounts.groupsFor(onlyCodex);
   assert.equal(brand.parts[0].text, "$(dotagents-accounts) dotagents");
   assert.equal(codex.parts[0].text, "$(dotagents-openai) hopper");
@@ -137,7 +137,7 @@ test("with no Claude profile the first group is the brand, and the ChatGPT one s
 
 test("the switch lists both providers' accounts, Claude first, the provider named and each current one marked", () => {
   const items = accounts.pickItems(both);
-  assert.deepEqual(items.map((i) => [i.label, i.provider]), [["$(check) personal", "claude"], ["work", "claude"], ["$(check) hopper", "codex"], ["dijkstra", "codex"]]);
+  assert.deepEqual(items.map((i) => [i.label, i.provider]), [["$(check) personal", "claude"], ["work", "claude"], ["$(check) hopper", "chatgpt"], ["dijkstra", "chatgpt"]]);
   assert.equal(items[2].description, "ChatGPT  5h 40%  7d 95%");
   assert.equal(items[2].detail, "in the slot on WSL");
   assert.equal(items[3].description, "ChatGPT");
@@ -146,24 +146,24 @@ test("the switch lists both providers' accounts, Claude first, the provider name
 
 test("a marked account can be switched until it is in every slot of its provider", () => {
   const sides = ["WSL", "Windows"];
-  const slots = { ...both.slots, codex: { WSL: "hopper", Windows: "dijkstra" } };
+  const slots = { ...both.slots, chatgpt: { WSL: "hopper", Windows: "dijkstra" } };
   const snapshot = { ...both, sides, slots };
   const [claude, , codex] = accounts.pickItems(snapshot);
   assert.equal(accounts.inEverySlot(snapshot, claude), false);
   assert.equal(accounts.inEverySlot(snapshot, codex), false);
-  assert.equal(accounts.inEverySlot({ ...snapshot, slots: { ...slots, codex: { WSL: "hopper", Windows: "hopper" } } }, codex), true);
+  assert.equal(accounts.inEverySlot({ ...snapshot, slots: { ...slots, chatgpt: { WSL: "hopper", Windows: "hopper" } } }, codex), true);
   const peerOff = { ...snapshot, slots: both.slots, peer: { name: "Windows", up: false } };
   assert.equal(accounts.inEverySlot(peerOff, codex), false, "the offline side's slot is unknown");
   assert.equal(accounts.inEverySlot({ ...both, sides: ["WSL"] }, codex), true, "a standalone machine has one slot");
 });
 
 test("a provider's view takes its profiles, its slots and its current from an API 2 answer", () => {
-  const codex = accounts.forProvider(both, "codex");
+  const codex = accounts.forProvider(both, "chatgpt");
   assert.deepEqual(codex.profiles.map((p) => p.name), ["hopper", "dijkstra"]);
   assert.deepEqual(codex.slots, { WSL: "hopper" });
   assert.equal(codex.current.profile, "hopper");
   assert.deepEqual(accounts.forProvider(both, "claude").slots, data.slots.claude);
-  assert.deepEqual(accounts.forProvider({ ...data, slots: undefined }, "codex").slots, {});
+  assert.deepEqual(accounts.forProvider({ ...data, slots: undefined }, "chatgpt").slots, {});
 });
 
 // What the sidebar shows of the table comes from src/accounts/providers.js, whatever the API's profiles say.
@@ -171,12 +171,12 @@ const withUnknown = { ...both, profiles: [...both.profiles, { name: "ghost", pro
 
 test("both providers: the panel is told each one's name, tool and mark, and the status bar and the pick list use the same table", () => {
   const table = accounts.panelProviders;
-  assert.deepEqual(Object.keys(table), ["claude", "codex"], "Claude first");
-  assert.deepEqual([table.claude.title, table.claude.agent, table.codex.title, table.codex.agent], ["Claude", "Claude Code", "ChatGPT", "Codex"]);
-  assert.notEqual(table.claude.mark, table.codex.mark);
-  assert.ok(table.claude.mark && table.codex.mark);
+  assert.deepEqual(Object.keys(table), ["claude", "chatgpt"], "Claude first");
+  assert.deepEqual([table.claude.title, table.claude.agent, table.chatgpt.title, table.chatgpt.agent], ["Claude", "Claude Code", "ChatGPT", "Codex"]);
+  assert.notEqual(table.claude.mark, table.chatgpt.mark);
+  assert.ok(table.claude.mark && table.chatgpt.mark);
   assert.equal(accounts.groupsFor(both).length, 2);
-  assert.equal(accounts.pickItems(both).find((i) => i.provider === "codex").description.split("  ")[0], "ChatGPT");
+  assert.equal(accounts.pickItems(both).find((i) => i.provider === "chatgpt").description.split("  ")[0], "ChatGPT");
 });
 
 test("Claude only: with no ChatGPT profile there is no ChatGPT group in the status bar nor in the pick list", () => {

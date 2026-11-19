@@ -11,7 +11,7 @@ const CLAUDE = "M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.07
 
 const PROVIDERS = {
   claude: { title: "Claude", agent: "Claude Code", mark: CLAUDE, icon: "dotagents-claude", plans: { pro: "Pro", max: "Max", team: "Team", enterprise: "Enterprise" } },
-  codex: { title: "ChatGPT", agent: "Codex", mark: OPENAI, icon: "dotagents-openai", plans: { plus: "Plus", pro: "Pro", team: "Business", business: "Business", enterprise: "Enterprise" } },
+  chatgpt: { title: "ChatGPT", agent: "Codex", mark: OPENAI, icon: "dotagents-openai", plans: { plus: "Plus", pro: "Pro", team: "Business", business: "Business", enterprise: "Enterprise" } },
 };
 
 module.exports = { PROVIDERS };

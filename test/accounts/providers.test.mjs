@@ -44,7 +44,7 @@ const flatten = (node) => typeof node === "object" ? [node, ...node.children.fla
 test("each group names its plan as the product does: team is Claude Team and ChatGPT Business", () => {
   const view = panel();
   const profile = (name, provider) => ({ name, provider, plan: "team", color: "#123456", avatar: "asleep", state: "no-data", windows: [] });
-  view.render({ profiles: [profile("work", "claude"), profile("personal", "claude"), profile("hopper", "codex"), profile("dijkstra", "codex")], slots: {}, current: {}, sides: [] });
+  view.render({ profiles: [profile("work", "claude"), profile("personal", "claude"), profile("hopper", "chatgpt"), profile("dijkstra", "chatgpt")], slots: {}, current: {}, sides: [] });
   const nodes = flatten(view.host);
   assert.ok(nodes.includes("Team  2 seats"), "Claude's group");
   assert.ok(nodes.includes("Business  2 seats"), "ChatGPT's group");
@@ -58,18 +58,18 @@ test("the extension and panel share account labels and marks, while sessions kee
   const { AGENTS } = require("../../src/sessions/agent.js");
   assert.deepEqual(Object.values(AGENTS).map((a) => a.name), ["Claude Code", "Codex"]);
 
-  const saved = providers.codex.title;
-  const savedPanel = accounts.panelProviders.codex.title;
+  const saved = providers.chatgpt.title;
+  const savedPanel = accounts.panelProviders.chatgpt.title;
   try {
     // Changing the single table must reach both consumers, without changing their code.
-    providers.codex.title = "ChatGPT test";
-    accounts.panelProviders.codex.title = providers.codex.title;
+    providers.chatgpt.title = "ChatGPT test";
+    accounts.panelProviders.chatgpt.title = providers.chatgpt.title;
     const data = {
       profiles: Object.keys(providers).map((provider) => ({ provider, name: provider, color: "#123456", avatar: "asleep", state: "no-data", windows: [] })),
       slots: {}, current: {}, sides: [],
     };
     assert.equal(accounts.pickItems(data)[1].description, "ChatGPT test");
-    assert.equal(accounts.groupsFor(data)[1].parts[0].text, `$(${providers.codex.icon}) codex`);
+    assert.equal(accounts.groupsFor(data)[1].parts[0].text, `$(${providers.chatgpt.icon}) chatgpt`);
     view.render(data);
     const nodes = flatten(view.host);
     assert.ok(nodes.includes("ChatGPT test"));
@@ -78,8 +78,8 @@ test("the extension and panel share account labels and marks, while sessions kee
     assert.ok(nodes.some((n) => n.attributes?.title === "Open claude's Claude Desktop"));
     for (const p of Object.values(providers)) assert.ok(nodes.some((n) => n.attributes?.d === p.mark), p.title);
   } finally {
-    providers.codex.title = saved;
-    accounts.panelProviders.codex.title = savedPanel;
+    providers.chatgpt.title = saved;
+    accounts.panelProviders.chatgpt.title = savedPanel;
   }
 });
 
@@ -89,8 +89,8 @@ test("the webview receives the shared provider table with usage", () => {
 
 test("after a switch the panel shows what to do next, in the core's words, until the next action", async () => {
   const view = panel();
-  const profile = (name) => ({ name, provider: "codex", plan: "team", color: "#123456", avatar: "asleep", state: "no-data", windows: [] });
-  view.render({ profiles: [profile("hopper"), profile("dijkstra")], slots: { codex: { WSL: "hopper" } }, current: {}, sides: ["WSL"] });
+  const profile = (name) => ({ name, provider: "chatgpt", plan: "team", color: "#123456", avatar: "asleep", state: "no-data", windows: [] });
+  view.render({ profiles: [profile("hopper"), profile("dijkstra")], slots: { chatgpt: { WSL: "hopper" } }, current: {}, sides: ["WSL"] });
   const button = flatten(view.host).find((n) => typeof n === "object" && n.listeners?.click && n.children.includes("switch"));
   button.listeners.click();
   const { id } = view.posted.at(-1);
