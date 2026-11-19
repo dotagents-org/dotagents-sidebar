@@ -40,7 +40,8 @@ test("an answer in another API version is refused with what to update, and an er
   assert.equal(accounts.refusal({ apiVersion: 3, profiles: [] }), "");
   assert.match(accounts.refusal({ apiVersion: 1, profiles: [] }), /run dotagents update/, "version 1 is from before the providers");
   assert.equal(accounts.refusal({ apiVersion: 3, error: "profiles.json is not valid JSON" }), "dotagents: profiles.json is not valid JSON");
-  assert.match(accounts.refusal({ apiVersion: 3 }), /update dotagents-sidebar/);
+  assert.match(accounts.refusal({ apiVersion: 4 }), /update dotagents-sidebar/);
+  assert.match(accounts.refusal({ apiVersion: 2, profiles: [] }), /run dotagents update/, "version 2 names the ChatGPT provider codex");
   assert.match(accounts.refusal({ version: 1, profiles: [] }), /run dotagents update/, "a server from before the API had a version");
 });
 
