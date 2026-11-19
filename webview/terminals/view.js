@@ -224,11 +224,15 @@
       if (behavior === "copyPaste" && term.hasSelection()) return copy();
       navigator.clipboard.readText().then((text) => text && term.paste(text), () => {});
     });
-    // The agent's window title names its conversation (Claude Code: "✳ fix login"). Without the
-    // status mark in front, and only when it says more than the agent's or the workspace's name
+    // The agent's window title names its conversation (Claude Code: "✳ fix login"; Codex: "⠋ fix
+    // login | project", its items joined by " | ", the project last, cut to 24 characters, so it is
+    // dropped by place, not by name). Without the status mark in front, and only when it says more
+    // than the agent's or the workspace's name
     let lastTitle;
     term.onTitleChange((raw) => {
-      const clean = raw.replace(/^[^\p{L}\p{N}]+/u, "").trim();
+      const strip = (text) => text.replace(/^[^\p{L}\p{N}]+/u, "").trim();
+      const parts = raw.split(" | ");
+      const clean = strip(session.provider === "codex" && parts.length > 1 ? parts.slice(0, -1).join(" | ") : raw);
       const title = session.kind === "terminal" || clean === kind(session).name || clean === settings.workspace ? "" : clean;
       if (title === lastTitle) return; // a spinner changes only the mark
       lastTitle = title;
