@@ -11,6 +11,7 @@ const sessions = require("./sessions/sessions.js");
 const layout = require("./shared/layout.js");
 const codexSessions = require("./sessions/codex-sessions.js");
 const keys = require("./shared/keys.js");
+const sessionHook = require("./sessions/session-hook.js");
 
 const { startAccounts } = require("./accounts/accounts.js");
 const SKIP_SHELL = require("./skip-shell.json");
@@ -140,6 +141,12 @@ class SidebarView {
     this.context = context;
     this.view = undefined;
     this.state = sessions.restore(context.workspaceState.get("sessions"));
+    // Where each agent session's SessionStart hook writes its conversation (session-hook.js): a
+    // file per session in the workspace's storage, and Claude Code's hook settings beside the
+    // extension's other files. A window with no folder has no storage of its own, and the session
+    // ids start over in every window, so there the agents get no hook
+    this.hookFolder = context.storageUri && path.join(context.storageUri.fsPath, "sessions");
+    this.claudeSettings = context.globalStorageUri && path.join(context.globalStorageUri.fsPath, "claude-session-hook.json");
     // Session id -> what the extension knows of its agent; the process and the screen live in the host
     this.terminals = new Map();
     this.snapshots = []; // the replies the host still owes, in order
@@ -480,6 +487,8 @@ class SidebarView {
     if (this.session(id).kind === "terminal") return this.startTerminal(id, terminal);
     // Open the session's conversation again; the first time, a new one with an id of our own
     const agent = agentOf(this.session(id));
+    const told = this.told(id, fresh);
+    if (told && told.conversation !== this.session(id).conversation) this.update(sessions.remember(this.state, id, { conversation: told.conversation }));
     let conversation = fresh ? undefined : this.session(id).conversation;
     const resume = !!conversation;
     const startedAt = Date.now();
@@ -492,8 +501,38 @@ class SidebarView {
       this.update(sessions.remember(this.state, id, { conversation, startedAt }));
     }
     Object.assign(terminal, { started: true, exited: false, resume, startedAt });
-    const { file, args } = command(process.platform, agent, conversationArgs(agent, conversation, resume));
-    this.createProcess(id, terminal, file, args);
+    const hook = this.hook(id, agent);
+    const { file, args } = command(process.platform, agent, [...hook.args, ...conversationArgs(agent, conversation, resume)]);
+    this.createProcess(id, terminal, file, args, hook.env);
+  }
+
+  hookFile(id) {
+    return this.hookFolder && path.join(this.hookFolder, `${id}.json`);
+  }
+
+  // The conversation the session's agent said it was in last, which wins over the one the view
+  // remembers: Claude Code moves to another one on /clear or /resume, and Codex picks its own. A
+  // fresh start forgets it
+  told(id, fresh) {
+    const file = this.hookFile(id);
+    if (!file) return undefined;
+    if (fresh) return sessionHook.forget(file);
+    return sessionHook.read(file);
+  }
+
+  // The arguments and the variable that give the agent its SessionStart hook; none when the
+  // extension has no storage, or its files can't be written
+  hook(id, agent) {
+    if (!this.hookFolder || !this.claudeSettings) return { args: [], env: {} };
+    try {
+      fs.mkdirSync(this.hookFolder, { recursive: true });
+      fs.mkdirSync(path.dirname(this.claudeSettings), { recursive: true });
+      fs.writeFileSync(this.claudeSettings, JSON.stringify(sessionHook.claudeSettings(process.platform), null, 2));
+    } catch (err) {
+      this.log.error("Could not set up the session hook", err);
+      return { args: [], env: {} };
+    }
+    return { args: sessionHook.args(process.platform, agent, this.claudeSettings), env: { [sessionHook.VARIABLE]: this.hookFile(id) } };
   }
 
   startTerminal(id, terminal) {
@@ -503,7 +542,7 @@ class SidebarView {
     this.createProcess(id, terminal, file, args);
   }
 
-  createProcess(id, terminal, file, args) {
+  createProcess(id, terminal, file, args, extraEnv = {}) {
     this.post({ type: "clear", id });
     this.send({
       type: "create",
@@ -511,7 +550,7 @@ class SidebarView {
       file,
       args,
       cwd: cwd(),
-      env: env(process.env),
+      env: { ...env(process.env), ...extraEnv },
       cols: terminal.size.cols,
       rows: terminal.size.rows,
       scrollback: terminalSettings().scrollback,
@@ -643,6 +682,7 @@ class SidebarView {
     if (!this.session(id)) return;
     this.send({ type: "kill", id });
     this.terminals.delete(id);
+    if (this.hookFile(id)) sessionHook.forget(this.hookFile(id));
     this.update(sessions.close(this.state, id));
   }
 
@@ -652,17 +692,28 @@ class SidebarView {
   watchCodex() {
     if (this.watching || !codexSessions.pending(this.state.sessions).length) return;
     this.watching = setInterval(() => {
-      try {
-        for (const [id, conversation] of Object.entries(codexSessions.discover(this.state.sessions))) {
-          if (this.session(id)) this.update(sessions.remember(this.state, id, { conversation }));
-        }
-        if (codexSessions.pending(this.state.sessions).length) return;
-      } catch (err) {
-        this.log.error("Could not look for the Codex conversations", err);
-      }
+      if (this.findCodex()) return;
       clearInterval(this.watching);
       this.watching = undefined;
     }, 3000);
+  }
+
+  // One look for the Codex sessions' conversations; true while one still has none
+  findCodex() {
+    try {
+      // What Codex told through the hook first; the rollouts' folder and time are a guess
+      for (const s of codexSessions.pending(this.state.sessions)) {
+        const told = this.told(s.id);
+        if (told) this.update(sessions.remember(this.state, s.id, { conversation: told.conversation }));
+      }
+      for (const [id, conversation] of Object.entries(codexSessions.discover(this.state.sessions))) {
+        if (this.session(id)) this.update(sessions.remember(this.state, id, { conversation }));
+      }
+      return codexSessions.pending(this.state.sessions).length > 0;
+    } catch (err) {
+      this.log.error("Could not look for the Codex conversations", err);
+      return false;
+    }
   }
 
   // A new process in the same conversation
