@@ -492,6 +492,10 @@ class SidebarView {
     const told = this.told(id, fresh);
     if (told && told.conversation !== this.session(id).conversation) this.update(sessions.remember(this.state, id, { conversation: told.conversation, guessed: false }));
     if (agent.id === "codex" && !fresh) this.dropClaimedGuesses(); // never resume another session's conversation
+    // A Codex conversation only guessed from the rollouts is never resumed on its own: Codex's own
+    // list of the folder's conversations asks which one, and its hook then tells the view
+    const guessed = agent.id === "codex" && !fresh && this.session(id).guessed && this.session(id).conversation;
+    if (guessed) this.update(sessions.remember(this.state, id, { conversation: undefined, guessed: false }));
     let conversation = fresh ? undefined : this.session(id).conversation;
     const resume = !!conversation;
     const startedAt = Date.now();
@@ -505,7 +509,7 @@ class SidebarView {
     }
     Object.assign(terminal, { started: true, exited: false, resume, startedAt });
     const hook = this.hook(id, agent);
-    const { file, args } = command(process.platform, agent, [...hook.args, ...conversationArgs(agent, conversation, resume)]);
+    const { file, args } = command(process.platform, agent, [...hook.args, ...(guessed ? ["resume"] : conversationArgs(agent, conversation, resume))]);
     this.createProcess(id, terminal, file, args, hook.env);
   }
 

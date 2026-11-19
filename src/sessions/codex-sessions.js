@@ -55,7 +55,9 @@ function readRollouts(home, since) {
         const file = path.join(dir, name);
         if (fs.statSync(file).mtimeMs < since) continue;
         const meta = JSON.parse(readFirstLine(file));
-        const { id, cwd, timestamp } = (meta.type === "session_meta" && meta.payload) || {};
+        const { id, cwd, timestamp, source, parent_thread_id: parent } = (meta.type === "session_meta" && meta.payload) || {};
+        // A subagent's conversation (Codex gives each its own rollout) is never a session's
+        if (parent || (source && typeof source === "object" && "subagent" in source)) continue;
         const started = Date.parse(timestamp);
         if (SAFE_ID.test(id || "") && typeof cwd === "string" && started) found.push({ id, cwd, started });
       } catch {

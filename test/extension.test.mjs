@@ -451,6 +451,42 @@ test("a guess that took a rollout before its own session's hook told it is dropp
     }
   }));
 
+test("a Codex conversation only guessed is never resumed on its own: Codex's list asks, and a subagent's rollout is never guessed", () =>
+  withStorage(async (storage) => {
+    const codexHome = fs.mkdtempSync(path.join(storage, "codex-"));
+    const before = process.env.CODEX_HOME;
+    process.env.CODEX_HOME = codexHome;
+    try {
+      const { view: sidebar, messages } = view(undefined, { storage });
+      sidebar.state = sessions.add(sessions.EMPTY, "Codex", undefined, "codex");
+      const [a] = sidebar.state.sessions.map((s) => s.id);
+      sidebar.start(a);
+      const day = new Date();
+      const dir = path.join(codexHome, "sessions", String(day.getFullYear()), String(day.getMonth() + 1).padStart(2, "0"), String(day.getDate()).padStart(2, "0"));
+      fs.mkdirSync(dir, { recursive: true });
+      const at = sidebar.session(a).startedAt;
+      const rollout = (id, extra) => {
+        const file = path.join(dir, `rollout-${id}.jsonl`);
+        fs.writeFileSync(file, JSON.stringify({ type: "session_meta", payload: { id, cwd: sidebar.session(a).cwd, timestamp: new Date(at + 1).toISOString(), ...extra } }) + "\n");
+        fs.utimesSync(file, new Date(at + 1000), new Date(at + 1000));
+      };
+      rollout("helper-1", { source: { subagent: { thread_spawn: {} } }, parent_thread_id: "x" });
+      sidebar.findCodex();
+      assert.equal(sidebar.session(a).conversation, undefined, "a subagent's rollout isn't a session's");
+      rollout("guess-1", {});
+      sidebar.findCodex();
+      assert.deepEqual([sidebar.session(a).conversation, sidebar.session(a).guessed], ["guess-1", true]);
+      sidebar.restart(a);
+      await Promise.resolve();
+      assert.match(messages.at(-1).args.join(" "), /codex.* resume$/, "Codex's own list, not the guessed id");
+      assert.doesNotMatch(messages.at(-1).args.join(" "), /guess-1/);
+      sidebar.dispose();
+    } finally {
+      if (before === undefined) delete process.env.CODEX_HOME;
+      else process.env.CODEX_HOME = before;
+    }
+  }));
+
 test("an empty window's host is found again after a reload by the id the window keeps, and is another window's own", () => {
   const workspace = new Map();
   const key = (made) => {
