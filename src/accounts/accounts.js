@@ -220,7 +220,7 @@ function startAccounts(vscode, context) {
     try {
       const { ok, json } = await api("POST", `/api/${action}`, body || {});
       // next: what to do after a switch, in the core's words (the switch command's last line)
-      result = json.apiVersion !== API_VERSION ? { ok: false, detail: refusal(json) } : { ok, detail: json.detail || json.error || "", ...(ok && json.next ? { next: json.next } : {}) };
+      result = json.apiVersion !== API_VERSION ? { ok: false, detail: refusal(json) } : { ok, detail: json.detail || json.error || "", ...(json.next ? { next: json.next } : {}) };
     } catch (err) {
       result = { ok: false, detail: err.message };
     }
@@ -285,7 +285,8 @@ function startAccounts(vscode, context) {
       // A dotagents start from before next had Claude's line only in the sidebar
       const next = result.next || (pick.provider === "claude" ? "Open conversations go on in the new account when you type continue." : "");
       if (result.ok) vscode.window.showInformationMessage(`dotagents: ${result.detail || `now ${pick.profile}`}${next ? `. ${next}` : ""}`);
-      else vscode.window.showErrorMessage(`dotagents: ${result.detail || "the switch failed"}`);
+      // A switch can change this side's slot and then fail on the other: the next step still holds here
+      else vscode.window.showErrorMessage(`dotagents: ${result.detail || "the switch failed"}${result.next ? `. ${result.next}` : ""}`);
     });
   }
 

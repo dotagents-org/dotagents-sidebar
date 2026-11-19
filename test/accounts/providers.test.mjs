@@ -100,4 +100,10 @@ test("after a switch the panel shows what to do next, in the core's words, until
   assert.ok(flatten(view.host).includes(next));
   button.listeners.click();
   assert.equal(flatten(view.host).includes(next), false);
+  // This side's slot changed, the other side failed: the error and what to do here, both
+  const again = view.posted.at(-1).id;
+  view.send({ type: "result", id: again, result: { ok: false, detail: "Windows: unreachable", next } });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.ok(flatten(view.host).includes("Windows: unreachable"));
+  assert.ok(flatten(view.host).includes(next));
 });

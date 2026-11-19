@@ -119,7 +119,7 @@
       const res = await act(action, body).catch((err) => ({ ok: false, detail: String(err) }));
       pending = null;
       failure = res.ok ? "" : res.detail || "it failed";
-      note = (res.ok && res.next) || "";
+      note = res.next || ""; // also after a switch that failed only on the other side
       redraw();
     };
     const busy = (key) => (pending && pending === key ? " busy" : "");
