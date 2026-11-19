@@ -800,6 +800,7 @@
     if (msg.type === "init") {
       initialized = true;
       state = msg.state;
+      picking = !!msg.picking;
       // The panes with a screen to restore are not fitted (nor is the host told a size) until the
       // screen is in: the first render would otherwise resize the agent before it is drawn
       restoring = new Set(Object.keys(msg.screens).filter((id) => msg.screens[id] !== undefined));

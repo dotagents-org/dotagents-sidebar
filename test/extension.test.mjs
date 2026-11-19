@@ -250,6 +250,19 @@ test("while a list is open, the view is told to leave the focus alone", async ()
   assert.deepEqual(messages.filter((m) => m.type === "picking").at(-1), { type: "picking", on: false });
 });
 
+test("a list opened over another keeps the view leaving the focus alone until the last one closes", async () => {
+  let release;
+  const { view: sidebar, messages, vscode } = view(undefined);
+  const lists = [new Promise((resolve) => (release = resolve)), Promise.resolve(undefined)];
+  vscode.window.showQuickPick = () => lists.shift();
+  const first = sidebar.quickPick([], {});
+  await sidebar.quickPick([], {}); // the second one closes while the first is still open
+  assert.deepEqual(messages.filter((m) => m.type === "picking").at(-1), { type: "picking", on: true });
+  release(undefined);
+  await first;
+  assert.deepEqual(messages.filter((m) => m.type === "picking").at(-1), { type: "picking", on: false });
+});
+
 test("a join whose target got too deep while the list was open says so and keeps the last side", async () => {
   const { DEPTH } = require("../src/shared/layout.js");
   let sidebar;

@@ -472,7 +472,7 @@ class SidebarView {
       screens[id] = s.screen;
       if (s.cols && s.rows) sizes[id] = { cols: s.cols, rows: s.rows };
     }
-    this.post({ type: "init", state: this.state, screens, sizes });
+    this.post({ type: "init", state: this.state, screens, sizes, picking: this.picking > 0 }); // a page made anew while a list is open
   }
 
   start(id, fresh = false) {
@@ -727,11 +727,14 @@ class SidebarView {
    * @returns {Promise<T | undefined>}
    */
   async quickPick(items, options) {
+    // Counted: a list opened over another closes it, and the first one's end must not clear the second
+    this.picking = (this.picking || 0) + 1;
     this.post({ type: "picking", on: true });
     try {
       return await vscode.window.showQuickPick(items, options);
     } finally {
-      this.post({ type: "picking", on: false });
+      this.picking--;
+      this.post({ type: "picking", on: this.picking > 0 });
     }
   }
 
