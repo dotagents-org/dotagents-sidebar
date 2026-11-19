@@ -47,10 +47,14 @@ function quote(platform, arg) {
 }
 
 function command(platform, agent, args = []) {
-  const line = [agent.command, ...args.map((arg) => quote(platform, arg))].join(" ");
+  const rest = args.map((arg) => quote(platform, arg));
   if (platform === "win32") {
+    // Only an application (.exe, .cmd): npm puts a codex.ps1 beside codex.cmd, and PowerShell, which
+    // would pick the .ps1, refuses it where scripts are blocked
+    const line = [`& (Get-Command ${agent.command} -CommandType Application -ErrorAction Stop)[0].Source`, ...rest].join(" ");
     return { file: "powershell.exe", args: ["-NoLogo", "-Command", line] };
   }
+  const line = [agent.command, ...rest].join(" ");
   // -i loads ~/.bashrc, where the agent's bin folder enters the PATH
   return { file: "bash", args: ["-ic", line] };
 }

@@ -21,10 +21,10 @@ test("the agents are Claude Code and Codex, with what the view needs; a session 
 test("command starts the agent through the shell that has it on the PATH", () => {
   assert.deepEqual(command("linux", claude), { file: "bash", args: ["-ic", "claude"] });
   assert.deepEqual(command("darwin", claude), { file: "bash", args: ["-ic", "claude"] });
-  assert.deepEqual(command("win32", claude), { file: "powershell.exe", args: ["-NoLogo", "-Command", "claude"] });
+  assert.deepEqual(command("win32", claude), { file: "powershell.exe", args: ["-NoLogo", "-Command", "& (Get-Command claude -CommandType Application -ErrorAction Stop)[0].Source"] });
   assert.deepEqual(command("linux", claude, ["--resume", "abc-1"]), { file: "bash", args: ["-ic", "claude --resume abc-1"] });
   assert.deepEqual(command("linux", codex, ["resume", "abc-1"]), { file: "bash", args: ["-ic", "codex resume abc-1"] });
-  assert.deepEqual(command("win32", codex), { file: "powershell.exe", args: ["-NoLogo", "-Command", "codex"] });
+  assert.deepEqual(command("win32", codex), { file: "powershell.exe", args: ["-NoLogo", "-Command", "& (Get-Command codex -CommandType Application -ErrorAction Stop)[0].Source"] });
 });
 
 test("env describes the terminal and drops VS Code's own process variables", () => {
@@ -71,6 +71,6 @@ test("a terminal runs the user's own shell, interactive; bash and PowerShell rep
 
 test("command quotes an argument that isn't plain, for bash and for PowerShell", () => {
   assert.deepEqual(command("linux", claude, ["--settings", "/home/a b/it's.json"]).args, ["-ic", `claude --settings '/home/a b/it'\\''s.json'`]);
-  assert.deepEqual(command("win32", claude, ["--settings", "C:\\Users\\a b\\it's.json"]).args, ["-NoLogo", "-Command", `claude --settings 'C:\\Users\\a b\\it''s.json'`]);
+  assert.deepEqual(command("win32", claude, ["--settings", "C:\\Users\\a b\\it's.json"]).args, ["-NoLogo", "-Command", `& (Get-Command claude -CommandType Application -ErrorAction Stop)[0].Source --settings 'C:\\Users\\a b\\it''s.json'`]);
   assert.deepEqual(command("linux", codex, ["-c", "a=[1]"]).args, ["-ic", "codex -c 'a=[1]'"]);
 });
