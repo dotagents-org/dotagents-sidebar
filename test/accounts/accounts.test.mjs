@@ -89,10 +89,12 @@ test("the switch lists every account with its usage and where it is, the current
 });
 
 test("dotagents start runs on its own: directly on Linux and macOS, through a hidden Start-Process on Windows", () => {
-  assert.deepEqual(accounts.startCommand("linux"), ["dotagents", ["start"]]);
-  assert.deepEqual(accounts.startCommand("darwin"), ["dotagents", ["start"]]);
-  const [file, args] = accounts.startCommand("win32");
+  assert.deepEqual(accounts.startCommand("linux"), ["dotagents", ["start"], { detached: true, stdio: "ignore" }]);
+  assert.deepEqual(accounts.startCommand("darwin"), ["dotagents", ["start"], { detached: true, stdio: "ignore" }]);
+  const [file, args, options] = accounts.startCommand("win32");
   assert.equal(file, "powershell.exe");
+  // A detached PowerShell has no console and exits without running the command.
+  assert.equal(options.detached, undefined);
   assert.ok(args.includes("Hidden"));
   assert.match(args.at(-1), /^Start-Process -WindowStyle Hidden -FilePath dotagents\.cmd -ArgumentList start$/);
 });

@@ -164,11 +164,12 @@ function inEverySlot(data, { provider, profile }) {
 
 // How to start `dotagents start` on its own. On Windows, `dotagents` is a .cmd, and one started
 // from here would be tied to a console window: closing it, or VS Code, stops the server. So a
-// hidden PowerShell hands it to Start-Process, which runs it hidden and on its own.
-/** @returns {[string, string[]]} */
+// hidden PowerShell hands it to Start-Process, which runs it hidden and on its own. That PowerShell
+// is not detached: one started with no console exits at once, without running the command.
+/** @returns {[string, string[], import("node:child_process").SpawnOptions]} */
 function startCommand(platform) {
-  if (platform !== "win32") return ["dotagents", ["start"]];
-  return ["powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", "Start-Process -WindowStyle Hidden -FilePath dotagents.cmd -ArgumentList start"]];
+  if (platform !== "win32") return ["dotagents", ["start"], { detached: true, stdio: "ignore" }];
+  return ["powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", "Start-Process -WindowStyle Hidden -FilePath dotagents.cmd -ArgumentList start"], { stdio: "ignore", windowsHide: true }];
 }
 
 const POLL_MS = 10_000;
@@ -204,8 +205,8 @@ function startAccounts(vscode, context) {
     } catch (err) {
       if (Date.now() - startedAt > 60_000) {
         startedAt = Date.now();
-        const [file, args] = startCommand(process.platform);
-        const child = spawn(file, args, { detached: true, stdio: "ignore", windowsHide: true });
+        const [file, args, options] = startCommand(process.platform);
+        const child = spawn(file, args, options);
         child.on("error", () => {});
         child.unref();
       }
