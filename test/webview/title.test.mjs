@@ -16,7 +16,7 @@ test("a Codex title keeps the thread's name and drops the project where Codex pu
   assert.equal(codex("repo | fix login", [undefined]), "repo | fix login"); // unknown: whole, never the thread's name lost
   // In repo/packages, Codex's project is repo, not the folder: whole, the thread (named as the window) kept
   assert.equal(codex("repo-workspace | repo", ["packages"]), "repo-workspace | repo");
-  assert.equal(codex("✳ fix login", ["shop"]), "fix login");
+  assert.equal(codex("⠙ fix login", ["shop"]), "fix login"); // Codex's spinner
   assert.equal(codex("repo | repo", ["repo"]), "repo | repo"); // a thread named as its project: both stay
   // 24 graphemes, not code points: "é" written as e and its accent counts once
   const accented = "proje\u0301to-com-um-nome-longo-demais";
@@ -27,4 +27,7 @@ test("a Codex title keeps the thread's name and drops the project where Codex pu
   assert.equal(strip("[RFC] api"), "[RFC] api");
   assert.equal(codex("Fix login | .private", [".private"]), "Fix login", "a dot in the folder's name is kept to compare");
   assert.equal(codex("[RFC] api | repo", ["repo"]), "[RFC] api");
+  assert.equal(codex("*RFC* | repo", ["repo"]), "*RFC*", "an asterisk is not a Codex mark");
+  assert.equal(codex("Fix login | *repo", ["repo"]), "Fix login | *repo", "a project written with an asterisk isn't the folder's name");
+  assert.equal(strip("*RFC* api"), "*RFC* api");
 });

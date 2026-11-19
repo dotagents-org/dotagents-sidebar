@@ -527,6 +527,37 @@ test("an empty window's host is found again after a reload by the id the window 
   assert.notEqual(key(view(undefined)), first);
 });
 
+test("the watch for Codex conversations goes on while one is only a guess, so a late hook can take it back", () =>
+  withStorage(async (storage) => {
+    const codexHome = fs.mkdtempSync(path.join(storage, "codex-"));
+    const before = process.env.CODEX_HOME;
+    process.env.CODEX_HOME = codexHome;
+    try {
+      const { view: sidebar } = view(undefined, { storage });
+      sidebar.state = sessions.add(sessions.add(sessions.EMPTY, "Codex", undefined, "codex"), "Codex", undefined, "codex");
+      const [a, b] = sidebar.state.sessions.map((s) => s.id);
+      sidebar.start(a);
+      sidebar.start(b);
+      tell(sidebar, a, "old-a", "startup");
+      const day = new Date();
+      const dir = path.join(codexHome, "sessions", String(day.getFullYear()), String(day.getMonth() + 1).padStart(2, "0"), String(day.getDate()).padStart(2, "0"));
+      fs.mkdirSync(dir, { recursive: true });
+      const rollout = path.join(dir, "rollout-new-a.jsonl");
+      fs.writeFileSync(rollout, JSON.stringify({ type: "session_meta", payload: { id: "new-a", cwd: sidebar.session(b).cwd, timestamp: new Date(sidebar.session(b).startedAt + 1).toISOString() } }) + "\n");
+      fs.utimesSync(rollout, new Date(sidebar.session(b).startedAt + 1000), new Date(sidebar.session(b).startedAt + 1000));
+      assert.equal(sidebar.findCodex(), true, "b has a guess, a's hook may still say it's a's");
+      assert.equal(sidebar.session(b).conversation, "new-a");
+      tell(sidebar, a, "new-a", "clear"); // the hook comes late
+      assert.equal(sidebar.findCodex(), true, "b is left waiting for its own");
+      assert.equal(sidebar.session(b).conversation, undefined);
+      assert.equal(sidebar.session(a).conversation, "new-a");
+      sidebar.dispose();
+    } finally {
+      if (before === undefined) delete process.env.CODEX_HOME;
+      else process.env.CODEX_HOME = before;
+    }
+  }));
+
 test("a window with no folder keeps its agents' hook files apart from another such window's, across a reload", () =>
   withStorage(async (storage) => {
     const fileOf = async (made) => {

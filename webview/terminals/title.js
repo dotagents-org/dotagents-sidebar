@@ -10,10 +10,11 @@
 // Shared by the extension's tests (CommonJS) and the view (a script that declares agentTitle).
 
 const agentTitle = (() => {
-  // The status mark in front goes: Codex's braille spinner and Claude Code's ✳ family, and the dots and
-  // bullets of an idle state. Nothing else: a title may start with "[RFC]" or end in ".private"
-  const MARKS = /^[\u2800-\u28FF\u2733\u2734\u2735\u2736\u2737\u2738\u2739\u273A\u273B\u273C\u273D\u2722\u2723\u2724\u2725\u00B7\u2022\u25CF\u25CB\u25CC\u25D0-\u25D3*]+\s*/u;
-  const strip = (text) => text.replace(MARKS, "").trim();
+  // The status mark in front goes, by the form each agent gives it: Codex's braille spinner, Claude Code's
+  // ✳ family and the dots of an idle state. Nothing else: a title may start with "[RFC]" or "*", or end in ".private"
+  const CODEX_MARK = /^[\u2800-\u28FF]+\s*/u;
+  const CLAUDE_MARK = /^[\u2800-\u28FF\u2733-\u273D\u2722-\u2725\u00B7\u2022\u25CF\u25CB\u25CC\u25D0-\u25D3]+\s*/u;
+  const strip = (text, agent = "claude") => text.replace(agent === "codex" ? CODEX_MARK : CLAUDE_MARK, "").trim();
 
   // The project as Codex writes it: whole up to 24 graphemes (a letter and its accents count as
   // one), else 21 and "..."
@@ -27,11 +28,11 @@ const agentTitle = (() => {
   // one part may go: when none or several match (a thread named as its project), it stays whole
   function codex(raw, names) {
     const parts = raw.split(" | ");
-    if (parts.length < 2) return strip(raw);
+    if (parts.length < 2) return strip(raw, "codex");
     const project = names.filter(Boolean).flatMap((name) => [name, asCodex(name)]);
-    const matches = parts.filter((part) => project.includes(strip(part)));
+    const matches = parts.filter((part) => project.includes(strip(part, "codex")));
     // Only the last part, where Codex puts the project by default: a thread may be named as the folder
-    return strip(matches.length === 1 && matches[0] === parts.at(-1) ? parts.slice(0, -1).join(" | ") : raw);
+    return strip(matches.length === 1 && matches[0] === parts.at(-1) ? parts.slice(0, -1).join(" | ") : raw, "codex");
   }
 
   return { strip, codex };

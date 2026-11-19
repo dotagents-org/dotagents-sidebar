@@ -731,7 +731,7 @@ class SidebarView {
   // rollouts every few seconds (a rollout may only appear once the first prompt is sent), until
   // each has one
   watchCodex() {
-    if (this.watching || !codexSessions.pending(this.state.sessions).length) return;
+    if (this.watching || !this.codexWaiting()) return;
     this.watching = setInterval(() => {
       if (this.findCodex()) return;
       clearInterval(this.watching);
@@ -754,6 +754,12 @@ class SidebarView {
     }
   }
 
+  // Whether a Codex session still waits for its conversation: it has none, or only a guess, which the hook
+  // of another session (late after a /clear) may still take back
+  codexWaiting() {
+    return codexSessions.pending(this.state.sessions).length > 0 || this.state.sessions.some((s) => s.provider === "codex" && s.guessed === true);
+  }
+
   // One look for the Codex sessions' conversations; true while one still has none
   findCodex() {
     try {
@@ -768,7 +774,7 @@ class SidebarView {
       for (const [id, conversation] of Object.entries(codexSessions.discover(this.state.sessions))) {
         if (this.session(id)) this.update(sessions.remember(this.state, id, { conversation, guessed: true }));
       }
-      return codexSessions.pending(this.state.sessions).length > 0;
+      return this.codexWaiting();
     } catch (err) {
       this.log.error("Could not look for the Codex conversations", err);
       return false;
