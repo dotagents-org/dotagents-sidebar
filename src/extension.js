@@ -708,10 +708,12 @@ class SidebarView {
   // One look for the Codex sessions' conversations; true while one still has none
   findCodex() {
     try {
-      // What Codex told through the hook first; the rollouts' folder and time are a guess
-      for (const s of codexSessions.pending(this.state.sessions)) {
+      // What Codex told through the hook first, for every Codex session: one that moved on (/clear)
+      // holds its new conversation, which the guess must not give to another. The rollouts' folder
+      // and time are a guess
+      for (const s of this.state.sessions.filter((s) => s.provider === "codex")) {
         const told = this.told(s.id);
-        if (told) this.update(sessions.remember(this.state, s.id, { conversation: told.conversation }));
+        if (told && told.conversation !== s.conversation) this.update(sessions.remember(this.state, s.id, { conversation: told.conversation }));
       }
       for (const [id, conversation] of Object.entries(codexSessions.discover(this.state.sessions))) {
         if (this.session(id)) this.update(sessions.remember(this.state, id, { conversation }));
