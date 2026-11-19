@@ -219,6 +219,23 @@ test("a Copy the clipboard refuses says so and leaves the selection", async () =
   assert.notEqual(messages.at(-1).type, "copiedDone");
 });
 
+test("dropping a session on another to join it asks the side first, the last one used on top, and Escape changes nothing", async () => {
+  const { view: sidebar, asked, global } = view(undefined, { picks: ["Up", undefined] });
+  sidebar.state = sessions.add(sessions.add(sidebar.state, "A"), "A");
+  const [first, second] = sidebar.state.sessions.map((s) => s.id);
+  global.set("splitDirection", "up");
+  await sidebar.onMessage({ type: "join", id: second, target: first }); // dragged onto it with Shift
+  assert.deepEqual(asked[0].items.map((i) => i.label), ["Up", "Right", "Down", "Left"]);
+  assert.equal(asked[0].options.title, "Join Session");
+  assert.deepEqual(sidebar.state.sessions.map((s) => s.id).slice(0, 2), [second, first]); // above it
+  assert.equal(sidebar.session(second).group, sidebar.session(first).group);
+  assert.equal(sidebar.state.layouts[sidebar.session(first).group].axis, "column");
+  const third = (sidebar.state = sessions.add(sidebar.state, "A")).active;
+  const before = sidebar.state;
+  await sidebar.onMessage({ type: "join", id: third, target: first }); // Escape on the list
+  assert.equal(sidebar.state, before);
+});
+
 test("a pane too deep to split says so, before asking anything and without changing the last side", async () => {
   const { DEPTH } = require("../src/shared/layout.js");
   const { view: sidebar, asked, told, global } = view(undefined, { picks: ["Right", "Claude Code"] });

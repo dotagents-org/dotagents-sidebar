@@ -278,6 +278,19 @@ test("reordering a split in the list keeps its shape and ratios", () => {
   assert.deepEqual(tree(moved), { axis: "row", ratio: 0.5, a: "s2", b: { axis: "column", ratio: 0.7, a: "s3", b: "s1" } });
 });
 
+test("join puts the session on the side asked: before the other for left and up, after it for right and down", () => {
+  let state = add(add(add(EMPTY, "A"), "A"), "A"); // s1 s2 s3, each alone
+  const up = join(state, "s3", "s1", "up");
+  assert.deepEqual(ids(up), ["s3", "s1", "s2"]);
+  assert.deepEqual(up.layouts, { s1: { axis: "column", ratio: 0.5, a: "s3", b: "s1" } });
+  const down = join(state, "s1", "s2", "down");
+  assert.deepEqual(ids(down), ["s2", "s1", "s3"]);
+  assert.deepEqual(down.layouts, { s2: { axis: "column", ratio: 0.5, a: "s2", b: "s1" } });
+  const left = join(state, "s1", "s3", "left");
+  assert.deepEqual(ids(left), ["s2", "s1", "s3"]);
+  assert.deepEqual(left.layouts, { s3: { axis: "row", ratio: 0.5, a: "s1", b: "s3" } });
+});
+
 test("joining and leaving a split change both trees", () => {
   let state = split(add(EMPTY, "A"), "A"); // [s1 s2]
   state = add(state, "A"); // s3 alone

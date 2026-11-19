@@ -117,16 +117,17 @@ function leave(layouts, session) {
   return layouts[session.group] ? setLayout(layouts, session.group, layout.remove(layouts[session.group], session.id)) : layouts;
 }
 
-// A session joins another's group (a split), right after it (to its right), and becomes the active one
-function join(state, id, targetId) {
+// A session joins another's group (a split) on the side `dir` says, as a split does: right after it in
+// the list for right and down, right before it for left and up. It becomes the active one
+function join(state, id, targetId, dir = "right") {
   const session = state.sessions.find((s) => s.id === id);
   const target = state.sessions.find((s) => s.id === targetId);
   if (!session || !target || id === targetId || session.group === target.group) return state;
   if (!roomBeside(treeOf(state, target.group), targetId)) return state;
   const rest = state.sessions.filter((s) => s.id !== id);
-  const at = rest.findIndex((s) => s.id === targetId) + 1;
+  const at = rest.findIndex((s) => s.id === targetId) + (dir === "left" || dir === "up" ? 0 : 1);
   const layouts = leave(layoutsOf(state), session);
-  const tree = layout.insert(layouts[target.group] || targetId, targetId, id, "right");
+  const tree = layout.insert(layouts[target.group] || targetId, targetId, id, dir);
   return { ...state, sessions: [...rest.slice(0, at), { ...session, group: target.group }, ...rest.slice(at)], active: id, layouts: setLayout(layouts, target.group, tree) };
 }
 

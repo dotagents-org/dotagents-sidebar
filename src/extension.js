@@ -372,10 +372,8 @@ class SidebarView {
       case "unsplit": // a session dropped below the last one with Shift, out of its split
         if (typeof msg.id === "string") this.update(sessions.unsplit(this.state, msg.id));
         break;
-      case "join": // a session into another's group
-        if (typeof msg.id !== "string" || typeof msg.target !== "string") break;
-        if (!sessions.canSplit(this.state, msg.target)) this.tooDeep();
-        else this.update(sessions.join(this.state, msg.id, msg.target));
+      case "join": // a session dropped on another with Shift, into its group
+        if (typeof msg.id === "string" && typeof msg.target === "string") return this.join(msg.id, msg.target);
         break;
       case "resizeSplit": // a border between two panes dragged, in a tree of the shape it names
         if (
@@ -552,14 +550,8 @@ class SidebarView {
     const current = !target ? "claude" : target.kind === "terminal" ? "terminal" : target.provider === "codex" ? "codex" : "claude";
     let dir;
     if (target) {
-      const last = this.context.globalState.get("splitDirection");
-      const order = [...DIRECTIONS.filter((d) => d.dir === last), ...DIRECTIONS.filter((d) => d.dir !== last)];
-      const side = await vscode.window.showQuickPick(
-        order.map((d) => ({ label: d.label, description: d.description, iconPath: new vscode.ThemeIcon(d.icon), dir: d.dir })),
-        { title: "Split Session", placeHolder: "Which side?" }
-      );
-      if (!side) return;
-      dir = side.dir;
+      dir = await this.pickSide("Split Session");
+      if (!dir) return;
     }
     const icon = (name) => ({
       light: vscode.Uri.joinPath(this.context.extensionUri, "media", `${name}-light.svg`),
@@ -582,6 +574,29 @@ class SidebarView {
     this.context.globalState.update("splitDirection", dir);
     const action = (state, name, kind, provider) => sessions.split(state, name, kind, provider, dir, id);
     this.open(action, pick.agent === "terminal" ? "terminal" : undefined, pick.agent);
+  }
+
+  // Which side a split goes, the side used last on top; undefined on Escape
+  async pickSide(title) {
+    const last = this.context.globalState.get("splitDirection");
+    const order = [...DIRECTIONS.filter((d) => d.dir === last), ...DIRECTIONS.filter((d) => d.dir !== last)];
+    const side = await vscode.window.showQuickPick(
+      order.map((d) => ({ label: d.label, description: d.description, iconPath: new vscode.ThemeIcon(d.icon), dir: d.dir })),
+      { title, placeHolder: "Which side?" }
+    );
+    return side?.dir;
+  }
+
+  // A session dropped on another to join its split: asks the side, as Split Session does, then joins it there
+  async join(id, targetId) {
+    const session = this.session(id);
+    const target = this.session(targetId);
+    if (!session || !target || session.group === target.group) return;
+    if (!sessions.canSplit(this.state, targetId)) return this.tooDeep();
+    const dir = await this.pickSide("Join Session");
+    if (!dir || !this.session(id) || !this.session(targetId)) return; // Escape, or one closed while the list was open
+    this.context.globalState.update("splitDirection", dir);
+    this.update(sessions.join(this.state, id, targetId, dir));
   }
 
   tooDeep() {
