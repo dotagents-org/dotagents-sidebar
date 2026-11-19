@@ -616,14 +616,13 @@
     // settle like the rest, instead of fitting the panes where the border is now
     if (stopResize) resizing();
     else layoutAll();
-    // The terminal takes the focus only when what is in view changes (another session, or the
-    // accounts tab opened or closed), never on a redraw for a title or a folder: that would pull the
-    // focus out of one of VS Code's lists open over the view (Split Session's, Join Session's)
+    // The terminal takes the focus when what is in view changes (another session, or the accounts
+    // tab opened or closed), and on any redraw while the view has the focus (a drag, Restart, a
+    // neighbor pane that closed and moved it). With one of VS Code's lists open over the view
+    // (Split Session's, Join Session's), a redraw for a title or a folder leaves the focus there.
     const shown = showAccounts ? "accounts" : state.active;
-    if (shown !== shownLast) {
-      shownLast = shown;
-      focus();
-    }
+    if (shown !== shownLast || document.hasFocus()) focus();
+    shownLast = shown;
   }
 
   // The active group's panes, laid out as its tree says (src/shared/layout.js): each split a row or a
