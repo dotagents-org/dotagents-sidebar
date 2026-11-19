@@ -19,13 +19,14 @@
   <img alt="VS Code 1.106 or later" src="https://img.shields.io/badge/vscode-%E2%89%A5%201.106-171717">
   <img alt="Local, WSL, SSH, containers" src="https://img.shields.io/badge/runs-local%2C%20WSL%2C%20SSH%2C%20containers-171717">
   <img alt="Claude Code" src="https://img.shields.io/badge/agent-Claude%20Code-171717">
+  <img alt="Codex" src="https://img.shields.io/badge/agent-Codex-171717">
   <img alt="MIT license" src="https://img.shields.io/badge/license-MIT-171717">
 </p>
 
 > [!NOTE]
-> **An unofficial community project**, not affiliated with or endorsed by Anthropic. It runs Claude Code and Codex.
+> **An unofficial community project**, not affiliated with or endorsed by Anthropic or OpenAI. It runs Claude Code and Codex.
 
-Claude Code's official extension puts it in a chat panel or a terminal tab. This one gives it a view of its own in the secondary sidebar, laid out like VS Code's terminal panel: the agent's terminal UI on the left, the list of sessions on the right, and the agents keep working while the window reloads.
+The official extensions of Claude Code and Codex put them in a chat panel or a terminal tab. This one gives them a view of their own in the secondary sidebar, laid out like VS Code's terminal panel: the agent's terminal UI on the left, the list of sessions on the right, and the agents keep working while the window reloads.
 
 With [dotagents](https://github.com/dotagents-org/dotagents-core), it is also where your Claude and ChatGPT accounts live in VS Code: the first tab shows every account's usage, its state as an avatar, and the switch; the status bar shows the current one. It works without dotagents, with the sessions only.
 
@@ -36,13 +37,13 @@ With [dotagents](https://github.com/dotagents-org/dotagents-core), it is also wh
 - **Sessions like terminals.** Each session is an agent in its own terminal; the Claude Code or Codex button opens one, and the list switches between them while the others keep running.
 - **Splits.** Right, left, down or up, nested, with the line between panes to drag, and Claude Code, Codex or a terminal on the new side; joined in the list as the terminal panel's tabs are. Drag a session to reorder it (its split goes with it); with Shift, drop it on another to join that split on the side you pick, or below the last one to leave its split.
 - **Agents survive a reload.** They run in a small host process of their own, so **Developer: Reload Window** brings the view back with every screen as it was.
-- **Claude Code and Codex.** the title strip has one button per agent, Claude Code and Codex, each with its mark, and one for a terminal; each session shows its agent's mark.
-- **Back to the conversation.** A session that starts again (a crash, a restart, the next day) opens its conversation with `--resume` (`codex resume` for Codex).
+- **Claude Code and Codex.** The title strip has one button per agent, Claude Code and Codex, each with its mark, and one for a terminal; each session shows its agent's mark.
+- **Back to the right conversation.** A session that starts again (a crash, a restart, the next day) opens its conversation with `--resume` (`codex resume` for Codex). The agent itself tells which one it is in, through a `SessionStart` hook given on its command line only, so a `/clear` or `/resume` inside it, or two Codex sessions started together in one folder, never send a restart to the wrong one.
 - **Like the integrated terminal.** Your terminal font and colors, VS Code's shortcuts while a session has focus, copy and paste, a click on a file path to open it, Shift+Enter for a newline, names and colors per session.
 
 **Your Claude and ChatGPT accounts, with dotagents**
 
-- **The accounts tab.** Every account with its 5-hour, weekly and model windows, the projection to the reset, and a switch that puts it on both sides of the machine.
+- **The accounts tab.** Every account with its plan, its 5-hour, weekly and model windows, the projection to the reset, and a switch that puts it on both sides of the machine, then says what to do with the sessions already open.
 - **Avatars that say how it is.** Each account in its color and shape; the eyes and the dot in the corner give its state, and a session at work makes it hop.
 - **The status bar.** A group for each provider, showing its current account and usage as in the statusLine; a click switches.
 
@@ -74,11 +75,11 @@ The eyes and the dot in the corner say how each account is:
 
 ## Quick start
 
-You need VS Code 1.106+ and [Claude Code](https://claude.com/claude-code) on the `PATH` where the workspace runs.
+You need VS Code 1.106+ and [Claude Code](https://claude.com/claude-code) or [Codex](https://developers.openai.com/codex/cli) on the `PATH` where the workspace runs.
 
 1. In a clone of this repository: `npm install`, then `npm run package`, which writes `dotagents-sidebar.vsix`.
 2. Run **Extensions: Install from VSIX...** (in a remote window, while connected), then **Developer: Reload Window**.
-3. Open the secondary sidebar and pick **dotagents: Sidebar**; the Claude Code button starts a session.
+3. Open the secondary sidebar and pick **dotagents: Sidebar**; the Claude Code or Codex button starts a session.
 
 For the accounts, set up [dotagents](https://github.com/dotagents-org/dotagents-core#quick-start) on the same side and add your profiles; the tab appears on the next reload. More in [Getting started](docs/getting-started.md).
 
@@ -103,7 +104,7 @@ Issues and pull requests are welcome. There is no build step: `npm install`, `np
 ## Credits
 
 - [xterm.js](https://github.com/xtermjs/xterm.js) and [node-pty](https://github.com/microsoft/node-pty) (MIT).
-- The Claude Code mark in the session list is Anthropic's, and belongs to it.
+- The Claude Code mark in the session list is Anthropic's, and the Codex mark OpenAI's; each belongs to its owner.
 - The shortcut rules follow VS Code's integrated terminal ([MIT](https://github.com/microsoft/vscode/blob/main/LICENSE.txt)).
 - The type is [Geist Mono](https://vercel.com/font) (OFL), as in dotagents.
 
