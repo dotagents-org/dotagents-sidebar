@@ -9,6 +9,9 @@
 const fs = require("fs");
 
 const VARIABLE = "DOTAGENTS_SESSION_FILE";
+// The format of the files: the JSON the agent hands its SessionStart hook, as it is. The view keeps
+// them in a folder named after it, so a format that changes goes to another folder
+const FORMAT = 1;
 const SAFE_ID = /^[A-Za-z0-9_-]+$/;
 
 // The hook's command. Both always exit 0, so a failure never gets in the agent's way. PowerShell
@@ -64,4 +67,4 @@ function forget(file) {
   }
 }
 
-module.exports = { VARIABLE, POSIX, POWERSHELL, claudeSettings, codexOverride, args, read, forget };
+module.exports = { VARIABLE, FORMAT, POSIX, POWERSHELL, claudeSettings, codexOverride, args, read, forget };

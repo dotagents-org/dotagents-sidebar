@@ -308,7 +308,7 @@ function withStorage(run) {
   return Promise.resolve(run(storage)).finally(() => fs.rmSync(storage, { recursive: true, force: true }));
 }
 
-const hookFile = (storage, id) => path.join(storage, "workspace", "sessions", `${id}.json`);
+const hookFile = (storage, id) => path.join(storage, "workspace", `session-hook-${sessionHook.FORMAT}`, `${id}.json`);
 const tell = (storage, id, conversation, source) => fs.writeFileSync(hookFile(storage, id), JSON.stringify({ session_id: conversation, source }));
 
 test("an agent starts with the session hook and the file it writes to", () =>

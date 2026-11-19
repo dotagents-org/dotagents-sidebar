@@ -147,7 +147,10 @@ class SidebarView {
     // extension's other files. A window with no folder has no storage of its own, and the session
     // ids start over in every window: there it is a folder of the extension's named by an id the
     // window keeps, so two such windows never share a file
-    this.hookFolder = context.storageUri ? path.join(context.storageUri.fsPath, "sessions") : context.globalStorageUri && path.join(context.globalStorageUri.fsPath, "windows", this.windowId(), "sessions");
+    // The folder names the files' format (sessionHook.FORMAT): a new one goes to a new folder, and
+    // the files of the old one are never misread
+    const folder = `session-hook-${sessionHook.FORMAT}`;
+    this.hookFolder = context.storageUri ? path.join(context.storageUri.fsPath, folder) : context.globalStorageUri && path.join(context.globalStorageUri.fsPath, "windows", this.windowId(), folder);
     this.claudeSettings = context.globalStorageUri && path.join(context.globalStorageUri.fsPath, "claude-session-hook.json");
     // Session id -> what the extension knows of its agent; the process and the screen live in the host
     this.terminals = new Map();
