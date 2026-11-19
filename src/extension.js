@@ -25,11 +25,12 @@ const TITLE_BUTTONS = ["dotagentsSidebar.new", "dotagentsSidebar.new.codex", "do
 const SESSION_BUTTONS = ["dotagentsSidebar.split", "dotagentsSidebar.restart"];
 
 // One host per workspace and protocol (src/host/host.js), not per version of the extension: an update
-// reaches the host the old version started, and its agents keep running. An empty window has
-// nothing to come back to, so its host is its own
-function hostKey() {
+// reaches the host the old version started, and its agents keep running. An empty window's is its
+// own, by the id it keeps across reloads (windowId), the one its hook files are named by too: a
+// reload finds its agents, and never starts a second set writing the same files
+function hostKey(windowId) {
   const workspace = vscode.workspace.workspaceFile || vscode.workspace.workspaceFolders?.[0]?.uri;
-  const id = workspace ? workspace.toString() : `window-${vscode.env.sessionId}`;
+  const id = workspace ? workspace.toString() : `window-${windowId}`;
   const hash = crypto.createHash("sha256").update(id).digest("hex").slice(0, 16);
   return `p${host.PROTOCOL}-${hash}`;
 }
@@ -268,7 +269,7 @@ class SidebarView {
   }
 
   async reachHost() {
-    const socket = host.socketPath(hostKey());
+    const socket = host.socketPath(hostKey(this.windowId()));
     const connect = () =>
       host.connect(
         socket,
@@ -281,7 +282,7 @@ class SidebarView {
       // not running yet
     }
     // A host started before the socket was named by protocol (an earlier version) was named by version
-    const legacy = host.socketPath(hostKey().replace(/^p\d+/, this.context.extension.packageJSON.version));
+    const legacy = host.socketPath(hostKey(this.windowId()).replace(/^p\d+/, this.context.extension.packageJSON.version));
     try {
       return await host.connect(
         legacy,

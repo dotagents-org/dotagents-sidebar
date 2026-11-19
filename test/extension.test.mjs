@@ -47,7 +47,7 @@ function view(kind, { picks = [], config = {}, storage, folder = true, workspace
   const extension = new Module(file);
   const localRequire = createRequire(file);
   extension.require = (id) => id === "vscode" ? vscode : id === "./log.js" ? { writer: () => () => {} } : localRequire(id);
-  extension._compile(`${fs.readFileSync(file, "utf8")}\nmodule.exports.SidebarView = SidebarView;`, file);
+  extension._compile(`${fs.readFileSync(file, "utf8")}\nmodule.exports.SidebarView = SidebarView;\nmodule.exports.hostKey = hostKey;`, file);
   const context = {
     extensionUri: "/ext",
     workspaceState: { get: (key) => (key === "sessions" ? undefined : workspace.get(key)), update: (key, value) => workspace.set(key, value) },
@@ -450,6 +450,17 @@ test("a guess that took a rollout before its own session's hook told it is dropp
       else process.env.CODEX_HOME = before;
     }
   }));
+
+test("an empty window's host is found again after a reload by the id the window keeps, and is another window's own", () => {
+  const workspace = new Map();
+  const key = (made) => {
+    made.vscode.workspace.workspaceFolders = undefined; // no folder
+    return made.extension.exports.hostKey(made.view.windowId());
+  };
+  const first = key(view(undefined, { workspace }));
+  assert.equal(key(view(undefined, { workspace })), first);
+  assert.notEqual(key(view(undefined)), first);
+});
 
 test("a window with no folder keeps its agents' hook files apart from another such window's, across a reload", () =>
   withStorage(async (storage) => {
