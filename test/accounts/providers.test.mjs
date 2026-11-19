@@ -107,3 +107,13 @@ test("after a switch the panel shows what to do next, in the core's words, until
   assert.ok(flatten(view.host).includes("Windows: unreachable"));
   assert.ok(flatten(view.host).includes(next));
 });
+
+test("each card says its plan and seat, with one provider too, so two seats of one plan are told apart", () => {
+  const view = panel();
+  const profile = (name, seat) => ({ name, provider: "claude", plan: "team", seat, color: "#123456", avatar: "asleep", state: "no-data", windows: [] });
+  view.render({ profiles: [profile("work", "team_standard"), profile("lab", "team_premium"), { ...profile("solo", null), plan: "max" }], slots: {}, current: {}, sides: [] });
+  const text = flatten(view.host).filter((n) => typeof n === "string");
+  assert.ok(text.includes("Team Standard"));
+  assert.ok(text.includes("Team Premium"));
+  assert.ok(text.includes("Max"));
+});

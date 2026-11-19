@@ -38,7 +38,7 @@ function refusal(json) {
   if (json?.apiVersion === API_VERSION) return json.error ? `dotagents: ${json.error}` : "";
   return typeof json?.apiVersion === "number" && json.apiVersion > API_VERSION
     ? "dotagents is newer than this extension: update dotagents-sidebar."
-    : "dotagents is older than this extension: run dotagents update.";
+    : "dotagents is older than this extension: run dotagents update, then end the dotagents start still running (its pid is in start.json in dotagents' state folder) and reload the window.";
 }
 
 const label = (w) => (w.kind === "session" ? "5h" : w.kind === "week" ? "7d" : w.model || "model");

@@ -23,6 +23,7 @@ What changed in each release. The format follows [Keep a Changelog](https://keep
 
 ### Changed
 
+- **The seat on each card.** An account card says its plan and seat (`Team Standard`, `Team Premium`, `Business`), also with one provider, where there is no group header, so two seats of one plan are told apart. Refusing a core older than API 3, the view says to end the `dotagents start` it left running too.
 - **ChatGPT accounts under `chatgpt`.** The accounts tab and the status bar read a ChatGPT profile's provider and the start API's `slots` and `current` as `chatgpt`, the account's name, as the core now says it; Codex sessions keep theirs. The view knows API version 3, and refuses an older core's answer saying which side to update.
 - **What to do after a switch, as the core says it.** The switch list's notification and the accounts panel show the line `dotagents switch` ends with, from the core's answer (`next`): for Claude, open conversations go on after `continue`; for ChatGPT, Codex sessions already open keep the old account until you restart them. The notification had Claude's line written in the sidebar, and nothing for ChatGPT; the panel said nothing.
 - **Plans by the product's name.** The accounts panel's group header says *Team  2 seats* for Claude and *Business  2 seats* for ChatGPT (Claude Team and ChatGPT Business, which was ChatGPT Team), where it said the API's `team` for both.

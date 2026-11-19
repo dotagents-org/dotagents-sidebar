@@ -30,7 +30,7 @@ The marks are glyphs of `media/icons.woff`, which `scripts/vscode-icon.py` write
 
 From `dotagents start`, on the side of the window: a local API on 127.0.0.1 that answers only with the token it leaves in `start.json`, in the same state folder. The view asks it every 10 seconds. When none answers, the view starts one in the background (at most once a minute), on its own: on Windows through a hidden `Start-Process`, so no console window holds it and closing VS Code doesn't stop it; a `start.json` left behind by a server that stopped, after a WSL shutdown for example, doesn't count. One server serves every window on that side.
 
-Every answer carries `apiVersion`. The view knows version 3; with another, it says which side to update: `dotagents update` when dotagents is older, this extension when dotagents is newer. The API is described in dotagents' [commands](https://github.com/dotagents-org/dotagents-core/blob/main/docs/commands.md#dotagents-start).
+Every answer carries `apiVersion`. The view knows version 3; with another, it says which side to update: `dotagents update` when dotagents is older (and the `dotagents start` it left running is ended, so the new one starts), this extension when dotagents is newer. The API is described in dotagents' [commands](https://github.com/dotagents-org/dotagents-core/blob/main/docs/commands.md#dotagents-start).
 
 ## Without the tab
 

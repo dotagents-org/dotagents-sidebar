@@ -128,6 +128,11 @@
       const provider = providers[p.provider || "claude"];
       const here = sides.filter((s) => slots[s] === p.name);
       const doing = p.activity ? [p.activity.working && `${p.activity.working} working`, p.activity.waiting && `${p.activity.waiting} waiting on you`].filter(Boolean).join(", ") : "";
+      // The plan as the product names it, with the seat the provider tells ("Team Standard"): on the card, so
+      // two seats of one plan are told apart, also with only one provider (no group header then)
+      const planName = (provider.plans || {})[p.plan] || p.plan || "";
+      const seatName = p.seat ? String(p.seat).replace(new RegExp(`^${p.plan}_`), "").split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "";
+      const planText = [planName, seatName].filter(Boolean).join(" ");
       const status = p.avatar === "error" ? p.error || `no login here, run: dotagents login ${p.name}` : doing;
       // Where the account is, and one switch that puts it on every side (the command's --here,
       // for one side only, stays in the terminal).
@@ -151,6 +156,7 @@
               "div",
               { class: "line" },
               el("span", { class: "name", style: { color: nameColor(p.color) } }, p.name),
+              planText && el("span", { class: "muted small" }, planText),
               // Every account has its Desktop app on Windows: Claude Desktop, or the ChatGPT app.
               el("button", { type: "button", class: "icon", style: { color: nameColor(p.color) }, title: `Open ${p.name}'s ${provider.title} Desktop`, "aria-label": `Open ${p.name}'s ${provider.title} Desktop`, onclick: run("desktop", { profile: p.name }, null) }, icon([provider.mark]))
             ),
