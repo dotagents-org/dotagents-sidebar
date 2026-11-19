@@ -527,7 +527,14 @@ class SidebarView {
     try {
       fs.mkdirSync(this.hookFolder, { recursive: true });
       fs.mkdirSync(path.dirname(this.claudeSettings), { recursive: true });
-      fs.writeFileSync(this.claudeSettings, JSON.stringify(sessionHook.claudeSettings(process.platform), null, 2));
+      // Another window may be starting a Claude Code that reads it now: written whole beside it and
+      // put in place in one step, and only when it changed
+      const text = JSON.stringify(sessionHook.claudeSettings(process.platform), null, 2);
+      if (!fs.existsSync(this.claudeSettings) || fs.readFileSync(this.claudeSettings, "utf8") !== text) {
+        const next = `${this.claudeSettings}.${process.pid}~`;
+        fs.writeFileSync(next, text);
+        fs.renameSync(next, this.claudeSettings);
+      }
     } catch (err) {
       this.log.error("Could not set up the session hook", err);
       return { args: [], env: {} };

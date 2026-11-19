@@ -33,6 +33,10 @@ test("the POSIX hook writes what the agent sends to the session's file, and does
     const run = (env) => spawnSync("sh", ["-c", hook.POSIX], { input: JSON.stringify(told), env: { PATH: process.env.PATH, ...env } });
     assert.equal(run({ [hook.VARIABLE]: file }).status, 0);
     assert.deepEqual(hook.read(file), { conversation: "abc-1", transcript: told.transcript_path, source: "clear" });
+    // A second conversation replaces the file whole, with nothing left beside it
+    const again = spawnSync("sh", ["-c", hook.POSIX], { input: JSON.stringify({ ...told, session_id: "abc-2" }), env: { PATH: process.env.PATH, [hook.VARIABLE]: file } });
+    assert.equal(again.status, 0);
+    assert.equal(hook.read(file).conversation, "abc-2");
     assert.equal(run({}).status, 0);
     assert.deepEqual(fs.readdirSync(dir), ["s1.json"]);
     assert.equal(run({ [hook.VARIABLE]: path.join(dir, "missing", "s2.json") }).status, 0);

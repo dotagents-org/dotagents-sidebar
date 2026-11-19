@@ -13,11 +13,14 @@ const SAFE_ID = /^[A-Za-z0-9_-]+$/;
 
 // The hook's command. Both always exit 0, so a failure never gets in the agent's way. PowerShell
 // started with -Command hands its stdin to $input (Codex runs hooks that way), else it is the
-// console's, read in UTF-8 rather than the console's code page. No quotes in it: see codexOverride
-const POSIX = `[ -z "$${VARIABLE}" ] || cat > "$${VARIABLE}"; exit 0`;
+// console's, read in UTF-8 rather than the console's code page. Each writes the file whole beside it
+// (its name and ~), then puts it in place in one step, so the view never reads half of one. No
+// quotes in them: see codexOverride
+const POSIX = `[ -z "$${VARIABLE}" ] || { cat > "$${VARIABLE}~" && mv -f "$${VARIABLE}~" "$${VARIABLE}"; }; exit 0`;
 const POWERSHELL =
   `try { if ($env:${VARIABLE}) { [Console]::InputEncoding = [Text.Encoding]::UTF8; $text = @($input) -join [char]10; ` +
-  `if (-not $text) { $text = [Console]::In.ReadToEnd() }; [IO.File]::WriteAllText($env:${VARIABLE}, $text) } } catch {}; exit 0`;
+  `if (-not $text) { $text = [Console]::In.ReadToEnd() }; $next = -join ($env:${VARIABLE}, [char]126); [IO.File]::WriteAllText($next, $text); ` +
+  `if ([IO.File]::Exists($env:${VARIABLE})) { [IO.File]::Replace($next, $env:${VARIABLE}, [NullString]::Value) } else { [IO.File]::Move($next, $env:${VARIABLE}) } } } catch {}; exit 0`;
 
 // Claude Code adds the settings of a --settings file to the user's. On Windows the hook runs in
 // PowerShell, since Git Bash may be missing
