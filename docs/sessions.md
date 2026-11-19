@@ -22,7 +22,7 @@ Codex runs a hook only once you trust it: the first Codex session asks to review
 
 ## The title
 
-The view is named after the active tab, using the session's agent or *Accounts*. The title strip shows the agent's mark, the workspace and the conversation's name when the agent reports one. Claude Code reports the name set with `/rename` or the topic it picks; Codex, the thread's name (`/rename`, or the one it gives), with the project, after it by default or wherever `tui.terminal_title` in its `config.toml` puts it: the strip leaves out the one part that is the name of the session's folder or of the workspace (whole, or cut to 24 characters as Codex cuts it), and shows the title whole when none or more than one part is. A name given in the list wins. The strip above the accounts panel keeps the buttons for new sessions.
+The view is named after the active tab, using the session's agent or *Accounts*. The title strip shows the agent's mark, the workspace and the conversation's name when the agent reports one. Claude Code reports the name set with `/rename` or the topic it picks; Codex, the thread's name (`/rename`, or the one it gives), with the project, after it by default or wherever `tui.terminal_title` in its `config.toml` puts it: the strip leaves out the one part that is the name of the session's folder (whole, or cut to 24 characters as Codex cuts it), and shows the title whole when none or more than one part is (a session started below its project's root shows it whole). A name given in the list wins. The strip above the accounts panel keeps the buttons for new sessions.
 
 ## Keys
 

@@ -1,9 +1,10 @@
 // What an agent's window title says about its conversation. Codex joins the items of its title with
 // " | ", by default the thread's name and then the project, but tui.terminal_title in its
 // config.toml may put them in any order. The project is the name of the folder Codex runs in (or of
-// its project root), cut to 24 characters ("..." in the last 3) when longer: the part that is one
-// of the names the view knows for it (the session's folder, the workspace) is dropped wherever it
-// is. When no part is, the title stays whole: better the project shown than the thread's name lost.
+// its project root), cut to 24 characters ("..." in the last 3) when longer: the one part that is
+// the session's folder's name is dropped wherever it is. The workspace's name is no proof (a thread
+// may be named so), and a project root above the folder isn't known here: then the title stays
+// whole, since better the project shown than the thread's name lost.
 //
 // Shared by the extension's tests (CommonJS) and the view (a script that declares agentTitle).
 
@@ -19,7 +20,7 @@ const agentTitle = (() => {
     return chars.length > 24 ? `${chars.slice(0, 21).join("")}...` : name;
   };
 
-  // names: what the project may be called (the session's folder's name, the workspace's). Exactly
+  // names: what the project may be called (the session's folder's name). Exactly
   // one part may go: when none or several match (a thread named as its project), it stays whole
   function codex(raw, names) {
     const parts = raw.split(" | ");
