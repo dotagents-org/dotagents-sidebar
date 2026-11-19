@@ -11,7 +11,7 @@ const { AGENTS, command, conversationArgs, env, terminalCommand } = require("../
 const sessionHook = require("../src/sessions/session-hook.js");
 
 // Load the real view with VS Code and logging replaced; keep its class private in production.
-function view(kind, { picks = [], config = {}, storage, folder = true } = {}) {
+function view(kind, { picks = [], config = {}, storage, folder = true, workspace = new Map() } = {}) {
   const messages = [];
   let disposed = 0;
   const ran = [];
@@ -50,7 +50,7 @@ function view(kind, { picks = [], config = {}, storage, folder = true } = {}) {
   extension._compile(`${fs.readFileSync(file, "utf8")}\nmodule.exports.SidebarView = SidebarView;`, file);
   const context = {
     extensionUri: "/ext",
-    workspaceState: { get: () => undefined, update() {} },
+    workspaceState: { get: (key) => (key === "sessions" ? undefined : workspace.get(key)), update: (key, value) => workspace.set(key, value) },
     globalState: { get: (key) => global.get(key), update: (key, value) => global.set(key, value) },
     ...(storage ? { globalStorageUri: { fsPath: storage }, ...(folder ? { storageUri: { fsPath: path.join(storage, "workspace") } } : {}) } : {}),
   };
@@ -451,13 +451,19 @@ test("a guess that took a rollout before its own session's hook told it is dropp
     }
   }));
 
-test("a window with no folder gives its agents no hook: its session ids would meet another window's", () =>
+test("a window with no folder keeps its agents' hook files apart from another such window's, across a reload", () =>
   withStorage(async (storage) => {
-    const { view: sidebar, messages } = view(undefined, { storage, folder: false });
-    const id = sidebar.state.active;
-    sidebar.start(id);
-    await Promise.resolve();
-    assert.deepEqual(messages.at(-1).args, command(process.platform, AGENTS.claude, ["--session-id", sidebar.session(id).conversation]).args);
-    assert.equal(messages.at(-1).env[sessionHook.VARIABLE], undefined);
-    sidebar.dispose();
+    const fileOf = async (made) => {
+      const id = made.view.state.active;
+      made.view.start(id);
+      await Promise.resolve();
+      const file = made.messages.at(-1).env[sessionHook.VARIABLE];
+      made.view.dispose();
+      return file;
+    };
+    const workspace = new Map();
+    const first = await fileOf(view(undefined, { storage, folder: false, workspace }));
+    assert.ok(first.startsWith(path.join(storage, "windows")));
+    assert.equal(await fileOf(view(undefined, { storage, folder: false, workspace })), first, "the same window after a reload");
+    assert.notEqual(await fileOf(view(undefined, { storage, folder: false })), first, "another window");
   }));

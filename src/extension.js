@@ -144,8 +144,9 @@ class SidebarView {
     // Where each agent session's SessionStart hook writes its conversation (session-hook.js): a
     // file per session in the workspace's storage, and Claude Code's hook settings beside the
     // extension's other files. A window with no folder has no storage of its own, and the session
-    // ids start over in every window, so there the agents get no hook
-    this.hookFolder = context.storageUri && path.join(context.storageUri.fsPath, "sessions");
+    // ids start over in every window: there it is a folder of the extension's named by an id the
+    // window keeps, so two such windows never share a file
+    this.hookFolder = context.storageUri ? path.join(context.storageUri.fsPath, "sessions") : context.globalStorageUri && path.join(context.globalStorageUri.fsPath, "windows", this.windowId(), "sessions");
     this.claudeSettings = context.globalStorageUri && path.join(context.globalStorageUri.fsPath, "claude-session-hook.json");
     // Session id -> what the extension knows of its agent; the process and the screen live in the host
     this.terminals = new Map();
@@ -505,6 +506,16 @@ class SidebarView {
     const hook = this.hook(id, agent);
     const { file, args } = command(process.platform, agent, [...hook.args, ...conversationArgs(agent, conversation, resume)]);
     this.createProcess(id, terminal, file, args, hook.env);
+  }
+
+  // An id for a window with no folder, kept in its own state across reloads
+  windowId() {
+    let id = this.context.workspaceState.get("hookWindow");
+    if (typeof id !== "string" || !/^[0-9a-f-]{36}$/.test(id)) {
+      id = crypto.randomUUID();
+      this.context.workspaceState.update("hookWindow", id);
+    }
+    return id;
   }
 
   hookFile(id) {
