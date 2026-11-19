@@ -73,4 +73,6 @@ test("command quotes an argument that isn't plain, for bash and for PowerShell",
   assert.deepEqual(command("linux", claude, ["--settings", "/home/a b/it's.json"]).args, ["-ic", `claude --settings '/home/a b/it'\\''s.json'`]);
   assert.deepEqual(command("win32", claude, ["--settings", "C:\\Users\\a b\\it's.json"]).args, ["-NoLogo", "-Command", `& (Get-Command claude -CommandType Application -ErrorAction Stop)[0].Source --settings 'C:\\Users\\a b\\it''s.json'`]);
   assert.deepEqual(command("linux", codex, ["-c", "a=[1]"]).args, ["-ic", "codex -c 'a=[1]'"]);
+  // PowerShell takes ‘ ’ ‚ ‛ for a single quote too (checked on Windows: the string comes back whole)
+  assert.equal(command("win32", claude, ["C:\\Users\\Ana d’Ávila\\s.json"]).args.at(-1).endsWith(`'C:\\Users\\Ana d’’Ávila\\s.json'`), true);
 });

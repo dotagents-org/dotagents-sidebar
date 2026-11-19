@@ -40,10 +40,11 @@ function conversationArgs(agent, id, resume) {
 }
 
 // An argument goes into the shell line as is when it is plain, else in single quotes, which
-// neither bash nor PowerShell expands
+// neither bash nor PowerShell expands. PowerShell also takes the typographic single quotes (‘ ’ ‚ ‛)
+// for one, as in a profile under C:\Users\Ana d’Ávila: each is doubled like the plain one
 function quote(platform, arg) {
   if (/^[A-Za-z0-9_\-.,:=@+/]+$/.test(arg)) return arg;
-  return platform === "win32" ? `'${arg.replace(/'/g, "''")}'` : `'${arg.replace(/'/g, `'\\''`)}'`;
+  return platform === "win32" ? `'${arg.replace(/['\u2018\u2019\u201A\u201B]/g, "$&$&")}'` : `'${arg.replace(/'/g, `'\\''`)}'`;
 }
 
 function command(platform, agent, args = []) {
