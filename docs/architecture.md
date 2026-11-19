@@ -40,7 +40,7 @@ The extension's own code is in `src/`, by area: `host/`, `sessions/`, `accounts/
 | `webview/accounts/` | The accounts tab: the panel (`panel.js`, `panel.css`) and the avatars, drawn live (`avatar.js`) |
 | `src/skip-shell.json` | VS Code's default commands that skip the shell, copied from its source |
 | `scripts/avatars/generate.mjs` | The avatars as still pictures and strips, for documents (`assets/avatars/`); the same rules as `avatar.js` |
-| `scripts/readme/generate.mjs` | The README's pictures of the avatars (`assets/readme/`) |
+| `scripts/readme/generate.mjs` | The README's pictures (`assets/readme/`): how the view works, how a session finds its conversation again, the avatars |
 | `scripts/vscode-icon.py` | The status bar's marks (accounts, Claude, OpenAI), glyphs of `media/icons.woff` |
 | `scripts/lockup.py` | The README lockup (SVG, then the PNGs the README shows) from the mark and Geist Mono |
 
